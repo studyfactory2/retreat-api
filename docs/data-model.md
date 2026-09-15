@@ -277,8 +277,9 @@ nested checklist shapes and typed internal snapshot builders.
 
 ## Planned DTOs and services
 
-Staff/property management and manual stays are implemented as described in
-[the administrator API guide](admin-management.md) and [stay API guide](admin-stays.md).
+Staff/property management, manual stays, and checklist templates are implemented as described in
+[the administrator API guide](admin-management.md), [stay API guide](admin-stays.md),
+and [template API guide](admin-checklist-templates.md).
 The other feature names below
 remain an implementation guide, not newly implemented classes.
 Each feature gets its controller/service/module under components and inputs plus
@@ -290,7 +291,7 @@ response contracts under libs/dto, following the existing Jagong-style structure
 | properties | CreatePropertyInput, UpdatePropertyInput, GetPropertiesInput, AssignStaffInput | PropertyDto, PropertyListDto | Property CRUD and active STAFF assignment; exclude token hashes from every response. |
 | stays | CreateStayInput, UpdateStayInput, CancelStayInput, GetStaysInput | StayDto, StayListDto, CalendarStayDto | Stable visits, guest snapshots, conflicts, corrections, cancellation, StayRevision transactions. |
 | imports | CreateImportInput, UpdateImportRowInput, ConfirmImportInput | ImportPreviewDto, ImportRowDto, ImportResultDto | Parse fixed workbook, preview/mapping, validation, concurrency-safe confirmation. |
-| checklist-templates | SaveChecklistTemplateInput with SectionInput and ItemInput | ChecklistTemplateDto | Per-property configuration, stable IDs, type rules, expected-version checks. |
+| checklist-templates | CreateChecklistTemplateInput, UpdateChecklistTemplateInput, GetChecklistTemplatesInput; ChecklistSectionInput and ChecklistItemInput | ChecklistTemplateDto, ChecklistTemplateListDto | Per-property configuration, stable IDs, type rules, expected-version checks. |
 | qr | RotatePropertyQrInput; scoped URL token | QrIssueDto, PublicPropertyDto | Issue/rotate QR capabilities; resolve safe context; enforce flow scope. |
 | submissions | StartSubmissionInput, SaveDraftInput, SubmitChecklistInput, CorrectSubmissionInput, CancelSubmissionInput, MatchSubmissionStayInput | SubmissionDto, SubmissionReceiptDto, SubmissionRevisionDto | Capture template, save staff start, validate answers, append immutable revisions, maintain private access and reviewed stay links. |
 | attachments | CreateUploadInput, CompleteUploadInput | UploadGrantDto, AttachmentDto | Upload ownership/claims, file limits, confirmed metadata, private authorized downloads, safe cleanup. |
@@ -394,3 +395,10 @@ and expectedRevision checks. Guest/notes corrections on an active stay remain
 possible after the property is deactivated, but date changes and restores require
 an active property. Guest guides, stay invitations, vehicle details, and the final
 staff-access policy still need their own agreed design and implementation slices.
+
+Checklist-template create/list/detail/update APIs now configure one template per
+property/type. Guest templates are fixed after initial creation; maintenance
+title/definition/activity edits use expectedVersion. Stable section/item IDs,
+nested validation, per-property isolation, and atomic version increments are
+implemented. Existing submission snapshots are never changed by template APIs;
+capturing those snapshots during actual guest/staff use remains a later slice.

@@ -260,6 +260,31 @@ No schema changes, migrations, Excel import, guest invitations, QR generation,
 vehicle forms, guides, or frontend changes are part of this slice. New guide/vehicle
 requirements and final staff/guest access policy remain separate follow-ups.
 
+## Administrator checklist-template slice
+
+ChecklistTemplatesController implements create/list/detail/update under
+/admin/checklist-templates, with explicit ADMIN/guard/no-store/static-log handlers.
+See docs/admin-checklist-templates.md for nested DTOs and request examples.
+One current template exists per property/type (CHECK_IN, CHECK_OUT, MAINTENANCE).
+Create requires an active property, rejects caller IDs, and stores version 1.
+Guest templates are fixed after initial configuration through these MVP APIs;
+routine title/sections/activity updates are MAINTENANCE-only. Property/type never
+change. All updates require an active property and expectedVersion. Meaningful
+updates increment version atomically; identical values preserve the version.
+
+Definitions use schemaVersion 1, ordered sections/items, and NORMAL_ABNORMAL
+answers. Server-generated UUIDs identify sections/items. An update retains only
+IDs from the current template and original section; new entries omit IDs. Removed
+IDs cannot be supplied later. Limits: 20 sections, 50 items per section, 500 total,
+150-character titles, 300-character labels. Nested unknown values and duplicates
+are rejected. Stored JSON is validated before exposing typed definitions.
+
+These services never update captured submission templates or revision history.
+Draft-time capture and photo/submission validation belong to later slices. No
+schema changes, migrations, guest/staff access flow, real template seeding, QR,
+uploads, guides, vehicle registration, or frontend are added. Jeju rental-car
+wording must be supplied before configuring those actual guest templates.
+
 ## References
 
 - Nest configuration: https://docs.nestjs.com/techniques/configuration

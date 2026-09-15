@@ -4,6 +4,10 @@ NestJS backend for the retreat management web app. Package manager: npm.
 
 ## Current slice
 
+Administrator checklist-template management now supports initial property-specific
+guest/maintenance configuration and version-checked maintenance edits through
+GET/POST /admin/checklist-templates routes. See [the template API guide](docs/admin-checklist-templates.md).
+
 Administrator stay management now supports creating, listing, correcting,
 cancelling, restoring, and reviewing the history of planned visits through
 GET/POST /admin/stays routes. Each mutation saves a versioned snapshot; conflicting
