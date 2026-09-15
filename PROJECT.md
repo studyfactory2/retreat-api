@@ -130,20 +130,34 @@ build to preserve dist/main. No schema changes or migrations accompany auth.
 Existing HTTP tests use test-only environment settings from the npm script; the
 stale reference to deleted test/setup-env.ts was removed without restoring it.
 
-## Remaining model sequence
+## Complete MVP model baseline
 
-The remaining model names are the working design, to be added with their slices:
+The user requested all MVP tables before implementing the remaining feature APIs.
+prisma/schema.prisma now defines 15 models: User, Property, Stay, StayRevision,
+ImportBatch, ImportRow, ChecklistTemplate, ChecklistSubmission, SubmissionRevision,
+Attachment, SubmissionRevisionAttachment, IssueCategory, Issue, IssueEvent,
+IssueEventAttachment. QR digests are nullable Property fields. Checklists have
+validated JSON definitions and immutable submission snapshots with stable item IDs.
 
-1. User and Property: shared people and whole-retreat definitions (defined).
-2. Stay and ImportBatch: scheduled visits and reviewed Excel imports.
-3. ChecklistTemplate, ChecklistSubmission, SubmissionRevision: per-property
-   checklist definitions, guest/staff records, and preserved historical versions.
-4. Attachment: stored file metadata and ownership.
-5. IssueCategory, Issue, IssueEvent: configurable categories and repair history.
+Read docs/data-model.md before implementing feature DTOs/services. It defines
+relationships, JSON contracts, ownership rules, history transactions, derived views,
+and the planned feature DTO/service map. docs/data-dictionary.md lists every stored
+column; docs/retreat-erd.mmd contains the full Mermaid ER diagram.
 
-The calendar and missing-checklist indicators derive from stays and submissions.
-Reports are generated from operational records. They need no separate tables in
-this first design. Later models will add relations to User and Property.
+This is schema definition only. The user runs:
+npx prisma migrate dev --name complete_mvp_data_model
+The assistant does not generate/apply migrations, seed business data, or add
+feature routes in this slice. Existing administrator authentication is preserved.
+
+History/photo joins are append-only by service contract. Foreign keys do not
+enforce actor roles, workflow transitions, JSON shape, or all optional-link
+consistency. Implement the documented invariants transactionally; use restrictive
+deletion plus deactivation/cancellation. Expected-version checks prevent stale
+imports/corrections from overwriting newer data. Never merge guests/stays on name
+alone or cancel visits because a later workbook omits them.
+
+Calendar, missing-checklist indicators, dashboard cards, and reports derive from
+operational data; no separate persistence tables are required for these views.
 
 ## Confirmed domain constraints for later slices
 

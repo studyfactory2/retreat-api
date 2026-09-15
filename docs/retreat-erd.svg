@@ -1,0 +1,210 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2360" height="1560" viewBox="0 0 2360 1560" role="img" aria-labelledby="title desc">
+  <title id="title">Retreat MVP — 15-table relationship overview</title>
+  <desc id="desc">A core relationship overview of all fifteen Retreat MVP tables. The full foreign-key diagram, optionality and service rules are documented separately in retreat-erd.mmd and data-model.md.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M1 1 L8 5 L1 9" fill="none" stroke="#3474cf" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+    <marker id="muted-arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M1 1 L8 5 L1 9" fill="none" stroke="#8395ae" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+    <style>
+      text { font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; fill: #1b2a41; }
+      .eyebrow { font-size: 20px; font-weight: 700; letter-spacing: 3px; fill: #2862ac; }
+      .heading { font-size: 44px; font-weight: 700; letter-spacing: -1px; }
+      .subhead { font-size: 23px; fill: #5c6c82; }
+      .card { fill: #fff; stroke: #cbd9eb; stroke-width: 2; }
+      .head { fill: #edf4ff; }
+      .name { font-size: 28px; font-weight: 700; fill: #164f9d; }
+      .long-name { font-size: 23px; font-weight: 700; fill: #164f9d; }
+      .purpose { font-size: 21px; fill: #5c6c82; }
+      .field { font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace; font-size: 21px; fill: #34475f; }
+      .key { fill: #164f9d; }
+      .edge { fill: none; stroke: #3474cf; stroke-width: 3; stroke-linejoin: round; stroke-linecap: round; marker-end: url(#arrow); }
+      .source-edge { fill: none; stroke: #8395ae; stroke-width: 2.5; stroke-dasharray: 7 7; stroke-linejoin: round; marker-end: url(#muted-arrow); }
+      .label { font-size: 20px; fill: #3d648f; }
+      .muted-label { font-size: 20px; fill: #64768e; }
+      .small { font-size: 19px; fill: #64768e; }
+    </style>
+  </defs>
+
+  <rect width="2360" height="1560" fill="#fff"/>
+  <text class="eyebrow" x="80" y="51">RETREAT / BACKEND MODEL</text>
+  <text class="heading" x="80" y="109">15 tables. One operational workflow.</text>
+  <text class="subhead" x="80" y="150">People, visits, checklists and issues — with preserved changes and private photo evidence.</text>
+  <text class="small" x="2230" y="54" text-anchor="end">PRISMA 5.22.0 · POSTGRESQL</text>
+  <text class="small" x="2230" y="88" text-anchor="end">Schema baseline · feature services follow</text>
+  <line x1="80" y1="178" x2="2230" y2="178" stroke="#e3eaf3" stroke-width="2"/>
+
+  <!-- Core relationship lines occupy the gutters, never the cards. -->
+  <path class="edge" d="M550 300 H640"/>
+  <text class="label" x="595" y="253" text-anchor="middle"><tspan x="595">assigned</tspan><tspan x="595" dy="24">worker</tspan></text>
+  <path class="edge" d="M1110 300 H1200"/>
+  <text class="label" x="1155" y="270" text-anchor="middle">configures</text>
+  <path class="edge" d="M1670 300 H1760"/>
+  <text class="label" x="1715" y="253" text-anchor="middle"><tspan x="1715">captured</tspan><tspan x="1715" dy="24">from</tspan></text>
+  <path class="edge" d="M875 400 V460 H1435 V550"/>
+  <text class="label" x="1160" y="448" text-anchor="middle">schedules visits</text>
+  <path class="edge" d="M1995 400 V550"/>
+  <text class="label" x="2013" y="485">preserves versions</text>
+  <path class="edge" d="M550 650 H640"/>
+  <text class="label" x="595" y="620" text-anchor="middle">previews</text>
+  <path class="edge" d="M1110 650 H1200"/>
+  <text class="label" x="1155" y="603" text-anchor="middle"><tspan x="1155">target /</tspan><tspan x="1155" dy="24">result</tspan></text>
+  <path class="edge" d="M1435 750 V815 H875 V900"/>
+  <text class="label" x="1155" y="803" text-anchor="middle">preserves visit changes</text>
+  <path class="edge" d="M1995 750 V900"/>
+  <text class="label" x="2013" y="866">links photos</text>
+  <path class="source-edge" d="M2230 330 H2310 V790 H2010 Q1995 771 1980 790 H1640 V900"/>
+  <text class="muted-label" x="2250" y="483" transform="rotate(90 2250 483)">abnormal checklist item</text>
+  <path class="edge" d="M550 1000 H590 V855 H1435 V900"/>
+  <text class="label" x="1155" y="843" text-anchor="middle">classifies problems</text>
+  <path class="edge" d="M1435 1100 V1175 H875 V1250"/>
+  <text class="label" x="1155" y="1163" text-anchor="middle">preserves issue activity</text>
+  <path class="edge" d="M1110 1350 H1200"/>
+  <text class="label" x="1155" y="1320" text-anchor="middle">evidence</text>
+  <path class="edge" d="M1760 1350 H1670"/>
+  <text class="label" x="1715" y="1303" text-anchor="middle"><tspan x="1715">stored</tspan><tspan x="1715" dy="24">photo</tspan></text>
+  <path class="edge" d="M1995 1250 V1100"/>
+  <text class="label" x="2013" y="1163"><tspan x="2013">same file,</tspan><tspan x="2013" dy="25">multiple revisions</tspan></text>
+
+  <!-- Row 1: people, property and form configuration. -->
+  <g transform="translate(80 200)">
+    <rect class="card" width="470" height="200" rx="18"/>
+    <path class="head" d="M18 1 H452 Q469 1 469 18 V62 H1 V18 Q1 1 18 1Z"/>
+    <text class="name" x="24" y="41">User</text>
+    <text class="purpose" x="24" y="95">Administrator, staff or guest profile</text>
+    <text class="field key" x="24" y="131">id · role · name</text>
+    <text class="field" x="24" y="165">loginId? · isActive</text>
+  </g>
+  <g transform="translate(640 200)">
+    <rect class="card" width="470" height="200" rx="18"/>
+    <path class="head" d="M18 1 H452 Q469 1 469 18 V62 H1 V18 Q1 1 18 1Z"/>
+    <text class="name" x="24" y="41">Property</text>
+    <text class="purpose" x="24" y="95">One whole retreat, with two QR links</text>
+    <text class="field key" x="24" y="131">id · name · staffUserId?</text>
+    <text class="field" x="24" y="165">guest / staff QR digests</text>
+  </g>
+  <g transform="translate(1200 200)">
+    <rect class="card" width="470" height="200" rx="18"/>
+    <path class="head" d="M18 1 H452 Q469 1 469 18 V62 H1 V18 Q1 1 18 1Z"/>
+    <text class="name" x="24" y="41">ChecklistTemplate</text>
+    <text class="purpose" x="24" y="95">Current checklist for property + type</text>
+    <text class="field key" x="24" y="131">id · propertyId · type</text>
+    <text class="field" x="24" y="165">version · definition JSON</text>
+  </g>
+  <g transform="translate(1760 200)">
+    <rect class="card" width="470" height="200" rx="18"/>
+    <path class="head" d="M18 1 H452 Q469 1 469 18 V62 H1 V18 Q1 1 18 1Z"/>
+    <text class="name" x="24" y="41">ChecklistSubmission</text>
+    <text class="purpose" x="24" y="95">One guest inspection or staff job</text>
+    <text class="field key" x="24" y="131">id · propertyId · stayId?</text>
+    <text class="field" x="24" y="165">type · status · templateSnapshot</text>
+  </g>
+
+  <!-- Row 2: roster workflow and submission revisions. -->
+  <g transform="translate(80 550)">
+    <rect class="card" width="470" height="200" rx="18"/>
+    <path class="head" d="M18 1 H452 Q469 1 469 18 V62 H1 V18 Q1 1 18 1Z"/>
+    <text class="name" x="24" y="41">ImportBatch</text>
+    <text class="purpose" x="24" y="95">One workbook, reviewed before apply</text>
+    <text class="field key" x="24" y="131">id · sourceAttachmentId</text>
+    <text class="field" x="24" y="165">status · version · confirmedAt?</text>
+  </g>
+  <g transform="translate(640 550)">
+    <rect class="card" width="470" height="200" rx="18"/>
+    <path class="head" d="M18 1 H452 Q469 1 469 18 V62 H1 V18 Q1 1 18 1Z"/>
+    <text class="name" x="24" y="41">ImportRow</text>
+    <text class="purpose" x="24" y="95">One source row and reviewed action</text>
+    <text class="field key" x="24" y="131">id · batchId · stayId?</text>
+    <text class="field" x="24" y="165">rawData · action · validation</text>
+  </g>
+  <g transform="translate(1200 550)">
+    <rect class="card" width="470" height="200" rx="18"/>
+    <path class="head" d="M18 1 H452 Q469 1 469 18 V62 H1 V18 Q1 1 18 1Z"/>
+    <text class="name" x="24" y="41">Stay</text>
+    <text class="purpose" x="24" y="95">One planned visit shown on calendar</text>
+    <text class="field key" x="24" y="131">id · propertyId · guestName</text>
+    <text class="field" x="24" y="165">checkInAt · checkOutAt · status</text>
+  </g>
+  <g transform="translate(1760 550)">
+    <rect class="card" width="470" height="200" rx="18"/>
+    <path class="head" d="M18 1 H452 Q469 1 469 18 V62 H1 V18 Q1 1 18 1Z"/>
+    <text class="name" x="24" y="41">SubmissionRevision</text>
+    <text class="purpose" x="24" y="95">Immutable answers and exact wording</text>
+    <text class="field key" x="24" y="131">id · submissionId · version</text>
+    <text class="field" x="24" y="165">action · snapshot JSON</text>
+  </g>
+
+  <!-- Row 3: preserved visits, current issues and revision photo joins. -->
+  <g transform="translate(80 900)">
+    <rect class="card" width="470" height="200" rx="18"/>
+    <path class="head" d="M18 1 H452 Q469 1 469 18 V62 H1 V18 Q1 1 18 1Z"/>
+    <text class="name" x="24" y="41">IssueCategory</text>
+    <text class="purpose" x="24" y="95">Shared, editable complaint categories</text>
+    <text class="field key" x="24" y="131">id · name</text>
+    <text class="field" x="24" y="165">sortOrder · isActive</text>
+  </g>
+  <g transform="translate(640 900)">
+    <rect class="card" width="470" height="200" rx="18"/>
+    <path class="head" d="M18 1 H452 Q469 1 469 18 V62 H1 V18 Q1 1 18 1Z"/>
+    <text class="name" x="24" y="41">StayRevision</text>
+    <text class="purpose" x="24" y="95">Immutable visit and correction record</text>
+    <text class="field key" x="24" y="131">id · stayId · version</text>
+    <text class="field" x="24" y="165">action · snapshot · importRowId?</text>
+  </g>
+  <g transform="translate(1200 900)">
+    <rect class="card" width="470" height="200" rx="18"/>
+    <path class="head" d="M18 1 H452 Q469 1 469 18 V62 H1 V18 Q1 1 18 1Z"/>
+    <text class="name" x="24" y="41">Issue</text>
+    <text class="purpose" x="24" y="95">Reported problem and current state</text>
+    <text class="field key" x="24" y="131">id · propertyId · categoryId</text>
+    <text class="field" x="24" y="165">status · isUrgent · sourceItemId?</text>
+  </g>
+  <g transform="translate(1760 900)">
+    <rect class="card" width="470" height="200" rx="18"/>
+    <path class="head" d="M18 1 H452 Q469 1 469 18 V62 H1 V18 Q1 1 18 1Z"/>
+    <text class="long-name" x="24" y="41">SubmissionRevisionAttachment</text>
+    <text class="purpose" x="24" y="95">One photo used in one saved version</text>
+    <text class="field key" x="24" y="131">revisionId + attachmentId</text>
+    <text class="field" x="24" y="165">submissionId · purpose · itemId?</text>
+  </g>
+
+  <!-- Row 4: legend, issue history and shared stored files. -->
+  <g transform="translate(80 1250)">
+    <rect width="470" height="200" rx="18" fill="#f6f9fd"/>
+    <text x="24" y="40" font-size="23" font-weight="700" fill="#164f9d">How to read this view</text>
+    <text class="small" x="24" y="79">Arrows show selected core relationships.</text>
+    <text class="small" x="24" y="109">? = optional field · + = composite key</text>
+    <text class="small" x="24" y="139">History and photo links are retained.</text>
+    <text class="small" x="24" y="169">Full cardinality and audit links: .mmd file</text>
+  </g>
+  <g transform="translate(640 1250)">
+    <rect class="card" width="470" height="200" rx="18"/>
+    <path class="head" d="M18 1 H452 Q469 1 469 18 V62 H1 V18 Q1 1 18 1Z"/>
+    <text class="name" x="24" y="41">IssueEvent</text>
+    <text class="purpose" x="24" y="95">Immutable report, repair or resolution</text>
+    <text class="field key" x="24" y="131">id · issueId · version</text>
+    <text class="field" x="24" y="165">type · actorSource · snapshot</text>
+  </g>
+  <g transform="translate(1200 1250)">
+    <rect class="card" width="470" height="200" rx="18"/>
+    <path class="head" d="M18 1 H452 Q469 1 469 18 V62 H1 V18 Q1 1 18 1Z"/>
+    <text class="long-name" x="24" y="41">IssueEventAttachment</text>
+    <text class="purpose" x="24" y="95">One photo used as event evidence</text>
+    <text class="field key" x="24" y="131">eventId + attachmentId</text>
+    <text class="field" x="24" y="165">sortOrder</text>
+  </g>
+  <g transform="translate(1760 1250)">
+    <rect class="card" width="470" height="200" rx="18"/>
+    <path class="head" d="M18 1 H452 Q469 1 469 18 V62 H1 V18 Q1 1 18 1Z"/>
+    <text class="name" x="24" y="41">Attachment</text>
+    <text class="purpose" x="24" y="95">Private photo or source workbook</text>
+    <text class="field key" x="24" y="131">id · storageKey · status</text>
+    <text class="field" x="24" y="165">kind · propertyId? · submissionId?</text>
+  </g>
+
+  <line x1="80" y1="1484" x2="2230" y2="1484" stroke="#e3eaf3" stroke-width="2"/>
+  <text class="small" x="80" y="1524">Core relationships • full foreign keys in retreat-erd.mmd</text>
+  <text class="small" x="2230" y="1524" text-anchor="end">Calendar, dashboard and exports are views — no extra tables.</text>
+</svg>

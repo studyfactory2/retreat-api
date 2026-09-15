@@ -4,20 +4,23 @@ NestJS backend for the retreat management web app. Package manager: npm.
 
 ## Current slice
 
-The first data-model slice defines User, Property, and Role (ADMIN, STAFF, GUEST)
-in Prisma 5.22.0. Users are person profiles; guest and staff profiles do not
-require login credentials. Each property can reference one assigned staff user.
-Administrator login now uses POST /users/login and GET /users/me with a Bearer
-token in the Authorization header. Staff assignment APIs and QR access are
-later slices. The initial User/Property migration is present.
+The complete MVP Prisma schema now defines 15 tables for users/properties,
+visits and roster imports, checklist definitions/submissions/history, photos,
+and issue management. Read [the ER and service guide](docs/data-model.md),
+[column dictionary](docs/data-dictionary.md), and [ER source](docs/retreat-erd.mmd).
+The schema is ready for the user's migration; feature APIs remain separate work.
+
+Administrator login uses POST /users/login and GET /users/me with a Bearer
+token in the Authorization header. Guest/staff profiles do not require login
+credentials. Each property can reference one assigned staff user.
 
 The shared DatabaseModule exports PrismaService for feature services to inject.
 Startup checks the database connection, and shutdown disconnects the client.
 
 The existing configuration, validation, error handling, and GET /health remain.
 The health endpoint reports application liveness only; it does not query the
-database on each request. Stays, checklists, issue records, and uploads will be
-added in separate slices.
+database on each request. Services for stays, checklists, issues, and uploads
+will be added in separate slices using the defined model.
 
 ## Local setup
 
@@ -130,15 +133,17 @@ existing checks and use focused runtime verification when needed.
 ## Database workflow
 
 Both prisma and @prisma/client are pinned to 5.22.0. The schema lives at
-prisma/schema.prisma. The current schema defines User, Property, and Role.
-The initial users/properties migration is present. No migration is needed for
-the authentication slice. Administrator creation is an explicit terminal command.
+prisma/schema.prisma and defines the complete 15-table MVP model.
+The initial users/properties migration is present. The new model's migration is
+created/applied by the user; administrator creation is an explicit terminal command.
 
-To create the initial tables in the local development database, the user runs:
+Apply the existing migrations and generate/apply this model's remaining changes
+in the local development database with:
 
-    npx prisma migrate dev --name init_users_properties
+    npx prisma migrate dev --name complete_mvp_data_model
 
-For subsequent schema changes, use the same command with a descriptive new name.
+The assistant has not generated/applied this migration. For subsequent schema
+changes, use the same command with a descriptive new name.
 
 Prisma 5.22 also regenerates the client during that command. To refresh client
 types without changing the database, run npm run prisma:generate. Keep generated

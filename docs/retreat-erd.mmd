@@ -1,0 +1,133 @@
+erDiagram
+  User {
+    String id PK
+    String loginId
+  }
+  Property {
+    String id PK
+    String staffUserId
+  }
+  Stay {
+    String id PK
+    String propertyId
+    String guestUserId
+    StayStatus status
+    String createdByUserId
+  }
+  StayRevision {
+    String id PK
+    String stayId
+    Int version
+    String actorUserId
+    String importRowId
+  }
+  ImportBatch {
+    String id PK
+    String sourceAttachmentId
+    ImportStatus status
+    Int version
+    String uploadedByUserId
+    String confirmedByUserId
+  }
+  ImportRow {
+    String id PK
+    String batchId
+    String propertyId
+    String stayId
+  }
+  ChecklistTemplate {
+    String id PK
+    String propertyId
+    ChecklistType type
+    Int version
+  }
+  ChecklistSubmission {
+    String id PK
+    String propertyId
+    ChecklistType type
+    String templateId
+    String stayId
+    String authorUserId
+    SubmissionStatus status
+  }
+  SubmissionRevision {
+    String id PK
+    String submissionId
+    Int version
+    SubmissionStatus status
+    String actorUserId
+  }
+  Attachment {
+    String id PK
+    AttachmentStatus status
+    String propertyId
+    String submissionId
+    String uploadedByUserId
+  }
+  SubmissionRevisionAttachment {
+    String revisionId
+    String attachmentId
+    String submissionId
+    String sectionId
+    String itemId
+  }
+  IssueCategory {
+    String id PK
+  }
+  Issue {
+    String id PK
+    String propertyId
+    String categoryId
+    IssueStatus status
+    String sourceSubmissionId
+    String sourceItemId
+    String sourceRevisionId
+  }
+  IssueEvent {
+    String id PK
+    String issueId
+    Int version
+    IssueEventType type
+    String actorUserId
+    String sourceRevisionId
+  }
+  IssueEventAttachment {
+    String eventId
+    String attachmentId
+  }
+  User o|--o{ Property : staff
+  Property ||--o{ Stay : property
+  User o|--o{ Stay : guest
+  User ||--o{ Stay : createdBy
+  Stay ||--o{ StayRevision : stay
+  User ||--o{ StayRevision : actor
+  ImportRow o|--o| StayRevision : importRow
+  Attachment ||--o| ImportBatch : sourceAttachment
+  User ||--o{ ImportBatch : uploadedBy
+  User o|--o{ ImportBatch : confirmedBy
+  ImportBatch ||--o{ ImportRow : batch
+  Property o|--o{ ImportRow : property
+  Stay o|--o{ ImportRow : stay
+  Property ||--o{ ChecklistTemplate : property
+  Property ||--o{ ChecklistSubmission : property
+  ChecklistTemplate ||--o{ ChecklistSubmission : template
+  Stay o|--o{ ChecklistSubmission : stay
+  User o|--o{ ChecklistSubmission : author
+  ChecklistSubmission ||--o{ SubmissionRevision : submission
+  User o|--o{ SubmissionRevision : actor
+  Property o|--o{ Attachment : property
+  ChecklistSubmission o|--o{ Attachment : submission
+  User o|--o{ Attachment : uploadedBy
+  SubmissionRevision ||--o{ SubmissionRevisionAttachment : revision
+  Attachment ||--o{ SubmissionRevisionAttachment : attachment
+  Property ||--o{ Issue : property
+  IssueCategory ||--o{ Issue : category
+  ChecklistSubmission o|--o{ Issue : sourceSubmission
+  SubmissionRevision o|--o{ Issue : sourceRevision
+  Issue o|--o{ Issue : recurrenceOf
+  User o|--o{ Issue : resolvedBy
+  Issue ||--o{ IssueEvent : issue
+  User o|--o{ IssueEvent : actor
+  SubmissionRevision o|--o{ IssueEvent : sourceRevision
+  IssueEvent ||--o{ IssueEventAttachment : event
+  Attachment ||--o{ IssueEventAttachment : attachment

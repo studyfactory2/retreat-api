@@ -8,7 +8,6 @@ import type {
 } from '../../libs/dto/user/user';
 import { AuthService } from '../auth/auth.service';
 
-// A non-account hash keeps unknown IDs on the password-comparison path too.
 const DUMMY_PASSWORD_HASH =
   '$2b$12$R9h/cIPz0gi.URNNX3kh2OPST9/PgBkqquzi.Ss7KIUgO2t0jWMUW';
 
