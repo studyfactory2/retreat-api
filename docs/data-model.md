@@ -277,8 +277,9 @@ nested checklist shapes and typed internal snapshot builders.
 
 ## Planned DTOs and services
 
-Staff/property management is implemented as described in
-[the administrator API guide](admin-management.md). The other feature names below
+Staff/property management and manual stays are implemented as described in
+[the administrator API guide](admin-management.md) and [stay API guide](admin-stays.md).
+The other feature names below
 remain an implementation guide, not newly implemented classes.
 Each feature gets its controller/service/module under components and inputs plus
 response contracts under libs/dto, following the existing Jagong-style structure.
@@ -384,4 +385,12 @@ The properties/staff management slice is now implemented with administrator-only
 GET/POST routes. Individual STAFF login and guest stay-level invitation links
 have since been proposed to the client; their access policy remains pending.
 The earlier QR-only access section describes the original baseline, not approval
-to implement the pending access flows unchanged. Next operational slice: stays.
+to implement the pending access flows unchanged.
+
+Manual stay management now implements creation, correction, cancellation,
+restoration, list/detail reads, and paginated revision history through /admin/stays.
+These paths enforce active-property scheduling, non-overlapping ACTIVE intervals,
+and expectedRevision checks. Guest/notes corrections on an active stay remain
+possible after the property is deactivated, but date changes and restores require
+an active property. Guest guides, stay invitations, vehicle details, and the final
+staff-access policy still need their own agreed design and implementation slices.

@@ -29,7 +29,7 @@ function queryBoolean({ value }: { value: unknown }): unknown {
   return value;
 }
 
-export class ListInput {
+export class PaginationInput {
   @Transform(queryInteger)
   @IsInt({ message: '페이지는 정수여야 합니다.' })
   @Min(1, { message: '페이지는 1 이상이어야 합니다.' })
@@ -41,7 +41,9 @@ export class ListInput {
   @Min(1, { message: '페이지당 개수는 1 이상이어야 합니다.' })
   @Max(100, { message: '페이지당 개수는 100 이하여야 합니다.' })
   limit: number = 20;
+}
 
+export class ListInput extends PaginationInput {
   @Transform(trimText)
   @ValidateIf((_object, value: unknown) => value !== undefined)
   @IsString({ message: '검색어는 문자열이어야 합니다.' })

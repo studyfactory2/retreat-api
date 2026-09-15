@@ -219,6 +219,47 @@ and nullable contact/region fields can be cleared with null or blank text. Unkno
 fields and empty updates are rejected. Responses use explicit database selects,
 excluding credentials and QR digests. No schema or migration changes are required.
 
+## Administrator stay management slice
+
+StaysController implements seven GET/POST routes under /admin/stays, all explicitly
+protected by ADMIN and RolesGuard. See docs/admin-stays.md for input/response
+contracts. Creation, correction, cancellation, and restoration run through
+StaysService and save Stay + StayRevision together in serializable transactions.
+The current revision starts at 1. Mutations require expectedRevision, compare the
+current version, and use a conditional write before creating the next snapshot.
+
+Stay is a planned visit, not a guest login or proof of physical check-in. ACTIVE
+means the visit has not been cancelled. Manual creation stores guest details as
+snapshots, leaves guestUserId unset, and sets source MANUAL plus the authenticated
+administrator as creator. The browser cannot submit role/source/creator/profile
+IDs, raw snapshots, or an arbitrary status. Property cannot be changed after
+creation; cancel/recreate a stay assigned to the wrong property.
+
+Timestamps require an ISO date/time with explicit Z or colon offset, seconds,
+and optional 1-3 fractional digits. Date-only/local-without-offset strings and
+invalid calendar dates are rejected. Convert display dates to Asia/Seoul in the
+client. Departure must be later than arrival. Stay list from/to filters use
+overlap with a half-open interval; omitted status includes ACTIVE and CANCELLED.
+
+Create, date changes, and restoration require an active property. ACTIVE visits
+at a property cannot overlap; checkout exactly at the next arrival is allowed.
+Availability is checked inside the same serializable transaction as the write,
+including concurrent creation/restoration. Cancelling releases the schedule and
+preserves all prior data. Restore checks availability again. Restore/cancel require
+a reason. Cancelled stays must be restored before edits. An active stay on an
+inactive property can still have guest/notes corrections or be cancelled; its
+dates cannot change until the property is reactivated.
+
+Snapshots explicitly include every Stay scalar plus property labels at that time,
+and actor snapshots include id/name/role but not credentials. Current property
+or administrator profile changes cannot rewrite old snapshots. History is newest
+revision first and paginated. PaginationInput now holds shared page/limit rules;
+existing ListInput extends it without changing staff/property query behaviour.
+
+No schema changes, migrations, Excel import, guest invitations, QR generation,
+vehicle forms, guides, or frontend changes are part of this slice. New guide/vehicle
+requirements and final staff/guest access policy remain separate follow-ups.
+
 ## References
 
 - Nest configuration: https://docs.nestjs.com/techniques/configuration

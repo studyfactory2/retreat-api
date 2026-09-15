@@ -4,6 +4,11 @@ NestJS backend for the retreat management web app. Package manager: npm.
 
 ## Current slice
 
+Administrator stay management now supports creating, listing, correcting,
+cancelling, restoring, and reviewing the history of planned visits through
+GET/POST /admin/stays routes. Each mutation saves a versioned snapshot; conflicting
+dates and stale edits are rejected. See [the stay API guide](docs/admin-stays.md).
+
 Administrator staff and property management now has GET/POST routes under /admin.
 Create/edit/deactivate staff profiles and properties, assign/unassign workers,
 and query paginated lists. See [the API guide](docs/admin-management.md) for
@@ -25,8 +30,8 @@ Startup checks the database connection, and shutdown disconnects the client.
 
 The existing configuration, validation, error handling, and GET /health remain.
 The health endpoint reports application liveness only; it does not query the
-database on each request. Services for stays, checklists, issues, and uploads
-will be added in separate slices using the defined model.
+database on each request. Checklists, issues, and uploads will be added in separate
+slices using the defined model.
 
 ## Local setup
 
