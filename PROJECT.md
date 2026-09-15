@@ -16,7 +16,8 @@ checks performed and provide one commit message. Keep unrelated user changes.
 - Local configuration in .env only; no .env.example.
 - Default port 3100.
 - No global /api prefix.
-- PostgreSQL through Prisma is the next database slice.
+- PostgreSQL through Prisma 5.22.0, matching jagong-api exactly.
+- prisma and @prisma/client must remain on the same version.
 - The user runs npx prisma migrate dev --name <name> for development migrations.
 - Runtime environment variables override .env.
 
@@ -27,7 +28,9 @@ checks performed and provide one commit message. Keep unrelated user changes.
 - src/components/: one module per feature, registered in components.module.ts.
 - src/libs/dto/<feature>/: input DTOs and response contracts.
 - src/libs/filters/: common exception handling.
-- src/database/: reserved for the Prisma module in Slice 2.
+- src/database/: global DatabaseModule and injectable PrismaService.
+- prisma/schema.prisma: PostgreSQL datasource and future models.
+- prisma/migrations/: created by the user's first development migration.
 
 This follows the familiar Jagong module and DTO organization. Keep feature
 logic in its own service when needed. Avoid creating empty feature modules.
@@ -54,8 +57,27 @@ logic in its own service when needed. Avoid creating empty feature modules.
 
 GET /health returns application liveness, not database or storage readiness.
 The old starter routes were removed. Tests cover environment validation and
-the shared HTTP behavior. Authentication, Prisma, business records, and uploads
-remain unimplemented.
+the shared HTTP behavior.
+
+## Slice 2 completion boundary
+
+The API requires DATABASE_URL and connects to PostgreSQL during module
+initialization. PrismaService disconnects on application shutdown. Startup
+failure also closes application resources; connection credentials are not logged.
+
+Use the global PrismaService directly in feature services, following Jagong's
+organization. No Prisma 7 adapter, generated source directory, or prisma.config.ts
+is needed with the selected Prisma 5.22.0 setup.
+
+No business models, migration, or seed are defined in this slice. A dedicated
+empty local development database is sufficient to verify the connection.
+The user runs development migrations after the table design is approved.
+Client generation uses --allow-no-models until then; postinstall and prebuild
+generate the client without altering the database.
+
+HTTP tests replace PrismaService so they cannot connect to a developer database.
+Live connection verification is a separate check. Authentication, business
+records, and uploads remain unimplemented.
 
 ## Confirmed domain constraints for later slices
 

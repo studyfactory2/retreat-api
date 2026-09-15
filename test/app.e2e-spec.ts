@@ -16,6 +16,7 @@ import type { App } from 'supertest/types';
 import { AppModule } from '../src/app.module';
 import { configureApp } from '../src/config/configure-app';
 import { validateEnvironment } from '../src/config/environment';
+import { PrismaService } from '../src/database/prisma.service';
 import type { ApiErrorResponse } from '../src/libs/dto/common/api-error.response';
 
 class ProbeInput {
@@ -76,9 +77,12 @@ describe('API foundation (e2e)', () => {
           validateEnvironment({
             NODE_ENV: 'test',
             CORS_ORIGINS: 'http://localhost:5173',
+            DATABASE_URL: 'postgresql://retreat@127.0.0.1:1/retreat_test',
           }),
         ),
       )
+      .overrideProvider(PrismaService)
+      .useValue({})
       .compile();
 
     app = moduleFixture.createNestApplication();

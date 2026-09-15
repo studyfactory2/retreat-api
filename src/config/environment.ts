@@ -2,6 +2,7 @@ export interface RuntimeEnvironment {
   NODE_ENV: 'development' | 'test' | 'production';
   PORT: number;
   CORS_ORIGINS: string[];
+  DATABASE_URL: string;
 }
 
 export function validateEnvironment(
@@ -58,9 +59,28 @@ export function validateEnvironment(
     }
   });
 
+  const databaseUrl =
+    typeof input.DATABASE_URL === 'string' ? input.DATABASE_URL.trim() : '';
+  try {
+    const url = new URL(databaseUrl);
+    if (
+      !['postgresql:', 'postgres:'].includes(url.protocol) ||
+      !url.hostname ||
+      url.pathname.length < 2 ||
+      url.hash
+    ) {
+      throw new Error();
+    }
+  } catch {
+    throw new Error(
+      'DATABASE_URL must be a PostgreSQL URL with a host and database name.',
+    );
+  }
+
   return {
     NODE_ENV: nodeEnv,
     PORT: port,
     CORS_ORIGINS: [...new Set(origins)],
+    DATABASE_URL: databaseUrl,
   };
 }

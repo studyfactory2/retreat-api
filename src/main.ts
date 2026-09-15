@@ -7,13 +7,18 @@ import type { RuntimeEnvironment } from './config/environment';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  configureApp(app);
-  app.enableShutdownHooks();
+  try {
+    configureApp(app);
+    app.enableShutdownHooks();
 
-  const config = app.get(ConfigService<RuntimeEnvironment, true>);
-  const port = config.get('PORT', { infer: true });
-  await app.listen(port);
-  Logger.log('Retreat API listening on port ' + port, 'Bootstrap');
+    const config = app.get(ConfigService<RuntimeEnvironment, true>);
+    const port = config.get('PORT', { infer: true });
+    await app.listen(port);
+    Logger.log('Retreat API listening on port ' + port, 'Bootstrap');
+  } catch (error: unknown) {
+    await app.close();
+    throw error;
+  }
 }
 
 void bootstrap().catch((error: unknown) => {
