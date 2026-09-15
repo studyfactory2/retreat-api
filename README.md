@@ -4,14 +4,19 @@ NestJS backend for the retreat management web app. Package manager: npm.
 
 ## Current slice
 
-Slice 2 adds PostgreSQL through Prisma 5.22.0, matching jagong-api. A shared
-DatabaseModule exports PrismaService for feature services to inject. Startup
-checks the database connection, and shutdown disconnects the client.
+The first data-model slice defines User, Property, and Role (ADMIN, STAFF, GUEST)
+in Prisma 5.22.0. Users are person profiles; guest and staff profiles do not
+require login credentials. Each property can reference one assigned staff user.
+These are model definitions only. The user applies the migration below to create
+the database tables; login, staff assignment APIs, and QR access are later slices.
+
+The shared DatabaseModule exports PrismaService for feature services to inject.
+Startup checks the database connection, and shutdown disconnects the client.
 
 The existing configuration, validation, error handling, and GET /health remain.
 The health endpoint reports application liveness only; it does not query the
-database on each request. Business tables, administrator login, guest forms,
-maintenance, and storage will follow the app and data-model discussion.
+database on each request. Stays, checklists, issue records, and uploads will be
+added in separate slices.
 
 ## Local setup
 
@@ -60,28 +65,29 @@ routes must enforce authentication and authorization independently.
     npm run lint
     npm run prisma:validate
     npm run build
-    npm test -- --runInBand
     npm run test:e2e -- --runInBand
     git diff --check
 
-The starter lint command applies formatting fixes. Configuration tests cover
-invalid startup settings. HTTP tests cover health, CORS, security headers, DTO
+The starter lint command applies formatting fixes. Existing HTTP tests cover
+health, CORS, security headers, DTO
 validation, malformed JSON, and safe error responses. Test-only routes are not
 registered in the running application.
 HTTP foundation tests use a replacement Prisma provider and do not require a
 running database. Their success is not evidence of a live database connection.
+Do not create new test files or restore tests the user deleted. Run relevant
+existing checks and use focused runtime verification when needed.
 
 ## Database workflow
 
 Both prisma and @prisma/client are pinned to 5.22.0. The schema lives at
-prisma/schema.prisma. Slice 2 intentionally defines no models: the generation
-script uses --allow-no-models so connection setup can be verified before table
-design. There is no initial migration or seed yet.
+prisma/schema.prisma. The current schema defines User, Property, and Role.
+There is no seed or generated migration yet.
 
-After we agree on models and update the schema, the user creates and applies
-development migrations with:
+To create the initial tables in the local development database, the user runs:
 
-    npx prisma migrate dev --name meaningful_change_name
+    npx prisma migrate dev --name init_users_properties
+
+For subsequent schema changes, use the same command with a descriptive new name.
 
 Prisma 5.22 also regenerates the client during that command. To refresh client
 types without changing the database, run npm run prisma:generate. Keep generated

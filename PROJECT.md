@@ -9,6 +9,8 @@ code and technical documentation are English.
 Implement one approved slice at a time. The user controls staging, commits,
 pushes, database migrations, and deployment. After implementation, report the
 checks performed and provide one commit message. Keep unrelated user changes.
+Do not create new test/spec files or restore tests the user deleted. Existing
+tests may remain; use relevant existing checks, lint/build, and runtime probes.
 
 ## Runtime decisions
 
@@ -29,7 +31,7 @@ checks performed and provide one commit message. Keep unrelated user changes.
 - src/libs/dto/<feature>/: input DTOs and response contracts.
 - src/libs/filters/: common exception handling.
 - src/database/: global DatabaseModule and injectable PrismaService.
-- prisma/schema.prisma: PostgreSQL datasource and future models.
+- prisma/schema.prisma: PostgreSQL datasource, models, and database enums.
 - prisma/migrations/: created by the user's first development migration.
 
 This follows the familiar Jagong module and DTO organization. Keep feature
@@ -69,15 +71,49 @@ Use the global PrismaService directly in feature services, following Jagong's
 organization. No Prisma 7 adapter, generated source directory, or prisma.config.ts
 is needed with the selected Prisma 5.22.0 setup.
 
-No business models, migration, or seed are defined in this slice. A dedicated
-empty local development database is sufficient to verify the connection.
-The user runs development migrations after the table design is approved.
-Client generation uses --allow-no-models until then; postinstall and prebuild
-generate the client without altering the database.
+Slice 2 established the connection with an empty local database. Client
+generation supports --allow-no-models; postinstall and prebuild generate the
+client without altering the database. The user controls development migrations.
 
 HTTP tests replace PrismaService so they cannot connect to a developer database.
-Live connection verification is a separate check. Authentication, business
-records, and uploads remain unimplemented.
+Live connection verification is a separate check.
+
+## First data-model slice
+
+The schema now defines User, Property, and Role (ADMIN, STAFF, GUEST).
+No migration has been generated or applied by the assistant. The user runs
+npx prisma migrate dev --name init_users_properties to create these tables.
+This slice does not implement login, CRUD routes, guest matching, QR access,
+or seed accounts/properties.
+
+- User is a person profile. Login ID and password hash are optional for profiles
+  that use scoped QR/private links. Future account provisioning must set login
+  credentials together and enforce the permitted login roles.
+- Names and phone numbers are not unique person identifiers. Import and guest
+  matching must not merge profiles solely because their names match.
+- Property represents an entire retreat. One property has at most one current
+  staff assignee; the same staff profile can be referenced by multiple properties.
+- The staff foreign key enforces that a user exists, not their role. Property
+  services must require an active STAFF assignee. A stored role alone grants no
+  access without the relevant login or scoped link.
+- isActive supports deactivation. Assigned staff cannot be physically deleted
+  while a property references them. Future historical records preserve their
+  own author and guest snapshots when profiles or assignments change.
+
+## Planned model sequence
+
+The remaining model names are the working design, to be added with their slices:
+
+1. User and Property: shared people and whole-retreat definitions (defined).
+2. Stay and ImportBatch: scheduled visits and reviewed Excel imports.
+3. ChecklistTemplate, ChecklistSubmission, SubmissionRevision: per-property
+   checklist definitions, guest/staff records, and preserved historical versions.
+4. Attachment: stored file metadata and ownership.
+5. IssueCategory, Issue, IssueEvent: configurable categories and repair history.
+
+The calendar and missing-checklist indicators derive from stays and submissions.
+Reports are generated from operational records. They need no separate tables in
+this first design. Later models will add relations to User and Property.
 
 ## Confirmed domain constraints for later slices
 
@@ -88,8 +124,18 @@ records, and uploads remain unimplemented.
 - Manager confirmation closes an issue; normal cleaning completion is separate.
 - Preserve original submitted wording and answers when checklist templates change.
 - Keep correction and cancellation history.
-- Guest editing, bulk checklist updates, room interpretation, Excel details, and
-  report format await the current client clarification.
+- The client confirmed fixed-format Excel upload with preview before applying it
+  to the calendar. Missing entry/exit submissions must be visible. Only managed
+  property sheets and real stays are imported; availability rows are not stays.
+- Each location is one whole property; no separate Room model is needed.
+- Guest entry/exit checklists are mostly fixed. Jeju needs an extra rental-car
+  checklist section; the actual items still need to be supplied.
+- Maintenance templates are editable per property. Bulk updates across properties
+  are not required for the first release.
+- Guest private view/edit links are accepted; automatic SMS/Kakao delivery is
+  undecided. Guest and staff profiles do not imply a registration requirement.
+- Excel exports are accepted. Explain the PDF alternative before treating PDF
+  reports as an additional confirmed requirement.
 - Calendar, roster import, and missing-submission detection are separate slices.
 
 ## References

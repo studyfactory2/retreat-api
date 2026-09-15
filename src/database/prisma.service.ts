@@ -25,6 +25,11 @@ export class PrismaService
   async onModuleInit(): Promise<void> {
     try {
       await this.$connect();
+      console.log(
+        `PostgreSQL connected to ${
+          process.env.NODE_ENV === 'production' ? 'production' : 'development'
+        } db`,
+      );
     } catch {
       await this.$disconnect();
       throw new Error(
