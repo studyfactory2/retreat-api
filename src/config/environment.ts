@@ -3,6 +3,7 @@ export interface RuntimeEnvironment {
   PORT: number;
   CORS_ORIGINS: string[];
   DATABASE_URL: string;
+  JWT_SECRET: string;
 }
 
 export function validateEnvironment(
@@ -77,10 +78,19 @@ export function validateEnvironment(
     );
   }
 
+  const jwtSecret =
+    typeof input.JWT_SECRET === 'string' ? input.JWT_SECRET.trim() : '';
+  if (Buffer.byteLength(jwtSecret, 'utf8') < 32) {
+    throw new Error(
+      'JWT_SECRET must contain at least 32 bytes. Use a randomly generated secret.',
+    );
+  }
+
   return {
     NODE_ENV: nodeEnv,
     PORT: port,
     CORS_ORIGINS: [...new Set(origins)],
     DATABASE_URL: databaseUrl,
+    JWT_SECRET: jwtSecret,
   };
 }

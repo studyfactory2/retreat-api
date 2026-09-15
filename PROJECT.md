@@ -100,7 +100,37 @@ or seed accounts/properties.
   while a property references them. Future historical records preserve their
   own author and guest snapshots when profiles or assignments change.
 
-## Planned model sequence
+## Authentication slice
+
+POST /users/login accepts loginId, password, and optional boolean autoLogin.
+GET /users/me returns the safe current administrator profile. Header format is
+Authorization: Bearer <token>; no cookies or /api prefix. JWT_SECRET is required,
+validated, and stored only in local .env or runtime environment configuration.
+JWT signing/verifying uses HS256 with retreat-api issuer and retreat-admin audience.
+The JWT carries userId; current name/role/account activity come from the database.
+AuthUser provides a safe profile with id, name, role, and loginId.
+
+Password login is ADMIN-only. STAFF/GUEST profiles remain separate from login
+authorization and will use scoped QR/private links later. MembershipGuard and
+Jagong branch/membership fields were removed. RolesGuard includes authentication
+and honors method or class @Roles metadata. WithoutGuard remains optional auth
+for public routes only. Expected auth failures are 401; role denials are 403;
+database failures propagate to the shared 5xx handler.
+
+Tokens retain the copied 7-day lifetime, or 30 days for autoLogin. No refresh or
+server logout/revocation table is implemented. Login throttling is 10/minute/IP,
+in memory per process; deployment needs topology-specific proxy configuration.
+Credentials and names are not logged by auth. Password hashing uses bcrypt cost
+12, with 12-character minimum and 72 UTF-8 byte maximum for new passwords.
+
+npm run admin:create is an interactive first-admin command, never a startup seed.
+It refuses any existing ADMIN and does not overwrite user records. The user runs
+it explicitly after their initial migration. scripts is excluded from the Nest
+build to preserve dist/main. No schema changes or migrations accompany auth.
+Existing HTTP tests use test-only environment settings from the npm script; the
+stale reference to deleted test/setup-env.ts was removed without restoring it.
+
+## Remaining model sequence
 
 The remaining model names are the working design, to be added with their slices:
 

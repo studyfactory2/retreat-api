@@ -78,6 +78,7 @@ describe('API foundation (e2e)', () => {
             NODE_ENV: 'test',
             CORS_ORIGINS: 'http://localhost:5173',
             DATABASE_URL: 'postgresql://retreat@127.0.0.1:1/retreat_test',
+            JWT_SECRET: 'retreat-http-test-only-secret-not-for-runtime',
           }),
         ),
       )
