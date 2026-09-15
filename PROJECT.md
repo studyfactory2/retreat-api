@@ -40,6 +40,12 @@ logic in its own service when needed. Avoid creating empty feature modules.
 ## HTTP conventions
 
 - English routes; Korean user-facing messages.
+- Use GET for reads and POST for every mutation. Administrator management routes
+  start with /admin; existing /users/login and /users/me stay unchanged.
+- On each administrator handler, declare @Roles(Role.ADMIN) and
+  @UseGuards(RolesGuard), then the route decorator. Use public async methods,
+  a static console.log such as 'POST: createStaff', and return await the service.
+  Do not include request bodies, credentials, tokens, or personal data in logs.
 - Use request DTO classes with class-validator decorators.
 - Unexpected properties and invalid DTO values return 400.
 - Implicit type conversion is disabled. Add explicit conversions where needed.
@@ -181,6 +187,37 @@ operational data; no separate persistence tables are required for these views.
 - Excel exports are accepted. Explain the PDF alternative before treating PDF
   reports as an additional confirmed requirement.
 - Calendar, roster import, and missing-submission detection are separate slices.
+
+## Administrator staff/property management slice
+
+AdminUsersController serves /admin/staff through UsersService; the original
+UsersController keeps authentication endpoints. PropertiesController serves
+/admin/properties through PropertiesService. All nine new handlers explicitly
+require RolesGuard and ADMIN. See docs/admin-management.md for request examples,
+response fields, status codes, and filters.
+
+Staff creation produces an active STAFF profile without login credentials.
+Administrator creation and changing account roles/credentials are not exposed by
+these DTOs. Individual staff login and guest stay invitations are proposals still
+awaiting the client's answer; this slice does not finalize those access flows.
+
+Properties are created active and unassigned. Assignment is a separate POST and
+requires an active property and active STAFF user. Explicit staffUserId: null
+unassigns, including on an inactive property. Staff deactivation requires that
+all property assignments have already been removed or transferred, including
+assignments to inactive properties. Records are deactivated, never deleted here.
+Property deactivation does not cancel stays, close issues, or erase assignments.
+
+runSerializableTransaction is shared by assignment, property updates, and staff
+updates. Assignment and staff deactivation validate and write within the same
+serializable transaction, retrying P2034 up to three attempts. This prevents
+concurrent requests from assigning an inactive worker. A final retry conflict is
+a safe 409 response. Lists use a repeatable-read transaction for rows and totals.
+
+Inputs use explicit transformations for query numbers/booleans; names are trimmed,
+and nullable contact/region fields can be cleared with null or blank text. Unknown
+fields and empty updates are rejected. Responses use explicit database selects,
+excluding credentials and QR digests. No schema or migration changes are required.
 
 ## References
 

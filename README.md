@@ -4,11 +4,17 @@ NestJS backend for the retreat management web app. Package manager: npm.
 
 ## Current slice
 
+Administrator staff and property management now has GET/POST routes under /admin.
+Create/edit/deactivate staff profiles and properties, assign/unassign workers,
+and query paginated lists. See [the API guide](docs/admin-management.md) for
+examples and response contracts. These endpoints use the existing administrator
+Bearer login. Staff credentials and guest verification remain a later decision.
+
 The complete MVP Prisma schema now defines 15 tables for users/properties,
 visits and roster imports, checklist definitions/submissions/history, photos,
 and issue management. Read [the ER and service guide](docs/data-model.md),
 [column dictionary](docs/data-dictionary.md), and [ER source](docs/retreat-erd.mmd).
-The schema is ready for the user's migration; feature APIs remain separate work.
+The complete-model migration is present. Other operational APIs remain separate work.
 
 Administrator login uses POST /users/login and GET /users/me with a Bearer
 token in the Authorization header. Guest/staff profiles do not require login
@@ -134,8 +140,8 @@ existing checks and use focused runtime verification when needed.
 
 Both prisma and @prisma/client are pinned to 5.22.0. The schema lives at
 prisma/schema.prisma and defines the complete 15-table MVP model.
-The initial users/properties migration is present. The new model's migration is
-created/applied by the user; administrator creation is an explicit terminal command.
+The initial users/properties and complete-model migrations are present. The user
+controls applying migrations; administrator creation is an explicit terminal command.
 
 Apply the existing migrations and generate/apply this model's remaining changes
 in the local development database with:

@@ -277,7 +277,9 @@ nested checklist shapes and typed internal snapshot builders.
 
 ## Planned DTOs and services
 
-These names are an implementation guide. They are not newly implemented classes.
+Staff/property management is implemented as described in
+[the administrator API guide](admin-management.md). The other feature names below
+remain an implementation guide, not newly implemented classes.
 Each feature gets its controller/service/module under components and inputs plus
 response contracts under libs/dto, following the existing Jagong-style structure.
 
@@ -377,3 +379,9 @@ and Prisma versions. It creates no real user/property/guest data and no new rout
 Next implementation order: properties/staff → stays → templates → scoped QR and
 uploads → submissions/history → issues → Excel import → dashboard/exports.
 Keep those services in independently reviewable commits.
+
+The properties/staff management slice is now implemented with administrator-only
+GET/POST routes. Individual STAFF login and guest stay-level invitation links
+have since been proposed to the client; their access policy remains pending.
+The earlier QR-only access section describes the original baseline, not approval
+to implement the pending access flows unchanged. Next operational slice: stays.
