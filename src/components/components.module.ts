@@ -7,6 +7,7 @@ import { StaysModule } from './stays/stays.module';
 import { ChecklistTemplatesModule } from './checklist-templates/checklist-templates.module';
 import { QrModule } from './qr/qr.module';
 import { SubmissionDraftsModule } from './submission-drafts/submission-drafts.module';
+import { AttachmentsModule } from './attachments/attachments.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { SubmissionDraftsModule } from './submission-drafts/submission-drafts.mo
     ChecklistTemplatesModule,
     QrModule,
     SubmissionDraftsModule,
+    AttachmentsModule,
   ],
 })
 export class ComponentsModule {}

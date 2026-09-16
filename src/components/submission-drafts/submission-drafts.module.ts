@@ -12,6 +12,7 @@ import { SubmissionDraftsService } from './submission-drafts.service';
   imports: [QrModule],
   controllers: [SubmissionDraftsController],
   providers: [SubmissionDraftsService, QrNoStoreMiddleware],
+  exports: [SubmissionDraftsService],
 })
 export class SubmissionDraftsModule implements NestModule {
   public configure(consumer: MiddlewareConsumer): void {

@@ -5,6 +5,11 @@ export interface RuntimeEnvironment {
   DATABASE_URL: string;
   JWT_SECRET: string;
   FRONTEND_URL: string;
+  AWS_REGION?: string;
+  S3_BUCKET_NAME?: string;
+  AWS_ACCESS_KEY_ID?: string;
+  AWS_SECRET_ACCESS_KEY?: string;
+  AWS_SESSION_TOKEN?: string;
 }
 
 export function validateEnvironment(
@@ -115,6 +120,39 @@ export function validateEnvironment(
     );
   }
 
+  const awsRegion = optionalEnvironmentText(input, 'AWS_REGION');
+  const s3Bucket = optionalEnvironmentText(input, 'S3_BUCKET_NAME');
+  if (Boolean(awsRegion) !== Boolean(s3Bucket)) {
+    throw new Error('AWS_REGION and S3_BUCKET_NAME must be provided together.');
+  }
+  if (awsRegion && !/^[a-z]{2}(?:-[a-z0-9]+)+-\d+$/.test(awsRegion)) {
+    throw new Error('AWS_REGION must be a valid AWS region name.');
+  }
+  if (
+    s3Bucket &&
+    (!/^[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$/.test(s3Bucket) ||
+      s3Bucket.includes('..') ||
+      /^\d+\.\d+\.\d+\.\d+$/.test(s3Bucket) ||
+      /^(xn--|sthree-|amzn-s3-demo-)/.test(s3Bucket) ||
+      /(-s3alias|--ol-s3|\.mrap|--x-s3|--table-s3)$/.test(s3Bucket))
+  ) {
+    throw new Error(
+      'S3_BUCKET_NAME must be a general-purpose bucket name, not a URL or path.',
+    );
+  }
+
+  const accessKey = optionalEnvironmentText(input, 'AWS_ACCESS_KEY_ID');
+  const secretKey = optionalEnvironmentText(input, 'AWS_SECRET_ACCESS_KEY');
+  const sessionToken = optionalEnvironmentText(input, 'AWS_SESSION_TOKEN');
+  if (Boolean(accessKey) !== Boolean(secretKey)) {
+    throw new Error(
+      'AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY must be provided together.',
+    );
+  }
+  if (sessionToken && !accessKey) {
+    throw new Error('AWS_SESSION_TOKEN requires an access key and secret key.');
+  }
+
   return {
     NODE_ENV: nodeEnv,
     PORT: port,
@@ -122,5 +160,22 @@ export function validateEnvironment(
     DATABASE_URL: databaseUrl,
     JWT_SECRET: jwtSecret,
     FRONTEND_URL: frontendUrl,
+    ...(awsRegion ? { AWS_REGION: awsRegion } : {}),
+    ...(s3Bucket ? { S3_BUCKET_NAME: s3Bucket } : {}),
+    ...(accessKey ? { AWS_ACCESS_KEY_ID: accessKey } : {}),
+    ...(secretKey ? { AWS_SECRET_ACCESS_KEY: secretKey } : {}),
+    ...(sessionToken ? { AWS_SESSION_TOKEN: sessionToken } : {}),
   };
+}
+
+function optionalEnvironmentText(
+  input: Record<string, unknown>,
+  key: string,
+): string | undefined {
+  const value = input[key];
+  if (value === undefined) return undefined;
+  if (typeof value !== 'string' || !value.trim() || /\s/.test(value.trim())) {
+    throw new Error(`${key} must be a non-empty value without whitespace.`);
+  }
+  return value.trim();
 }

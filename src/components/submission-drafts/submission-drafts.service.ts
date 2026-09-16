@@ -290,7 +290,7 @@ export class SubmissionDraftsService {
     }
   }
 
-  private async resolveDraft(
+  public async resolveDraft(
     tx: Prisma.TransactionClient,
     authorization: string | undefined,
   ): Promise<DraftRecord> {

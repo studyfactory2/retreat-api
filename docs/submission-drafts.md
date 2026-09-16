@@ -1,7 +1,8 @@
 # Checklist submission drafts
 
-This slice starts and saves drafts. It does not submit a completed checklist,
-upload photos, create issues, match a planned stay, create guest accounts, or
+This slice starts and saves drafts. Separate [photo endpoints](draft-photos.md)
+now attach images to these drafts. It does not submit a completed checklist,
+create issues, match a planned stay, create guest accounts, or
 implement the future prearrival invitation. No schema change is required.
 
 ## HTTP contract

@@ -4,6 +4,10 @@ NestJS backend for the retreat management web app. Package manager: npm.
 
 ## Current slice
 
+Checklist drafts support private photo upload, listing, temporary viewing links
+and removal through GET/POST /submission-drafts/photos. Files live in private S3;
+metadata and ownership stay in PostgreSQL. See [the photo API guide](docs/draft-photos.md).
+
 Property QR access now issues/replaces separate guest and staff links, reports
 issuance status, and resolves scoped property/checklist context. The frontend will
 render the returned links as QR images. See [the QR access guide](docs/qr-access.md).
@@ -38,8 +42,8 @@ Startup checks the database connection, and shutdown disconnects the client.
 
 The existing configuration, validation, error handling, and GET /health remain.
 The health endpoint reports application liveness only; it does not query the
-database on each request. Checklists, issues, and uploads will be added in separate
-slices using the defined model.
+database on each request. Final checklist submission and issue management remain
+separate slices using the defined model.
 
 ## Local setup
 

@@ -333,9 +333,22 @@ replace the validated answer set with an expectedUpdatedAt concurrency check;
 incomplete drafts are allowed and currentRevision stays zero. Template edits do
 not alter captured wording. No schema changes, migrations or new test files.
 
-Photos/S3, final submission, issue creation, revision history APIs, personal stay
-invitations and the submitted-link lifetime remain later slices. A saved draft
-must not count as a completed check-in, check-out or cleaning.
+Photo storage is covered by the separate slice below. Final submission, issue
+creation, revision history APIs, personal stay invitations and the submitted-link
+lifetime remain later slices. A saved draft must not count as a completed
+check-in, check-out or cleaning.
+
+## Draft photo slice
+
+AttachmentsModule provides upload, list, private view and removal under
+/submission-drafts/photos, using the private draft token and current draft access
+rules. S3Service uses AWS SDK v3 with the default credential chain (local .env
+credentials; EC2 instance role in production). PhotoImageService validates actual
+JPEG/PNG/WebP bytes and normalizes them to bounded JPEGs without metadata.
+Existing Attachment rows track PENDING/READY/FAILED/DELETED and scoped ownership.
+No schema changes, migrations, submitted records, issue creation, photo grouping
+or new test/spec files are part of this slice. See docs/draft-photos.md for limits,
+private URL expiry, deletion/cleanup behavior and deployment follow-ups.
 
 ## References
 
