@@ -52,7 +52,7 @@ replace an old link, rotate it. There is no separate disable endpoint in this sl
 ## Browser links and API access
 
 FRONTEND_URL configures the destination origin. Local development defaults to
-http://localhost:5173. Production requires an explicitly configured HTTPS origin.
+http://localhost:5175. Production requires an explicitly configured HTTPS origin.
 Credentials, paths, query strings, fragments, and wildcard hosts are not accepted.
 It is separate from CORS_ORIGINS; include the frontend origin in that allowlist too.
 For example, using a frontend origin of

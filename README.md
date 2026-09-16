@@ -44,14 +44,14 @@ slices using the defined model.
 ## Local setup
 
 Use Node.js 22. The project reads a local .env file; no .env.example is maintained.
-FRONTEND_URL controls issued QR destinations (local default http://localhost:5173;
+FRONTEND_URL controls issued QR destinations (local default http://localhost:5175;
 production requires an explicit HTTPS origin). Include that frontend origin in
 CORS_ORIGINS as well. Configure the local values in .env:
 
     NODE_ENV=development
-    FRONTEND_URL=http://localhost:5173
+    FRONTEND_URL=http://localhost:5175
     PORT=3100
-    CORS_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
+    CORS_ORIGINS=http://localhost:5175,http://127.0.0.1:5175
     DATABASE_URL="postgresql://YOUR_USER:YOUR_PASSWORD@127.0.0.1:5432/retreat_dev?schema=public&connect_timeout=5"
 
 Use your PostgreSQL role and credentials in the URL; passwordless local setups

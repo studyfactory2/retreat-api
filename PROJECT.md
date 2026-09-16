@@ -17,6 +17,7 @@ tests may remain; use relevant existing checks, lint/build, and runtime probes.
 - NestJS 11 and TypeScript, managed with npm.
 - Local configuration in .env only; no .env.example.
 - Default port 3100.
+- Local frontend port 5175, used by FRONTEND_URL and the CORS allowlist.
 - No global /api prefix.
 - PostgreSQL through Prisma 5.22.0, matching jagong-api exactly.
 - prisma and @prisma/client must remain on the same version.
@@ -304,7 +305,7 @@ never includes roster/history/contact details or QR digests. Missing configurati
 is represented by empty checklists/null assignee. Assignment context is not identity
 verification, and future writes must revalidate scope/configuration independently.
 
-FRONTEND_URL is a validated origin, local default http://localhost:5173 and required
+FRONTEND_URL is a validated origin, local default http://localhost:5175 and required
 HTTPS in production. Future React pages /guest and /staff read the token fragment,
 then call the matching API; QR rendering/pages are not implemented here. Public
 endpoints use per-endpoint/IP throttling at 60/minute; login policy is unchanged.

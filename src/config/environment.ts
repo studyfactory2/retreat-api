@@ -33,7 +33,7 @@ export function validateEnvironment(
     input.CORS_ORIGINS ??
     (nodeEnv === 'production'
       ? ''
-      : 'http://localhost:5173,http://127.0.0.1:5173');
+      : 'http://localhost:5175,http://127.0.0.1:5175');
 
   if (typeof originsValue !== 'string' || !originsValue.trim()) {
     throw new Error('CORS_ORIGINS must contain at least one HTTP(S) origin.');
@@ -63,7 +63,7 @@ export function validateEnvironment(
 
   const frontendValue =
     input.FRONTEND_URL ??
-    (nodeEnv === 'production' ? '' : 'http://localhost:5173');
+    (nodeEnv === 'production' ? '' : 'http://localhost:5175');
   let frontendUrl: string;
   try {
     if (typeof frontendValue !== 'string' || !frontendValue.trim()) {

@@ -76,7 +76,7 @@ describe('API foundation (e2e)', () => {
         new ConfigService(
           validateEnvironment({
             NODE_ENV: 'test',
-            CORS_ORIGINS: 'http://localhost:5173',
+            CORS_ORIGINS: 'http://localhost:5175',
             DATABASE_URL: 'postgresql://retreat@127.0.0.1:1/retreat_test',
             JWT_SECRET: 'retreat-http-test-only-secret-not-for-runtime',
           }),
@@ -124,17 +124,17 @@ describe('API foundation (e2e)', () => {
   it('allows the configured frontend origin', async () => {
     await request(app.getHttpServer())
       .get('/health')
-      .set('Origin', 'http://localhost:5173')
-      .expect('Access-Control-Allow-Origin', 'http://localhost:5173')
+      .set('Origin', 'http://localhost:5175')
+      .expect('Access-Control-Allow-Origin', 'http://localhost:5175')
       .expect(200);
   });
 
   it('handles an allowed preflight', async () => {
     await request(app.getHttpServer())
       .options('/health')
-      .set('Origin', 'http://localhost:5173')
+      .set('Origin', 'http://localhost:5175')
       .set('Access-Control-Request-Method', 'GET')
-      .expect('Access-Control-Allow-Origin', 'http://localhost:5173')
+      .expect('Access-Control-Allow-Origin', 'http://localhost:5175')
       .expect(204);
   });
 
