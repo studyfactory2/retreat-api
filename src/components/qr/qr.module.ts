@@ -13,6 +13,7 @@ import { QrService } from './qr.service';
   imports: [AuthModule],
   controllers: [AdminPropertyQrController, QrController],
   providers: [QrService, QrNoStoreMiddleware],
+  exports: [QrService],
 })
 export class QrModule implements NestModule {
   public configure(consumer: MiddlewareConsumer): void {

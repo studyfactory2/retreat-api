@@ -6,6 +6,7 @@ import { PropertiesModule } from './properties/properties.module';
 import { StaysModule } from './stays/stays.module';
 import { ChecklistTemplatesModule } from './checklist-templates/checklist-templates.module';
 import { QrModule } from './qr/qr.module';
+import { SubmissionDraftsModule } from './submission-drafts/submission-drafts.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { QrModule } from './qr/qr.module';
     StaysModule,
     ChecklistTemplatesModule,
     QrModule,
+    SubmissionDraftsModule,
   ],
 })
 export class ComponentsModule {}

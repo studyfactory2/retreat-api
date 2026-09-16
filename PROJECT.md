@@ -314,6 +314,28 @@ No schema/migration, package, real QR issuance, image generation, personal stay
 invitation, guide/vehicle feature, upload, submission, or frontend implementation
 is part of this slice. No new test/spec files are added.
 
+## Checklist draft slice
+
+SubmissionDraftsModule adds guest/staff draft starts and private current/save
+endpoints under /submission-drafts. All are GET/POST with strict DTOs, throttling,
+no-store responses and static logs. See docs/submission-drafts.md for contracts.
+Start validates the property QR, current staff assignment and active matching
+template in the same serializable transaction. It captures immutable template and
+author snapshots; staff starts record server time and Seoul date. Guest details
+are self-reported, without account creation or stay matching.
+
+Each draft has its own random token, stored only as a domain-separated digest.
+Initial draft access expires after seven days and requires an active property;
+staff access also requires the same current active assignee. Shared QR cannot
+reopen drafts. Duplicate request keys never disclose/recover credentials. Saves
+replace the validated answer set with an expectedUpdatedAt concurrency check;
+incomplete drafts are allowed and currentRevision stays zero. Template edits do
+not alter captured wording. No schema changes, migrations or new test files.
+
+Photos/S3, final submission, issue creation, revision history APIs, personal stay
+invitations and the submitted-link lifetime remain later slices. A saved draft
+must not count as a completed check-in, check-out or cleaning.
+
 ## References
 
 - Nest configuration: https://docs.nestjs.com/techniques/configuration
