@@ -5,6 +5,7 @@ import { UsersModule } from './users/users.module';
 import { PropertiesModule } from './properties/properties.module';
 import { StaysModule } from './stays/stays.module';
 import { ChecklistTemplatesModule } from './checklist-templates/checklist-templates.module';
+import { QrModule } from './qr/qr.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { ChecklistTemplatesModule } from './checklist-templates/checklist-templa
     PropertiesModule,
     StaysModule,
     ChecklistTemplatesModule,
+    QrModule,
   ],
 })
 export class ComponentsModule {}

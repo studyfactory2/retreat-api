@@ -285,6 +285,35 @@ schema changes, migrations, guest/staff access flow, real template seeding, QR,
 uploads, guides, vehicle registration, or frontend are added. Jeju rental-car
 wording must be supplied before configuring those actual guest templates.
 
+## Property QR access slice
+
+QrModule adds ADMIN GET /admin/properties/:id/qr and POST
+/admin/properties/:id/qr/guest/rotate plus /staff/rotate. Every rotation requires
+expectedRotatedAt (null before first issuance, otherwise the last UTC timestamp),
+checks an active property, and writes a new hash/monotonic timestamp atomically.
+Competing stale requests fail. Raw 32-byte tokens appear only in the returned
+frontend URL fragment; stored SHA-256 digests include the flow. Save/print the
+returned link because status cannot reconstruct it. No expiry is imposed on
+printed property QR; rotate to replace. Property deactivation suspends access,
+and reactivation restores the same QR unless replaced.
+
+GET /qr/guest and /qr/staff consume opaque tokens through Authorization: Bearer.
+They return only safe property labels and active flow-specific checklist definitions.
+Staff context also returns active STAFF assignment id/name or null. Public context
+never includes roster/history/contact details or QR digests. Missing configuration
+is represented by empty checklists/null assignee. Assignment context is not identity
+verification, and future writes must revalidate scope/configuration independently.
+
+FRONTEND_URL is a validated origin, local default http://localhost:5173 and required
+HTTPS in production. Future React pages /guest and /staff read the token fragment,
+then call the matching API; QR rendering/pages are not implemented here. Public
+endpoints use per-endpoint/IP throttling at 60/minute; login policy is unchanged.
+QR middleware sets no-store/no-referrer before guards/handlers. See docs/qr-access.md.
+
+No schema/migration, package, real QR issuance, image generation, personal stay
+invitation, guide/vehicle feature, upload, submission, or frontend implementation
+is part of this slice. No new test/spec files are added.
+
 ## References
 
 - Nest configuration: https://docs.nestjs.com/techniques/configuration

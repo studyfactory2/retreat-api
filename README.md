@@ -4,6 +4,10 @@ NestJS backend for the retreat management web app. Package manager: npm.
 
 ## Current slice
 
+Property QR access now issues/replaces separate guest and staff links, reports
+issuance status, and resolves scoped property/checklist context. The frontend will
+render the returned links as QR images. See [the QR access guide](docs/qr-access.md).
+
 Administrator checklist-template management now supports initial property-specific
 guest/maintenance configuration and version-checked maintenance edits through
 GET/POST /admin/checklist-templates routes. See [the template API guide](docs/admin-checklist-templates.md).
@@ -39,10 +43,13 @@ slices using the defined model.
 
 ## Local setup
 
-Use Node.js 22. The project reads a local .env file; no .env.example is
-maintained. Configure your own local PostgreSQL connection in .env:
+Use Node.js 22. The project reads a local .env file; no .env.example is maintained.
+FRONTEND_URL controls issued QR destinations (local default http://localhost:5173;
+production requires an explicit HTTPS origin). Include that frontend origin in
+CORS_ORIGINS as well. Configure the local values in .env:
 
     NODE_ENV=development
+    FRONTEND_URL=http://localhost:5173
     PORT=3100
     CORS_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
     DATABASE_URL="postgresql://YOUR_USER:YOUR_PASSWORD@127.0.0.1:5432/retreat_dev?schema=public&connect_timeout=5"

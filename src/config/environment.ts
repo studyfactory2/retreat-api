@@ -4,6 +4,7 @@ export interface RuntimeEnvironment {
   CORS_ORIGINS: string[];
   DATABASE_URL: string;
   JWT_SECRET: string;
+  FRONTEND_URL: string;
 }
 
 export function validateEnvironment(
@@ -60,6 +61,34 @@ export function validateEnvironment(
     }
   });
 
+  const frontendValue =
+    input.FRONTEND_URL ??
+    (nodeEnv === 'production' ? '' : 'http://localhost:5173');
+  let frontendUrl: string;
+  try {
+    if (typeof frontendValue !== 'string' || !frontendValue.trim()) {
+      throw new Error();
+    }
+    const url = new URL(frontendValue.trim());
+    if (
+      !['http:', 'https:'].includes(url.protocol) ||
+      (nodeEnv === 'production' && url.protocol !== 'https:') ||
+      url.username ||
+      url.password ||
+      url.pathname !== '/' ||
+      url.search ||
+      url.hash ||
+      url.hostname.includes('*')
+    ) {
+      throw new Error();
+    }
+    frontendUrl = url.origin;
+  } catch {
+    throw new Error(
+      'FRONTEND_URL must be an HTTP(S) origin without paths, credentials, query, or fragment; production requires an explicit HTTPS origin.',
+    );
+  }
+
   const databaseUrl =
     typeof input.DATABASE_URL === 'string' ? input.DATABASE_URL.trim() : '';
   try {
@@ -92,5 +121,6 @@ export function validateEnvironment(
     CORS_ORIGINS: [...new Set(origins)],
     DATABASE_URL: databaseUrl,
     JWT_SECRET: jwtSecret,
+    FRONTEND_URL: frontendUrl,
   };
 }

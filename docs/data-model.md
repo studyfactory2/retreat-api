@@ -292,7 +292,7 @@ response contracts under libs/dto, following the existing Jagong-style structure
 | stays | CreateStayInput, UpdateStayInput, CancelStayInput, GetStaysInput | StayDto, StayListDto, CalendarStayDto | Stable visits, guest snapshots, conflicts, corrections, cancellation, StayRevision transactions. |
 | imports | CreateImportInput, UpdateImportRowInput, ConfirmImportInput | ImportPreviewDto, ImportRowDto, ImportResultDto | Parse fixed workbook, preview/mapping, validation, concurrency-safe confirmation. |
 | checklist-templates | CreateChecklistTemplateInput, UpdateChecklistTemplateInput, GetChecklistTemplatesInput; ChecklistSectionInput and ChecklistItemInput | ChecklistTemplateDto, ChecklistTemplateListDto | Per-property configuration, stable IDs, type rules, expected-version checks. |
-| qr | RotatePropertyQrInput; scoped URL token | QrIssueDto, PublicPropertyDto | Issue/rotate QR capabilities; resolve safe context; enforce flow scope. |
+| qr (implemented) | RotatePropertyQrInput; opaque Bearer token | QrIssueDto, PropertyQrStatusDto, GuestQrContextDto, StaffQrContextDto | Independent version-checked issuance; resolve scoped property/templates and staff assignment context. |
 | submissions | StartSubmissionInput, SaveDraftInput, SubmitChecklistInput, CorrectSubmissionInput, CancelSubmissionInput, MatchSubmissionStayInput | SubmissionDto, SubmissionReceiptDto, SubmissionRevisionDto | Capture template, save staff start, validate answers, append immutable revisions, maintain private access and reviewed stay links. |
 | attachments | CreateUploadInput, CompleteUploadInput | UploadGrantDto, AttachmentDto | Upload ownership/claims, file limits, confirmed metadata, private authorized downloads, safe cleanup. |
 | issue-categories | CreateIssueCategoryInput, UpdateIssueCategoryInput | IssueCategoryDto | Shared category editor and deactivation. |
@@ -402,3 +402,8 @@ title/definition/activity edits use expectedVersion. Stable section/item IDs,
 nested validation, per-property isolation, and atomic version increments are
 implemented. Existing submission snapshots are never changed by template APIs;
 capturing those snapshots during actual guest/staff use remains a later slice.
+
+Property guest/staff QR issuance, rotation/status, and scoped context reads are now
+implemented; see [QR access](qr-access.md). Context does not verify a person's
+identity or authorize later writes by itself. The guest/staff submission and
+personal stay invitation flows remain separate work.
