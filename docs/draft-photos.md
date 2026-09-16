@@ -2,7 +2,8 @@
 
 Photos are uploaded through NestJS to a private S3 bucket. PostgreSQL stores
 metadata and draft/property ownership in the existing Attachment table. This
-slice does not submit checklists or group photos by checklist item/cleaning area.
+gallery does not persist photo grouping. [Final submission](checklist-submissions.md)
+now assigns item/cleaning-area purposes and preserves the original photo links.
 No schema change or migration is required.
 
 ## Routes
@@ -69,7 +70,9 @@ deletion that failed after the database update. Historical evidence is protected
 Viewing URLs last at most two minutes and are capped by the remaining draft
 lifetime. Already-issued URLs can remain usable for their short lifetime even
 after access changes. Successful object deletion also stops subsequent reads.
-Photo grouping and immutable historical links belong to the final-submission slice.
+Photo grouping and immutable historical links are handled by the final-submission
+slice. Draft gallery access closes after submission; a minimal completion receipt
+remains available through the separate receipt endpoint.
 
 ## Configuration
 

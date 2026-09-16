@@ -4,6 +4,11 @@ NestJS backend for the retreat management web app. Package manager: npm.
 
 ## Current slice
 
+Saved checklists can now be completed through POST /submissions/submit. Completion
+atomically preserves revision 1, photo associations and abnormal-item issues.
+GET /submissions/receipt returns a minimal private confirmation. See
+[the submission API guide](docs/checklist-submissions.md).
+
 Checklist drafts support private photo upload, listing, temporary viewing links
 and removal through GET/POST /submission-drafts/photos. Files live in private S3;
 metadata and ownership stay in PostgreSQL. See [the photo API guide](docs/draft-photos.md).
@@ -42,8 +47,8 @@ Startup checks the database connection, and shutdown disconnects the client.
 
 The existing configuration, validation, error handling, and GET /health remain.
 The health endpoint reports application liveness only; it does not query the
-database on each request. Final checklist submission and issue management remain
-separate slices using the defined model.
+database on each request. Administrator issue management and submitted-record
+corrections remain separate slices using the defined model.
 
 ## Local setup
 

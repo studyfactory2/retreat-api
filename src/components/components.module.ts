@@ -8,6 +8,7 @@ import { ChecklistTemplatesModule } from './checklist-templates/checklist-templa
 import { QrModule } from './qr/qr.module';
 import { SubmissionDraftsModule } from './submission-drafts/submission-drafts.module';
 import { AttachmentsModule } from './attachments/attachments.module';
+import { SubmissionsModule } from './submissions/submissions.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { AttachmentsModule } from './attachments/attachments.module';
     QrModule,
     SubmissionDraftsModule,
     AttachmentsModule,
+    SubmissionsModule,
   ],
 })
 export class ComponentsModule {}

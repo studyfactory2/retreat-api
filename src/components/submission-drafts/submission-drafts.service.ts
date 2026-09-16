@@ -42,6 +42,7 @@ const draftSelect = {
   templateId: true,
   templateVersion: true,
   templateSnapshot: true,
+  stayId: true,
   authorUserId: true,
   authorSnapshot: true,
   authorSource: true,
@@ -49,6 +50,9 @@ const draftSelect = {
   status: true,
   draftAnswers: true,
   startedAt: true,
+  submittedAt: true,
+  cancelledAt: true,
+  currentRevision: true,
   privateTokenHash: true,
   privateTokenExpiresAt: true,
   createdAt: true,
@@ -64,7 +68,7 @@ const draftSelect = {
   },
   author: { select: { id: true, role: true, isActive: true } },
 } satisfies Prisma.ChecklistSubmissionSelect;
-type DraftRecord = Prisma.ChecklistSubmissionGetPayload<{
+export type DraftRecord = Prisma.ChecklistSubmissionGetPayload<{
   select: typeof draftSelect;
 }>;
 
@@ -294,6 +298,16 @@ export class SubmissionDraftsService {
     tx: Prisma.TransactionClient,
     authorization: string | undefined,
   ): Promise<DraftRecord> {
+    const draft = await this.resolvePrivateSubmission(tx, authorization);
+    if (draft.status !== SubmissionStatus.DRAFT) throw this.invalidAccess();
+    return draft;
+  }
+
+  // Completed access is receipt-only. Draft mutation callers keep resolveDraft.
+  public async resolvePrivateSubmission(
+    tx: Prisma.TransactionClient,
+    authorization: string | undefined,
+  ): Promise<DraftRecord> {
     const match =
       typeof authorization === 'string' && authorization.length <= 100
         ? /^Bearer +([A-Za-z0-9_-]{43})$/i.exec(authorization)
@@ -309,7 +323,8 @@ export class SubmissionDraftsService {
     });
     if (
       !draft ||
-      draft.status !== SubmissionStatus.DRAFT ||
+      (draft.status !== SubmissionStatus.DRAFT &&
+        draft.status !== SubmissionStatus.SUBMITTED) ||
       !draft.property.isActive ||
       !draft.privateTokenExpiresAt ||
       draft.privateTokenExpiresAt.getTime() <= Date.now()
@@ -353,7 +368,7 @@ export class SubmissionDraftsService {
     };
   }
 
-  private readTemplate(draft: DraftRecord): DraftTemplateSnapshot {
+  public readTemplate(draft: DraftRecord): DraftTemplateSnapshot {
     const value = draft.templateSnapshot;
     if (
       !this.isObject(value) ||
@@ -378,7 +393,7 @@ export class SubmissionDraftsService {
     };
   }
 
-  private readAuthor(draft: DraftRecord): DraftAuthorSnapshot {
+  public readAuthor(draft: DraftRecord): DraftAuthorSnapshot {
     const value = draft.authorSnapshot;
     const role = draft.type === ChecklistType.MAINTENANCE ? 'STAFF' : 'GUEST';
     if (

@@ -1,9 +1,10 @@
 # Checklist submission drafts
 
 This slice starts and saves drafts. Separate [photo endpoints](draft-photos.md)
-now attach images to these drafts. It does not submit a completed checklist,
-create issues, match a planned stay, create guest accounts, or
-implement the future prearrival invitation. No schema change is required.
+now attach images to these drafts. [Final submission](checklist-submissions.md)
+completes them and creates abnormal-item issues. The draft endpoints do not match
+a planned stay, create guest accounts or implement the prearrival invitation.
+No schema change is required.
 
 ## HTTP contract
 
@@ -115,7 +116,9 @@ by these DTOs. The broader data-model document describes their future contract.
   saves cannot silently overwrite each other: 409 DRAFT_CHANGED requires reloading
   current and reconciling the form. Every successful save advances updatedAt.
 - Draft saves keep currentRevision at zero and create no SubmissionRevision. Final
-  submission/history and the post-submission access policy are separate slices.
+  submission creates the first immutable revision through the separate submission
+  endpoint. The same unexpired private token can then read a minimal receipt;
+  completed answers/photos and correction history are not exposed by draft APIs.
 
 Start endpoints allow 10 requests/minute per endpoint/IP; current/save allow 60.
 Limits are in memory per process, as with the existing login/QR endpoints. No-store

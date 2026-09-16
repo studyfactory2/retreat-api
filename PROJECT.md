@@ -350,6 +350,28 @@ No schema changes, migrations, submitted records, issue creation, photo grouping
 or new test/spec files are part of this slice. See docs/draft-photos.md for limits,
 private URL expiry, deletion/cleanup behavior and deployment follow-ups.
 
+## Final checklist submission slice
+
+SubmissionsModule adds POST /submissions/submit and GET /submissions/receipt using
+the existing private draft token, unchanged expiry/activity/assignment rules,
+throttling and no-store middleware. See docs/checklist-submissions.md. Submission
+validates saved answers against captured required items and explicitly associates
+every READY photo with its purpose and captured item/section/area. Pending uploads
+block completion; photo ownership/status are checked separately from answer CAS.
+
+One serializable transaction updates SUBMITTED/currentRevision 1/submittedAt,
+saves an immutable full snapshot and photo joins, and bulk creates abnormal-item
+issues/events/evidence. Staff repair claims produce events but never resolve issues.
+An active shared 기타 fallback is used/created transactionally; inactive categories
+are not reactivated. Preserve the fallback name until category management provides
+an explicit fallback setting. Matching retry fingerprints return the same receipt.
+
+Completed private access exposes only the original minimal receipt (property,
+type, visit/start/completion dates and counts), with the original seven-day expiry.
+The existing draft mutation/photo paths still reject completed submissions. No
+submitted answer/photo viewing, corrections, admin review/issue APIs, stay matching,
+schema changes, migration, new packages or new test/spec files are included.
+
 ## References
 
 - Nest configuration: https://docs.nestjs.com/techniques/configuration
