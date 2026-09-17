@@ -79,6 +79,7 @@ category changes themselves do not create issue events or a category audit trail
 Other errors include 400 VALIDATION_ERROR / INVALID_ISSUE_CATEGORY_ID / EMPTY_UPDATE,
 401 UNAUTHENTICATED, 404 ISSUE_CATEGORY_NOT_FOUND and 409 CONCURRENT_UPDATE.
 
-The guest-facing category list and standalone complaint/photo workflow remain a
-separate slice. Existing checklist abnormalities continue to use 기타 rather than
+The guest-facing active category list and standalone text reports are documented
+in [guest-issues.md](guest-issues.md). Complaint photos remain a separate slice.
+Existing checklist abnormalities continue to use 기타 rather than
 automatically inferring a category from their text. No migration is required.

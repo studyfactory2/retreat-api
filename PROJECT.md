@@ -437,6 +437,30 @@ references and historical labels remain intact. No schema/migration, packages,
 new tests, guest category route or direct complaint upload workflow are added.
 See docs/admin-issue-categories.md for contracts and limitations.
 
+## Guest text-reporting slice
+
+GuestIssuesModule owns GET /guest/issues/categories and POST /guest/issues/report.
+The guest property QR is supplied as an Authorization Bearer token; both routes
+resolve an active property in their database transaction. No administrator login
+or guest account is used. Guest identity is self-reported, without stay matching.
+
+Reports accept requestKey, categoryId, guestName, title and optional description.
+A serializable transaction creates a NEW/version-1 Issue and a full REPORTED
+IssueEvent with GUEST_QR source and a captured GUEST actor with no user ID. All
+checklist source fields remain null. Existing administrator issue readers, notes
+and status changes support these reports using the same snapshot contract.
+
+The request UUID is namespaced by property. Identical normalized retries return
+the original minimal receipt; changed content under the same key returns 409.
+The original report is compared before checking current category activity, so
+replays survive category changes and administrator actions but still require a
+current guest QR. No reports, people or mutable status are exposed through a
+guest list/detail endpoint. See docs/guest-issues.md for the complete contract.
+
+No migrations, schema changes, packages, default category seeding, new tests,
+complaint photos, notifications, guest correction/private links or frontend
+screens are included in this slice.
+
 ## References
 
 - Nest configuration: https://docs.nestjs.com/techniques/configuration

@@ -187,7 +187,7 @@ export class QrService {
     );
   }
 
-  // Draft creation shares this lookup inside its own transaction.
+  // QR-scoped writes share this lookup inside their own transaction.
   public async resolveProperty(
     tx: Prisma.TransactionClient,
     flow: QrFlow,

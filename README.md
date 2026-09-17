@@ -4,6 +4,12 @@ NestJS backend for the retreat management web app. Package manager: npm.
 
 ## Current slice
 
+Guests can submit standalone text reports through their property's guest QR.
+GET /guest/issues/categories lists active choices; POST /guest/issues/report
+creates an issue and original report together, with safe duplicate retries.
+See [the guest reporting guide](docs/guest-issues.md). Complaint photos follow
+in a separate slice; existing checklist photo uploads are unchanged.
+
 Administrator issue categories now support paginated search, creation, renaming,
 display ordering and activation through GET/POST /admin/issue-categories.
 Updates check updatedAt, and the shared 기타 fallback is protected. See

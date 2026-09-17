@@ -108,6 +108,7 @@ ISSUE_EVENT_NOT_FOUND / ISSUE_PHOTO_NOT_FOUND; 409 ISSUE_CANCELLED /
 CONCURRENT_UPDATE. Inconsistent stored snapshots/evidence fail with a safe 500.
 
 Category editing is documented in [admin-issue-categories.md](admin-issue-categories.md).
-Direct guest complaints, urgency editing, cancellation,
+Standalone guest text reports now use this workflow; see [guest-issues.md](guest-issues.md).
+Complaint photo uploads, urgency editing, cancellation,
 recurrence linking, notifications, frontend screens and deployment remain later
 slices. Checklist abnormalities still use the existing shared 기타 fallback.
