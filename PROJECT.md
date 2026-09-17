@@ -420,6 +420,23 @@ gapped because it comes from the submission's global photo order.
 No schema/migration/package/test-file additions. Direct complaints, categories,
 urgency editing, cancellation/recurrence writes and frontend remain later work.
 
+## Administrator issue category slice
+
+AdminIssueCategoriesModule owns GET/POST /admin/issue-categories and
+POST /admin/issue-categories/:id/update, with separate DTOs and explicit ADMIN
+guards. Lists support search, activity filters and stable pagination. Creation
+starts active; updates allow name, sortOrder and isActive, with required
+expectedUpdatedAt and a conditional write inside a serializable transaction.
+Duplicate names and stale edits return safe 409 errors.
+
+The shared FALLBACK_ISSUE_CATEGORY_NAME constant identifies 기타 for category
+management and checklist issue creation. This category cannot be renamed or
+deactivated; ordinary categories cannot be renamed into it. Sorting and explicit
+reactivation remain allowed. No categories are seeded at startup. Existing issue
+references and historical labels remain intact. No schema/migration, packages,
+new tests, guest category route or direct complaint upload workflow are added.
+See docs/admin-issue-categories.md for contracts and limitations.
+
 ## References
 
 - Nest configuration: https://docs.nestjs.com/techniques/configuration

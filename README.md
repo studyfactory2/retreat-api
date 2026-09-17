@@ -4,6 +4,11 @@ NestJS backend for the retreat management web app. Package manager: npm.
 
 ## Current slice
 
+Administrator issue categories now support paginated search, creation, renaming,
+display ordering and activation through GET/POST /admin/issue-categories.
+Updates check updatedAt, and the shared 기타 fallback is protected. See
+[the category management guide](docs/admin-issue-categories.md).
+
 Administrator issue management now lists reported problems, preserves original
 reports and event history, provides private evidence viewing, and records action
 notes and version-checked status changes. See

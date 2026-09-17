@@ -11,6 +11,7 @@ import { AttachmentsModule } from './attachments/attachments.module';
 import { SubmissionsModule } from './submissions/submissions.module';
 import { AdminSubmissionsModule } from './admin-submissions/admin-submissions.module';
 import { AdminIssuesModule } from './admin-issues/admin-issues.module';
+import { AdminIssueCategoriesModule } from './admin-issue-categories/admin-issue-categories.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { AdminIssuesModule } from './admin-issues/admin-issues.module';
     SubmissionsModule,
     AdminSubmissionsModule,
     AdminIssuesModule,
+    AdminIssueCategoriesModule,
   ],
 })
 export class ComponentsModule {}

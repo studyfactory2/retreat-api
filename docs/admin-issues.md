@@ -107,6 +107,7 @@ INVALID_ISSUE_STATUS_CHANGE; 401 UNAUTHENTICATED; 404 ISSUE_NOT_FOUND /
 ISSUE_EVENT_NOT_FOUND / ISSUE_PHOTO_NOT_FOUND; 409 ISSUE_CANCELLED /
 CONCURRENT_UPDATE. Inconsistent stored snapshots/evidence fail with a safe 500.
 
-Direct guest complaints, category editing, urgency editing, cancellation,
+Category editing is documented in [admin-issue-categories.md](admin-issue-categories.md).
+Direct guest complaints, urgency editing, cancellation,
 recurrence linking, notifications, frontend screens and deployment remain later
 slices. Checklist abnormalities still use the existing shared 기타 fallback.

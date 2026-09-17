@@ -10,6 +10,7 @@ import {
 } from '@prisma/client';
 import type { ActorSource, Issue, Prisma } from '@prisma/client';
 import { randomUUID } from 'node:crypto';
+import { FALLBACK_ISSUE_CATEGORY_NAME } from '../../libs/constants/issue-category';
 import type {
   DraftAnswers,
   DraftAuthorSnapshot,
@@ -49,8 +50,8 @@ export async function createSubmissionIssues(
   if (abnormalAnswers.length === 0) return 0;
 
   const category = await tx.issueCategory.upsert({
-    where: { name: '기타' },
-    create: { name: '기타' },
+    where: { name: FALLBACK_ISSUE_CATEGORY_NAME },
+    create: { name: FALLBACK_ISSUE_CATEGORY_NAME },
     update: {},
     select: { id: true, name: true, isActive: true },
   });
