@@ -372,6 +372,33 @@ The existing draft mutation/photo paths still reject completed submissions. No
 submitted answer/photo viewing, corrections, admin review/issue APIs, stay matching,
 schema changes, migration, new packages or new test/spec files are included.
 
+## Administrator submission review slice
+
+Administrator review lives in its own AdminSubmissionsModule under
+src/components/admin-submissions/, registered alongside SubmissionsModule in
+ComponentsModule. Its request/response contracts live under
+src/libs/dto/admin-submission/. SubmissionsModule owns guest/staff submission and
+receipt routes. Shared pure submission validators are reused without duplicating
+services or importing the whole SubmissionsModule into administrator review.
+
+GET /admin/submissions provides completed-record filtering and pagination;
+detail, paginated history, and revision-scoped photo viewing are available below
+that route. Every handler uses the ADMIN RolesGuard and no-store/no-referrer
+middleware. See docs/admin-submissions.md for the response contracts.
+
+Historical wording, property labels and author details come from saved revision
+snapshots, not live profiles/templates. DRAFT records stay inaccessible. Activity,
+staff assignment changes and private-link expiry do not hide administrator history.
+Snapshot fields are explicitly projected; raw JSON, hashes, tokens and storage
+keys are never included in detail/history responses. Photo signing verifies both
+the historical association and attachment ownership/status. Administrator access
+and association are checked again after signing; URLs expire after 120 seconds.
+
+This slice adds no mutations, schema changes, migrations, packages or test files.
+Guest corrections, cancellation, issue management and planned-stay matching remain
+separate work; the presence of CANCELLED/history read contracts does not implement
+those write workflows.
+
 ## References
 
 - Nest configuration: https://docs.nestjs.com/techniques/configuration

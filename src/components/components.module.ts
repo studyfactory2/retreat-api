@@ -9,6 +9,7 @@ import { QrModule } from './qr/qr.module';
 import { SubmissionDraftsModule } from './submission-drafts/submission-drafts.module';
 import { AttachmentsModule } from './attachments/attachments.module';
 import { SubmissionsModule } from './submissions/submissions.module';
+import { AdminSubmissionsModule } from './admin-submissions/admin-submissions.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { SubmissionsModule } from './submissions/submissions.module';
     SubmissionDraftsModule,
     AttachmentsModule,
     SubmissionsModule,
+    AdminSubmissionsModule,
   ],
 })
 export class ComponentsModule {}

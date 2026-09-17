@@ -21,8 +21,9 @@ use no-store/no-referrer. No credentials appear in responses or application logs
 Receipt access reveals only this record's property label, checklist type, visit
 date, start/completion times, original revision number, answer/photo/issue counts
 and link expiry. It does not expose answers, author/contact details, issue records,
-photos, revision history or other people's records. Full submitted-record viewing,
-corrections and administrator review endpoints remain separate slices.
+photos, revision history or other people's records. Guest submitted-record viewing
+and corrections remain separate slices. Administrator access is documented in
+[administrator submission review](admin-submissions.md).
 
 ## Submit the latest saved answers
 
@@ -112,5 +113,5 @@ No category management or direct-complaint endpoint is introduced here.
 - 409 ISSUE_CATEGORY_UNAVAILABLE / CONCURRENT_UPDATE.
 
 Stay matching, missing-checklist detection, automatic SMS/Kakao, submitted-record
-corrections, full administrator review and issue management remain future slices.
+corrections and issue management remain future slices.
 An unmatched submitted guest checklist does not automatically satisfy a Stay.

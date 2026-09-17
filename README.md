@@ -4,6 +4,11 @@ NestJS backend for the retreat management web app. Package manager: npm.
 
 ## Current slice
 
+Administrators can list completed checklists, read their captured answers and
+photo metadata, browse revision history, and request private photo viewing links
+through GET /admin/submissions routes. See
+[the administrator review guide](docs/admin-submissions.md).
+
 Saved checklists can now be completed through POST /submissions/submit. Completion
 atomically preserves revision 1, photo associations and abnormal-item issues.
 GET /submissions/receipt returns a minimal private confirmation. See
