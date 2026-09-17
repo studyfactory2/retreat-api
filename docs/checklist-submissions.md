@@ -93,8 +93,8 @@ remove/view endpoints remain DRAFT-only after completion, protecting the evidenc
 Each ABNORMAL answer creates one NEW issue and a REPORTED event. Source submission,
 item and original revision are recorded, with that item's DEFECT photos linked as
 evidence. A staff repair claim creates an additional REPAIR_REPORTED event and
-links REPAIR photos, but keeps the issue NEW. Only the future administrator issue
-workflow will resolve problems. A normal answer creates no issue.
+links REPAIR photos, but keeps the issue NEW. The [administrator issue workflow](admin-issues.md)
+records action notes and administrator resolution. A normal answer creates no issue.
 
 For this slice, abnormalities use the shared fallback category `기타` (Other).
 It is created lazily in the same transaction if absent; an existing inactive
@@ -113,5 +113,5 @@ No category management or direct-complaint endpoint is introduced here.
 - 409 ISSUE_CATEGORY_UNAVAILABLE / CONCURRENT_UPDATE.
 
 Stay matching, missing-checklist detection, automatic SMS/Kakao, submitted-record
-corrections and issue management remain future slices.
+corrections and direct complaint reporting remain future slices.
 An unmatched submitted guest checklist does not automatically satisfy a Stay.

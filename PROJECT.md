@@ -399,6 +399,27 @@ Guest corrections, cancellation, issue management and planned-stay matching rema
 separate work; the presence of CANCELLED/history read contracts does not implement
 those write workflows.
 
+## Administrator issue management slice
+
+AdminIssuesModule is a separate sibling feature under src/components/admin-issues/,
+with DTOs under src/libs/dto/admin-issue/. Its six ADMIN endpoints list/read issues,
+event history and evidence, and add notes/change status. See docs/admin-issues.md.
+The reader preserves original report/event snapshots and validates evidence scope;
+the photo service handles bounded private URLs. GET list dates mean inclusive
+Korean reported-at days. Cancelled issues are hidden from the default list, remain
+historically readable, and reject changes.
+
+POST actions require expectedVersion, recheck the active administrator within a
+serializable transaction and atomically append one event while updating the issue.
+Resolve and reopen require notes. Resolution records administrator/time; reopening
+clears current resolution metadata without deleting the old event. Plain notes use
+UPDATED and preserve status. Staff repair claims never auto-resolve, and may mean
+the initial currentVersion is already 2. Photo ordering within an event can be
+gapped because it comes from the submission's global photo order.
+
+No schema/migration/package/test-file additions. Direct complaints, categories,
+urgency editing, cancellation/recurrence writes and frontend remain later work.
+
 ## References
 
 - Nest configuration: https://docs.nestjs.com/techniques/configuration

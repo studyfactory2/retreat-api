@@ -4,6 +4,11 @@ NestJS backend for the retreat management web app. Package manager: npm.
 
 ## Current slice
 
+Administrator issue management now lists reported problems, preserves original
+reports and event history, provides private evidence viewing, and records action
+notes and version-checked status changes. See
+[the issue management guide](docs/admin-issues.md).
+
 Administrators can list completed checklists, read their captured answers and
 photo metadata, browse revision history, and request private photo viewing links
 through GET /admin/submissions routes. See
@@ -52,8 +57,8 @@ Startup checks the database connection, and shutdown disconnects the client.
 
 The existing configuration, validation, error handling, and GET /health remain.
 The health endpoint reports application liveness only; it does not query the
-database on each request. Administrator issue management and submitted-record
-corrections remain separate slices using the defined model.
+database on each request. Direct complaints and submitted-record corrections
+remain separate slices using the defined model.
 
 ## Local setup
 
