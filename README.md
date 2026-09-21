@@ -4,6 +4,12 @@ NestJS backend for the retreat management web app. Package manager: npm.
 
 ## Current slice
 
+Administrators can find unmatched guest QR checklists, review same-property/day
+stay candidates, and link, correct or remove an association with a reason.
+Version checks protect edits; every change preserves guest answers/photos and
+appends administrator history. Guest view/edit links retain their existing scope.
+No migration is needed. See [the linking guide](docs/admin-submission-stays.md).
+
 Administrators can review or skip roster preview rows through
 POST /admin/stay-imports/:id/review, then confirm the batch through
 POST /admin/stay-imports/:id/confirm. Confirmation rechecks conflicts and saves

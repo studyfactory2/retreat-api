@@ -13,6 +13,12 @@ const visitDatePattern = /^\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01])$/;
 
 export class GetAdminSubmissionsInput extends PaginationInput {
   @ValidateIf((_object, value: unknown) => value !== undefined)
+  @IsIn(['LINKED', 'UNLINKED'], {
+    message: '이용 일정 연결 상태를 확인해 주세요.',
+  })
+  linkStatus?: 'LINKED' | 'UNLINKED';
+
+  @ValidateIf((_object, value: unknown) => value !== undefined)
   @IsUUID('4', { message: '휴양소 ID를 확인해 주세요.' })
   propertyId?: string;
 

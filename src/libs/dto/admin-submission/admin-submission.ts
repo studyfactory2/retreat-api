@@ -40,6 +40,8 @@ export interface AdminSubmissionRevisionDto {
 
 export interface AdminSubmissionSummaryDto {
   id: string;
+  stayId: string | null;
+  authorSource: ActorSource;
   type: ChecklistType;
   status: 'SUBMITTED' | 'CANCELLED';
   currentRevision: number;

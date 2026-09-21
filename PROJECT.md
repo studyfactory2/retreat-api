@@ -627,6 +627,35 @@ accepts optional timeout/maxWait settings; only import review/confirmation opt
 into 60s/10s, preserving other callers' defaults. No schema, migration, dependency,
 frontend or test-file additions. User owns commits and production operations.
 
+## Administrator checklist-to-stay linking slice
+
+AdminSubmissionStaysModule independently owns GET
+/admin/submissions/:id/stay-candidates and POST
+/admin/submissions/:id/link-stay. Existing admin submission lists add a
+linkStatus filter and stayId/authorSource summary fields. All new routes require
+ADMIN, strict DTOs and no-store responses. See docs/admin-submission-stays.md.
+
+Only completed GUEST_QR check-in/out records without a stay-link version can be
+linked, relinked or unlinked. Candidate stays must be active at the same active
+property with the relevant arrival/departure date equal to the recorded visit
+date in Asia/Seoul. Names do not automatically match people. Required submission
+and target stay revisions prevent stale decisions; required reasons and captured
+administrator actors document every meaningful change. A cancelled target or
+inactive property does not prevent removing a mistaken association.
+
+Serializable writes preserve original guest details, dates, answers, photo joins,
+issue evidence, receipts and private capabilities. CORRECTED snapshots retain
+history; exact actor-bound retries recover the original result. The snapshot's
+stayLinkChange describes only the administrator action, while stayMatch captures
+the reviewed stay revision/dates and survives later guest answer corrections.
+Current admin readers validate stayId consistency; old history retains old IDs.
+
+Link-time duplicate checks protect concurrent administrator linking, but do not
+introduce a global uniqueness rule for existing private-link finalization.
+Future calendar work must handle duplicates and changed stay revisions explicitly.
+No schema, migration, dependency, new test file, frontend, calendar endpoint or
+missing-checklist calculation is included. The user controls commits and rollout.
+
 ## References
 
 - Nest configuration: https://docs.nestjs.com/techniques/configuration

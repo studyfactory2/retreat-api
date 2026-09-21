@@ -137,6 +137,10 @@ export class GuestSubmissionCorrectionsService {
           };
           const snapshot = {
             schemaVersion: 1,
+            ...(this.isObject(current.revision.snapshot) &&
+            current.revision.snapshot.stayMatch !== undefined
+              ? { stayMatch: current.revision.snapshot.stayMatch }
+              : {}),
             correction: {
               schemaVersion: 1,
               expectedRevision: input.expectedRevision,

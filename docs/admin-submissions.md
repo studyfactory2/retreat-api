@@ -32,6 +32,7 @@ Example: `GET /admin/submissions?type=CHECK_IN&from=2026-09-01&to=2026-09-30&pag
 | propertyId | Optional property UUID v4 |
 | type | Optional CHECK_IN, CHECK_OUT or MAINTENANCE |
 | status | Optional SUBMITTED or CANCELLED; default includes both |
+| linkStatus | Optional UNLINKED guest QR records or LINKED records; see the linking guide |
 | from / to | Optional inclusive visit-date bounds, YYYY-MM-DD |
 | page | Integer 1–100000; default 1 |
 | limit | Integer 1–100; default 20 |
@@ -45,6 +46,7 @@ share a repeatable-read database snapshot. An empty page has `items: []`.
 Responses use `{ items, total, page, limit, totalPages }`. Each summary includes:
 
 - `id`, `type`, `status`, `currentRevision` and `visitDate`.
+- `stayId` and `authorSource` for reviewing current associations.
 - Captured `property: { id, name, region }` and `author: { id, name, role }`.
 - `startedAt`, `submittedAt`, `cancelledAt`.
 - `answeredItemCount`, `abnormalItemCount`, `photoCount`.
@@ -93,6 +95,7 @@ URL when needed; do not persist it as the photo's permanent address.
 
 ## Boundary
 
-All four endpoints are reads. There is no new migration or dependency. This is
-API work; React screens, guest submitted-record editing, issue status workflows,
-Excel/calendar integration and deployment remain separate slices.
+These four endpoints are reads. The separate AdminSubmissionStaysModule owns
+candidate discovery and administrator linking under the same URL namespace;
+see [the linking guide](admin-submission-stays.md). No migration or dependency is
+needed. Calendar calculation, React screens and deployment remain separate work.

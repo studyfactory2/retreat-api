@@ -6,8 +6,10 @@ import {
   ServiceUnavailableException,
 } from '@nestjs/common';
 import {
+  ActorSource,
   AttachmentKind,
   AttachmentStatus,
+  ChecklistType,
   Prisma,
   SubmissionStatus,
 } from '@prisma/client';
@@ -40,6 +42,8 @@ const completedStatuses = [
 const submissionSelect = {
   id: true,
   propertyId: true,
+  stayId: true,
+  authorSource: true,
   type: true,
   status: true,
   currentRevision: true,
@@ -123,6 +127,27 @@ export class AdminSubmissionsService {
       type: input.type,
       ...(from || to ? { visitDate: { gte: from, lte: to } } : {}),
     };
+    if (input.linkStatus === 'UNLINKED') {
+      if (
+        input.type === ChecklistType.MAINTENANCE ||
+        input.status === SubmissionStatus.CANCELLED
+      ) {
+        throw new BadRequestException({
+          code: 'INVALID_SUBMISSION_LINK_FILTER',
+          message:
+            '미연결 내역은 제출 완료된 이용객 입실 또는 퇴실 체크리스트에서 조회해 주세요.',
+        });
+      }
+      where.status = SubmissionStatus.SUBMITTED;
+      where.type = input.type ?? {
+        in: [ChecklistType.CHECK_IN, ChecklistType.CHECK_OUT],
+      };
+      where.authorSource = ActorSource.GUEST_QR;
+      where.stayId = null;
+      where.stayLinkVersion = null;
+    } else if (input.linkStatus === 'LINKED') {
+      where.stayId = { not: null };
+    }
     return await this.prisma.$transaction(
       async (tx) => {
         const rows = await tx.checklistSubmission.findMany({
@@ -159,10 +184,15 @@ export class AdminSubmissionsService {
               status: revision.status,
             },
           );
-          if (record.visitDate !== row.visitDate.toISOString().slice(0, 10))
+          if (
+            record.visitDate !== row.visitDate.toISOString().slice(0, 10) ||
+            record.stayId !== row.stayId
+          )
             throw this.invalidRecord();
           return {
             id: row.id,
+            stayId: row.stayId,
+            authorSource: row.authorSource,
             type: row.type,
             status: this.completedStatus(row.status),
             currentRevision: row.currentRevision,
@@ -364,6 +394,11 @@ export class AdminSubmissionsService {
       version: revision.version,
       status: revision.status,
     });
+    if (
+      revision.version === submission.currentRevision &&
+      parsed.record.stayId !== submission.stayId
+    )
+      throw this.invalidRecord();
     if (parsed.photos.length !== revision.photos.length)
       throw this.invalidRecord();
     const photos: AdminSubmissionPhotoDto[] = revision.photos.map(

@@ -19,6 +19,7 @@ import { AdminStayLinksModule } from './admin-stay-links/admin-stay-links.module
 import { GuestStaysModule } from './guest-stays/guest-stays.module';
 import { GuestSubmissionsModule } from './guest-submissions/guest-submissions.module';
 import { AdminStayImportsModule } from './admin-stay-imports/admin-stay-imports.module';
+import { AdminSubmissionStaysModule } from './admin-submission-stays/admin-submission-stays.module';
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { AdminStayImportsModule } from './admin-stay-imports/admin-stay-imports.
     GuestStaysModule,
     GuestSubmissionsModule,
     AdminStayImportsModule,
+    AdminSubmissionStaysModule,
   ],
 })
 export class ComponentsModule {}
