@@ -656,6 +656,35 @@ Future calendar work must handle duplicates and changed stay revisions explicitl
 No schema, migration, dependency, new test file, frontend, calendar endpoint or
 missing-checklist calculation is included. The user controls commits and rollout.
 
+## Administrator calendar slice
+
+AdminCalendarModule owns GET /admin/calendar with explicit ADMIN, no-store and
+60/minute/IP throttling. Required from/to are inclusive Seoul dates with a 62-day
+maximum; optional propertyId and stable stay pagination are supported. ACTIVE
+means not cancelled; stays at inactive properties remain visible. Arrivals before
+the exclusive range end and departures at/after the range start are included,
+including midnight checkout events. See docs/admin-calendar.md.
+
+Separate checkIn/checkOut states are SCHEDULED, NOT_SUBMITTED, SUBMITTED or
+NEEDS_REVIEW. Missing records on future days are scheduled; no overdue deadline
+is assumed. Only linked SUBMITTED guest checklists count. Duplicates always need
+review. Singleton current snapshots are validated against submission scalars and
+captured stayMatch revision/name/full dates. Any changed stay revision is reviewed;
+invalid or missing context cannot silently count as completion. All rows/counts
+share a repeatable-read transaction; duplicate evidence is counted without loading
+all snapshots. Existing admin submission lists add an optional stayId drilldown.
+
+New PRIVATE_LINK finalizations capture stayMatch in the original snapshot with
+parent access rechecked inside the existing serializable transaction. Exact
+retries and legacy snapshots remain unchanged. Existing guest corrections preserve
+the context. Legacy private submissions without it are flagged for review; there
+is no speculative backfill or new private reassignment endpoint. Current guest
+invitation expiry/revocation/reissue does not erase historical calendar completion.
+
+No schema, migration, dependency or new test file is introduced. This is API work;
+frontend calendar, dashboard, exports, overdue policy and deployment remain
+separate. Calendar states do not assert physical guest presence or cleaning.
+
 ## References
 
 - Nest configuration: https://docs.nestjs.com/techniques/configuration

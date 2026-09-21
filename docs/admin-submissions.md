@@ -30,6 +30,7 @@ Example: `GET /admin/submissions?type=CHECK_IN&from=2026-09-01&to=2026-09-30&pag
 | Query | Meaning |
 | --- | --- |
 | propertyId | Optional property UUID v4 |
+| stayId | Optional stay UUID v4; combines with other filters except UNLINKED |
 | type | Optional CHECK_IN, CHECK_OUT or MAINTENANCE |
 | status | Optional SUBMITTED or CANCELLED; default includes both |
 | linkStatus | Optional UNLINKED guest QR records or LINKED records; see the linking guide |
@@ -38,6 +39,8 @@ Example: `GET /admin/submissions?type=CHECK_IN&from=2026-09-01&to=2026-09-30&pag
 | limit | Integer 1–100; default 20 |
 
 Dates filter the recorded **visit date**, not the upload/submission timestamp.
+The stayId filter supports drilling into calendar duplicate/review records.
+Combining it with linkStatus=UNLINKED returns 400 INVALID_SUBMISSION_LINK_FILTER.
 Invalid calendar dates, timestamps instead of dates, reversed ranges, invalid
 enums, repeated/array values and unexpected query fields return 400. Sorting is
 submission time descending, then ID descending for stable ties. Pagination/counts

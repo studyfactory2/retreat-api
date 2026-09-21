@@ -20,6 +20,7 @@ import { GuestStaysModule } from './guest-stays/guest-stays.module';
 import { GuestSubmissionsModule } from './guest-submissions/guest-submissions.module';
 import { AdminStayImportsModule } from './admin-stay-imports/admin-stay-imports.module';
 import { AdminSubmissionStaysModule } from './admin-submission-stays/admin-submission-stays.module';
+import { AdminCalendarModule } from './admin-calendar/admin-calendar.module';
 
 @Module({
   imports: [
@@ -44,6 +45,7 @@ import { AdminSubmissionStaysModule } from './admin-submission-stays/admin-submi
     GuestSubmissionsModule,
     AdminStayImportsModule,
     AdminSubmissionStaysModule,
+    AdminCalendarModule,
   ],
 })
 export class ComponentsModule {}

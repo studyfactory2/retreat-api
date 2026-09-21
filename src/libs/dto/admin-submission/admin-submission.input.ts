@@ -23,6 +23,10 @@ export class GetAdminSubmissionsInput extends PaginationInput {
   propertyId?: string;
 
   @ValidateIf((_object, value: unknown) => value !== undefined)
+  @IsUUID('4', { message: '이용 일정 ID를 확인해 주세요.' })
+  stayId?: string;
+
+  @ValidateIf((_object, value: unknown) => value !== undefined)
   @IsEnum(ChecklistType, { message: '체크리스트 유형을 확인해 주세요.' })
   type?: ChecklistType;
 

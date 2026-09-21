@@ -2,12 +2,15 @@ import {
   ConflictException,
   Injectable,
   InternalServerErrorException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import {
+  ActorSource,
   AttachmentKind,
   AttachmentStatus,
   ChecklistType,
   Prisma,
+  StayStatus,
   SubmissionRevisionAction,
   SubmissionStatus,
 } from '@prisma/client';
@@ -34,6 +37,15 @@ import {
   assertCompleteAnswers,
   prepareSubmissionPhotos,
 } from './submission-validation';
+
+type SubmissionStayMatch = {
+  schemaVersion: 1;
+  stayId: string;
+  stayRevision: number;
+  guestName: string;
+  checkInAt: string;
+  checkOutAt: string;
+};
 
 @Injectable()
 export class SubmissionsService {
@@ -116,6 +128,7 @@ export class SubmissionsService {
           }
           assertCompleteAnswers(template.definition, answers);
           await this.checkPhotos(tx, draft, photos);
+          const stayMatch = await this.readPrivateStayMatch(tx, draft);
           const submittedAt = new Date();
           const updatedAt = new Date(
             Math.max(submittedAt.getTime(), draft.updatedAt.getTime() + 1),
@@ -166,6 +179,7 @@ export class SubmissionsService {
           const revisionId = randomUUID();
           const snapshot = {
             schemaVersion: 1,
+            ...(stayMatch ? { stayMatch } : {}),
             requestHash,
             finalizedFromUpdatedAt: input.expectedUpdatedAt,
             submission: {
@@ -285,6 +299,68 @@ export class SubmissionsService {
     });
     if (!revision) throw new InternalServerErrorException();
     return revision;
+  }
+
+  private async readPrivateStayMatch(
+    tx: Prisma.TransactionClient,
+    draft: DraftRecord,
+  ): Promise<SubmissionStayMatch | null> {
+    if (draft.authorSource !== ActorSource.PRIVATE_LINK) return null;
+    if (
+      !draft.stayId ||
+      !draft.stayLinkVersion ||
+      (draft.type !== ChecklistType.CHECK_IN &&
+        draft.type !== ChecklistType.CHECK_OUT)
+    ) {
+      throw this.invalidStayAccess();
+    }
+    // The parent invitation was authorized by resolvePrivateSubmission in this
+    // transaction. Capture its reviewed stay without storing invitation secrets.
+    const stay = await tx.stay.findUnique({
+      where: { id: draft.stayId },
+      select: {
+        id: true,
+        propertyId: true,
+        guestName: true,
+        checkInAt: true,
+        checkOutAt: true,
+        status: true,
+        currentRevision: true,
+        guestLinkVersion: true,
+        guestLinkStayRevision: true,
+        guestLinkExpiresAt: true,
+        property: { select: { isActive: true } },
+      },
+    });
+    if (
+      !stay ||
+      stay.propertyId !== draft.propertyId ||
+      stay.status !== StayStatus.ACTIVE ||
+      !stay.property.isActive ||
+      stay.guestLinkVersion !== draft.stayLinkVersion ||
+      stay.currentRevision < 1 ||
+      stay.guestLinkStayRevision !== stay.currentRevision ||
+      !stay.guestLinkExpiresAt ||
+      stay.guestLinkExpiresAt.getTime() <= Date.now()
+    ) {
+      throw this.invalidStayAccess();
+    }
+    return {
+      schemaVersion: 1,
+      stayId: stay.id,
+      stayRevision: stay.currentRevision,
+      guestName: stay.guestName,
+      checkInAt: stay.checkInAt.toISOString(),
+      checkOutAt: stay.checkOutAt.toISOString(),
+    };
+  }
+
+  private invalidStayAccess(): UnauthorizedException {
+    return new UnauthorizedException({
+      code: 'INVALID_STAY_ACCESS',
+      message:
+        '이용 링크를 사용할 수 없습니다. 관리자에게 새 링크를 요청해 주세요.',
+    });
   }
 
   private async checkPhotos(

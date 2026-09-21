@@ -124,13 +124,15 @@ export class AdminSubmissionsService {
       submittedAt: { not: null },
       status: input.status ?? { in: completedStatuses },
       propertyId: input.propertyId?.toLowerCase(),
+      stayId: input.stayId?.toLowerCase(),
       type: input.type,
       ...(from || to ? { visitDate: { gte: from, lte: to } } : {}),
     };
     if (input.linkStatus === 'UNLINKED') {
       if (
         input.type === ChecklistType.MAINTENANCE ||
-        input.status === SubmissionStatus.CANCELLED
+        input.status === SubmissionStatus.CANCELLED ||
+        input.stayId !== undefined
       ) {
         throw new BadRequestException({
           code: 'INVALID_SUBMISSION_LINK_FILTER',
@@ -146,7 +148,7 @@ export class AdminSubmissionsService {
       where.stayId = null;
       where.stayLinkVersion = null;
     } else if (input.linkStatus === 'LINKED') {
-      where.stayId = { not: null };
+      where.stayId = input.stayId?.toLowerCase() ?? { not: null };
     }
     return await this.prisma.$transaction(
       async (tx) => {

@@ -4,6 +4,13 @@ NestJS backend for the retreat management web app. Package manager: npm.
 
 ## Current slice
 
+GET /admin/calendar returns paginated stays for an inclusive Seoul date range
+with separate entry/exit checklist states: scheduled, not submitted, submitted,
+or needs review. Duplicates and changed/uncertain stay associations are explicit;
+no overdue deadline is assumed. New private submissions capture their reviewed
+stay context; old evidence stays unchanged. No migration is needed. See
+[the calendar guide](docs/admin-calendar.md).
+
 Administrators can find unmatched guest QR checklists, review same-property/day
 stay candidates, and link, correct or remove an association with a reason.
 Version checks protect edits; every change preserves guest answers/photos and
