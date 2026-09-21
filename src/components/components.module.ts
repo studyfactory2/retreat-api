@@ -23,6 +23,7 @@ import { AdminSubmissionStaysModule } from './admin-submission-stays/admin-submi
 import { AdminCalendarModule } from './admin-calendar/admin-calendar.module';
 import { AdminDashboardModule } from './admin-dashboard/admin-dashboard.module';
 import { AdminMaintenanceModule } from './admin-maintenance/admin-maintenance.module';
+import { AdminReportsModule } from './admin-reports/admin-reports.module';
 
 @Module({
   imports: [
@@ -50,6 +51,7 @@ import { AdminMaintenanceModule } from './admin-maintenance/admin-maintenance.mo
     AdminCalendarModule,
     AdminDashboardModule,
     AdminMaintenanceModule,
+    AdminReportsModule,
   ],
 })
 export class ComponentsModule {}

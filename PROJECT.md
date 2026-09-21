@@ -719,6 +719,46 @@ No new test files are introduced. Cleaning records are not deduplicated work job
 physical cleaner presence or automatic room-ready decisions. Frontend, exports,
 guides, vehicle registration, cleanup and deployment remain separate work.
 
+## Administrator Excel report slice
+
+AdminReportsModule owns GET /admin/reports/excel. Its controller explicitly uses
+ADMIN/RolesGuard, no-store/no-referrer middleware and 10/minute/IP/process
+throttling. It returns an XLSX attachment with an ASCII filename; Content-Disposition
+is exposed to allowed browser origins. There is no global /api prefix.
+
+GetAdminReportInput requires from/to date-only values in 1900–2100; propertyId is
+optional. AdminReportReaderService enforces inclusive UTC+09:00 days with a 62-day
+maximum. It counts submitted/noncancelled guest and maintenance records plus
+noncancelled issues first, rejects more than 5,000 combined records, then reads
+100-row keyset batches within one RepeatableRead transaction (30-second timeout).
+All properties, including inactive ones, are eligible. Records sort by event date
+then ID within each sheet after bounded reads. No list-page truncation is used.
+
+Checklist selection uses submittedAt, not visitDate. Issues use reportedAt and
+their current status at export time. Draft/cancelled submissions and cancelled
+issues are excluded. Current immutable revisions/event snapshots are validated
+against scalar fields; damaged eligible evidence rejects the whole export with
+409 REPORT_RECORD_NEEDS_REVIEW. Existing issue readers retain their own error
+contract. Historical labels and author names come from saved evidence, independent
+of current property/staff activity or token expiry. No links are inferred by name.
+
+AdminReportWorkbookService uses the existing xlsx dependency. It writes three
+Korean summary sheets with filterable columns, numeric counts, sortable numeric
+dates, period/property/output-time metadata and per-sheet/combined record counts.
+Text uses explicit string cells, never formulas/hyperlinks. Phone numbers, tokens,
+storage keys, signed URLs, detailed answers, images and full history are omitted.
+The XLSX byte limit is 16 MiB; oversized exports return 413 REPORT_TOO_LARGE.
+
+AdminReportsService permits one in-process generation at a time and clears its
+guard in finally on success/failure. Busy generation returns 429 REPORT_EXPORT_BUSY.
+Only successful output receives XLSX headers; failures use the shared JSON error
+format. The file is generated in memory, returned directly and not stored in S3.
+See docs/admin-reports.md for download usage, dates, exclusions and errors.
+
+No schema, migration, new package, new test file, frontend or deployment changes
+are included. Guides, vehicle registration, final client configuration, upload
+cleanup and release verification remain separate slices.
+
 ## References
 
 - Nest configuration: https://docs.nestjs.com/techniques/configuration

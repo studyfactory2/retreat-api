@@ -4,6 +4,14 @@ NestJS backend for the retreat management web app. Package manager: npm.
 
 ## Current slice
 
+GET /admin/reports/excel downloads one Korean `.xlsx` workbook with guest
+submissions, completed maintenance and issue summaries. Select required from/to
+dates and an optional property; checklists use submission dates, issues use
+reported dates, and all times display as UTC+09:00. Exports preserve captured
+names and current saved revisions. Requests over 62 days or 5,000 combined
+records are rejected rather than truncated. No migration is needed. See
+[the Excel report guide](docs/admin-reports.md).
+
 GET /admin/dashboard summarizes the selected Seoul day's planned arrivals,
 departures and checklist evidence, plus maintenance starts/completions and current
 unfinished work/open issues. GET /admin/maintenance provides a paginated cleaning
