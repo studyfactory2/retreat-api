@@ -94,6 +94,11 @@ Current scheduled visit and guest details.
 | source | StaySource / StaySource | required; default MANUAL | Original creation method. |
 | notes | String? / text | nullable | Optional current administrative notes. |
 | createdByUserId | String / text | required; foreign key | Administrator who created the visit. |
+| guestLinkTokenHash | String? / text | nullable; unique | Domain-separated digest of the stay invitation; never expose it. |
+| guestLinkExpiresAt | DateTime? / Timestamptz(3) | nullable | Initial invitation expiry: planned checkout plus seven days. |
+| guestLinkVersion | Int / integer | required; default 0 | Separate invitation generation counter; increments on issue/revoke. |
+| guestLinkStayRevision | Int? / integer | nullable | Stay revision for which the invitation was issued; mismatch disables access. |
+| guestLinkUpdatedAt | DateTime? / Timestamptz(3) | nullable | Last monotonic issuance/revocation timestamp. |
 | currentRevision | Int / integer | required; default 0 | Increment transactionally with each immutable StayRevision, starting at 1 on creation. |
 | cancelledAt | DateTime? / Timestamptz(3) | nullable | Cancellation instant; null while not cancelled. |
 | cancellationReason | String? / text | nullable | Optional retained explanation for cancellation. |
@@ -250,6 +255,7 @@ Current guest inspection or staff job, including drafts and scoped access.
 | templateVersion | Int / integer | required | Captured template version at draft start. |
 | templateSnapshot | Json / jsonb | required | Captured versioned definition; independent of future template edits. |
 | stayId | String? / text | nullable; foreign key | Optional reviewed calendar match; never infer identity from a name alone. |
+| stayLinkVersion | Int? / integer | nullable | Invitation generation captured by a stay-linked guest draft; null for existing QR drafts. |
 | authorUserId | String? / text | nullable; foreign key | Optional attributed profile; QR does not authenticate that person. |
 | authorSnapshot | Json / jsonb | required | Versioned claimed author name/company/department. |
 | authorSource | ActorSource / ActorSource | required | How the author reached the form. |

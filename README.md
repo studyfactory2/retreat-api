@@ -4,6 +4,11 @@ NestJS backend for the retreat management web app. Package manager: npm.
 
 ## Current slice
 
+Personal guest stay links now support administrator issuance/replacement/revocation,
+private stay context and linked check-in/out draft starts. Run the user-managed
+`npx prisma migrate dev --name add_guest_stay_links` before starting this version.
+See [the stay-link guide](docs/guest-stay-links.md) for expiry and access behavior.
+
 Guest problem reports now accept up to 10 optional photos. Uploads use private
 per-photo tokens, JPEG normalization and private S3; submission claims the photos
 atomically as immutable report evidence. See [the guest photo guide](docs/guest-issue-photos.md).

@@ -501,6 +501,30 @@ test files are added. Expired abandoned uploads need a deployment cleanup job
 that excludes linked evidence. Browser/device checks, live AWS verification and
 frontend implementation remain separate from local API probes.
 
+## Personal guest stay link slice
+
+AdminStayLinksModule owns status/issue/revoke under /admin/stays/:id/guest-link;
+GuestStaysModule owns /guest/stays/current and /guest/stays/drafts/start.
+StayAccessModule shares invitation resolution with SubmissionDraftsModule; the
+GuestStayAccessGuard file lives under auth/guards and is provided by the guest
+feature. See docs/guest-stay-links.md for contracts and client handling.
+
+Stay has a nullable domain-separated invitation digest/expiry/issued revision/
+updated timestamp and a version counter. ChecklistSubmission.stayLinkVersion
+binds child capabilities to the original invitation. Any stay revision change,
+revocation/replacement, cancellation, inactive property or expiry blocks linked
+draft reads/writes/photos/submission/receipts; administrator history is unchanged.
+The initial invitation policy is checkout plus seven days, and draft expiry is
+capped by both its existing seven-day lifetime and parent invitation expiry.
+Guest author/date/property/stayId come from the resolved Stay in the same
+serializable transaction as draft creation. Existing QR draft behavior remains.
+
+The user runs npx prisma migrate dev --name add_guest_stay_links. No migration
+is generated/applied by the assistant. Prisma client generation and mocked HTTP
+verification do not prove migrated PostgreSQL/browser behavior. No frontend,
+automatic delivery, guest corrections, resume/token-recovery, calendar matching,
+new test files or additional tables are part of this slice.
+
 ## References
 
 - Nest configuration: https://docs.nestjs.com/techniques/configuration

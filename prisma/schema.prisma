@@ -181,6 +181,12 @@ model Stay {
   notes              String?
   createdByUserId    String
 
+  guestLinkTokenHash    String?   @unique
+  guestLinkExpiresAt    DateTime? @db.Timestamptz(3)
+  guestLinkVersion      Int       @default(0)
+  guestLinkStayRevision Int?
+  guestLinkUpdatedAt    DateTime? @db.Timestamptz(3)
+
   currentRevision    Int        @default(0)
   cancelledAt        DateTime?  @db.Timestamptz(3)
   cancellationReason String?
@@ -309,6 +315,7 @@ model ChecklistSubmission {
   templateVersion       Int
   templateSnapshot      Json
   stayId                String?
+  stayLinkVersion       Int?
   authorUserId          String?
   authorSnapshot        Json
   authorSource          ActorSource

@@ -148,6 +148,13 @@ whether the stay date is appropriate. Maintenance jobs do not satisfy guest chec
 
 ### 4. QR and private links
 
+Personal stay invitations are implemented in [the stay-link slice](guest-stay-links.md).
+Stay invitation fields are separate from checklist draft credentials. The server
+binds linked drafts through stayId and stayLinkVersion; parent version, active
+state, issued Stay revision and expiry are rechecked for subsequent private access.
+The administrator sends the link manually. The user must apply the
+add_guest_stay_links migration before running the updated API.
+
 Property stores independent guestQrTokenHash and staffQrTokenHash values. Generate
 cryptographically random tokens; store only a digest. A null digest or inactive
 property disables the corresponding entry point. Rotate guest/staff tokens

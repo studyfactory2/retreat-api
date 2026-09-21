@@ -18,6 +18,7 @@ import type { RuntimeEnvironment } from '../../config/environment';
 import { PrismaService } from '../../database/prisma.service';
 import { runSerializableTransaction } from '../../database/serializable-transaction';
 import { QrFlow } from '../../libs/dto/qr/qr';
+import type { StartStayGuestDraftInput } from '../../libs/dto/guest-stay/guest-stay.input';
 import type {
   SaveDraftInput,
   StartGuestDraftInput,
@@ -31,6 +32,7 @@ import type {
 } from '../../libs/dto/submission-draft/submission-draft';
 import { parseChecklistDefinition } from '../checklist-templates/checklist-definition';
 import { QrService } from '../qr/qr.service';
+import { StayAccessService } from '../stay-access/stay-access.service';
 import { buildDraftAnswers, parseDraftAnswers } from './draft-answers';
 
 // Initial draft policy; this does not define the future submitted-link lifetime.
@@ -43,6 +45,7 @@ const draftSelect = {
   templateVersion: true,
   templateSnapshot: true,
   stayId: true,
+  stayLinkVersion: true,
   authorUserId: true,
   authorSnapshot: true,
   authorSource: true,
@@ -78,6 +81,7 @@ export class SubmissionDraftsService {
     private readonly prisma: PrismaService,
     private readonly qrService: QrService,
     private readonly config: ConfigService<RuntimeEnvironment, true>,
+    private readonly stayAccess: StayAccessService,
   ) {}
 
   public async startGuestDraft(
@@ -105,6 +109,54 @@ export class SubmissionDraftsService {
           company: input.company ?? null,
           department: input.department ?? null,
           phone: input.phone ?? null,
+        },
+        startedAt: null,
+      };
+    });
+  }
+
+  public async startStayGuestDraft(
+    authorization: string | undefined,
+    input: StartStayGuestDraftInput,
+  ): Promise<StartDraftDto> {
+    if (
+      input.type !== ChecklistType.CHECK_IN &&
+      input.type !== ChecklistType.CHECK_OUT
+    ) {
+      throw new BadRequestException({
+        code: 'INVALID_CHECKLIST_TYPE',
+        message: '입실 또는 퇴실 체크리스트를 선택해 주세요.',
+      });
+    }
+    return await this.startDraft(async (tx) => {
+      const stay = await this.stayAccess.resolveStay(tx, authorization);
+      const visitAt =
+        input.type === ChecklistType.CHECK_IN
+          ? stay.checkInAt
+          : stay.checkOutAt;
+      const visitDate = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Asia/Seoul',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      }).format(visitAt);
+      return {
+        propertyId: stay.propertyId,
+        stayId: stay.id,
+        stayLinkVersion: stay.guestLinkVersion,
+        accessExpiresAt: stay.guestLinkExpiresAt,
+        requestKey: input.requestKey.toLowerCase(),
+        type: input.type,
+        visitDate: this.parseVisitDate(visitDate),
+        authorUserId: null,
+        authorSource: ActorSource.PRIVATE_LINK,
+        authorSnapshot: {
+          schemaVersion: 1,
+          role: 'GUEST',
+          name: stay.guestName,
+          company: stay.company,
+          department: stay.department,
+          phone: stay.phone,
         },
         startedAt: null,
       };
@@ -211,6 +263,9 @@ export class SubmissionDraftsService {
   private async startDraft(
     resolve: (tx: Prisma.TransactionClient) => Promise<{
       propertyId: string;
+      stayId?: string;
+      stayLinkVersion?: number;
+      accessExpiresAt?: Date;
       requestKey: string;
       type: ChecklistType;
       visitDate: Date;
@@ -223,7 +278,7 @@ export class SubmissionDraftsService {
     const token = randomBytes(32).toString('base64url');
     try {
       return await runSerializableTransaction(this.prisma, async (tx) => {
-        const context = await resolve(tx);
+        const { accessExpiresAt, ...context } = await resolve(tx);
         // A request key deduplicates creation; it never authorizes token recovery.
         const existing = await tx.checklistSubmission.findUnique({
           where: { requestKey: context.requestKey },
@@ -255,7 +310,13 @@ export class SubmissionDraftsService {
           ...template,
           definition: parseChecklistDefinition(template.definition),
         };
-        const expiresAt = new Date(Date.now() + DRAFT_LIFETIME_MS);
+        const expiresAt = new Date(
+          Math.min(
+            Date.now() + DRAFT_LIFETIME_MS,
+            accessExpiresAt?.getTime() ?? Number.POSITIVE_INFINITY,
+          ),
+        );
+        if (expiresAt.getTime() <= Date.now()) throw this.invalidAccess();
         const draft = await tx.checklistSubmission.create({
           data: {
             ...context,
@@ -338,6 +399,22 @@ export class SubmissionDraftsService {
         !draft.author.isActive)
     )
       throw this.invalidAccess();
+    if (draft.stayLinkVersion !== null) {
+      if (
+        !draft.stayId ||
+        draft.type === ChecklistType.MAINTENANCE ||
+        draft.authorSource !== ActorSource.PRIVATE_LINK
+      )
+        throw this.invalidAccess();
+      const stay = await this.stayAccess.resolveLinkedStay(
+        tx,
+        draft.stayId,
+        draft.stayLinkVersion,
+      );
+      if (stay.propertyId !== draft.propertyId) throw this.invalidAccess();
+    } else if (draft.authorSource === ActorSource.PRIVATE_LINK) {
+      throw this.invalidAccess();
+    }
     return draft;
   }
 

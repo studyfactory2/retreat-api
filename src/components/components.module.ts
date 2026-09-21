@@ -15,6 +15,8 @@ import { AdminSubmissionsModule } from './admin-submissions/admin-submissions.mo
 import { AdminIssuesModule } from './admin-issues/admin-issues.module';
 import { AdminIssueCategoriesModule } from './admin-issue-categories/admin-issue-categories.module';
 import { GuestIssuesModule } from './guest-issues/guest-issues.module';
+import { AdminStayLinksModule } from './admin-stay-links/admin-stay-links.module';
+import { GuestStaysModule } from './guest-stays/guest-stays.module';
 
 @Module({
   imports: [
@@ -34,6 +36,8 @@ import { GuestIssuesModule } from './guest-issues/guest-issues.module';
     AdminIssuesModule,
     AdminIssueCategoriesModule,
     GuestIssuesModule,
+    AdminStayLinksModule,
+    GuestStaysModule,
   ],
 })
 export class ComponentsModule {}
