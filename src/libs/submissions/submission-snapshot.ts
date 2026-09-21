@@ -8,23 +8,23 @@ import {
 } from '@prisma/client';
 import type { Prisma } from '@prisma/client';
 import type {
-  AdminSubmissionActorDto,
-  AdminSubmissionRecordDto,
-} from '../../libs/dto/admin-submission/admin-submission';
-import type { PreparedSubmissionPhoto } from '../../libs/dto/submission/submission';
-import type { SubmissionPhotoInput } from '../../libs/dto/submission/submission.input';
-import { MAX_DRAFT_PHOTOS } from '../photo-processing/photo-policy';
-import { parseChecklistDefinition } from '../checklist-templates/checklist-definition';
-import { parseDraftAnswers } from '../submission-drafts/draft-answers';
+  SubmissionActor,
+  SubmissionRecord,
+} from '../dto/submission-record/submission-record';
+import type { PreparedSubmissionPhoto } from '../dto/submission/submission';
+import type { SubmissionPhotoInput } from '../dto/submission/submission.input';
+import { MAX_DRAFT_PHOTOS } from '../../components/photo-processing/photo-policy';
+import { parseChecklistDefinition } from '../../components/checklist-templates/checklist-definition';
+import { parseDraftAnswers } from '../../components/submission-drafts/draft-answers';
 import {
   assertCompleteAnswers,
   prepareSubmissionPhotos,
-} from '../submissions/submission-validation';
+} from '../../components/submissions/submission-validation';
 
 const UUID_V4 =
   /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-export function parseAdminSubmissionSnapshot(
+export function parseSubmissionSnapshot(
   snapshot: Prisma.JsonValue,
   expected: {
     submissionId: string;
@@ -33,7 +33,7 @@ export function parseAdminSubmissionSnapshot(
     version: number;
     status: SubmissionStatus;
   },
-): { record: AdminSubmissionRecordDto; photos: PreparedSubmissionPhoto[] } {
+): { record: SubmissionRecord; photos: PreparedSubmissionPhoto[] } {
   try {
     const root = object(snapshot);
     const submission = object(root.submission);
@@ -145,10 +145,10 @@ export function parseAdminSubmissionSnapshot(
   }
 }
 
-export function parseAdminSubmissionActor(
+export function parseSubmissionActor(
   value: Prisma.JsonValue,
   actorUserId: string | null,
-): AdminSubmissionActorDto {
+): SubmissionActor {
   try {
     const actor = object(value);
     const id = nullableUuid(actor.id);

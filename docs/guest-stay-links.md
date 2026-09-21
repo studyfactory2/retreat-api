@@ -105,8 +105,9 @@ The existing requestKey policy remains: duplicate creation requests return
 409 DRAFT_REQUEST_EXISTS and never recover a secret. A different request key may
 create a separate checklist; this slice does not deduplicate by stay/type or add
 a draft recovery/list endpoint. Future calendar review must account for duplicate
-submissions. Guest viewing/correcting submitted answers remains a later slice;
-the completed draft token exposes only its existing minimal receipt.
+submissions. The completed draft token now also supports read-only captured
+answers/photos through [guest checklist viewing](guest-submissions.md). Corrections
+remain a later slice; the original minimal receipt endpoint is unchanged.
 
 ## Compatibility and follow-ups
 

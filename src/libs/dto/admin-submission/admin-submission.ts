@@ -2,46 +2,19 @@ import type {
   ActorSource,
   ChecklistType,
   PhotoPurpose,
-  Role,
   SubmissionRevisionAction,
 } from '@prisma/client';
 import type { DraftPhotoDto } from '../attachment/attachment';
 import type { ListDto } from '../common/list';
 import type {
-  DraftAnswers,
-  DraftTemplateSnapshot,
-} from '../submission-draft/submission-draft';
+  SubmissionActor,
+  SubmissionAuthor,
+  SubmissionRecord,
+} from '../submission-record/submission-record';
 
-export interface AdminSubmissionAuthorDto {
-  id: string | null;
-  role: 'GUEST' | 'STAFF';
-  name: string;
-  company: string | null;
-  department: string | null;
-  phone: string | null;
-}
-
-export interface AdminSubmissionActorDto {
-  id: string | null;
-  role: Role;
-  name: string;
-}
-
-export interface AdminSubmissionRecordDto {
-  property: { id: string; name: string; region: string | null };
-  type: ChecklistType;
-  visitDate: string;
-  stayId: string | null;
-  authorSource: ActorSource;
-  author: AdminSubmissionAuthorDto;
-  template: DraftTemplateSnapshot;
-  answers: DraftAnswers;
-  startedAt: Date | null;
-  submittedAt: Date;
-  cancelledAt: Date | null;
-  createdAt: Date;
-  updatedAt: Date;
-}
+export type AdminSubmissionAuthorDto = SubmissionAuthor;
+export type AdminSubmissionActorDto = SubmissionActor;
+export type AdminSubmissionRecordDto = SubmissionRecord;
 
 export interface AdminSubmissionPhotoDto extends DraftPhotoDto {
   purpose: PhotoPurpose;

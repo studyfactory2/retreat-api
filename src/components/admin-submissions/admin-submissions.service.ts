@@ -29,9 +29,9 @@ import { S3Service } from '../../storage/s3.service';
 import { AuthService } from '../auth/auth.service';
 import { PHOTO_VIEW_TTL_SECONDS } from '../photo-processing/photo-policy';
 import {
-  parseAdminSubmissionActor,
-  parseAdminSubmissionSnapshot,
-} from './admin-submission-snapshot';
+  parseSubmissionActor,
+  parseSubmissionSnapshot,
+} from '../../libs/submissions/submission-snapshot';
 
 const completedStatuses = [
   SubmissionStatus.SUBMITTED,
@@ -149,7 +149,7 @@ export class AdminSubmissionsService {
           ) {
             throw this.invalidRecord();
           }
-          const { record, photos } = parseAdminSubmissionSnapshot(
+          const { record, photos } = parseSubmissionSnapshot(
             revision.snapshot,
             {
               submissionId: row.id,
@@ -357,7 +357,7 @@ export class AdminSubmissionsService {
       revision.version > submission.currentRevision
     )
       throw this.invalidRecord();
-    const parsed = parseAdminSubmissionSnapshot(revision.snapshot, {
+    const parsed = parseSubmissionSnapshot(revision.snapshot, {
       submissionId: submission.id,
       propertyId: submission.propertyId,
       type: submission.type,
@@ -415,10 +415,7 @@ export class AdminSubmissionsService {
       createdAt: revision.createdAt,
       reason: revision.reason,
       actorSource: revision.actorSource,
-      actor: parseAdminSubmissionActor(
-        revision.actorSnapshot,
-        revision.actorUserId,
-      ),
+      actor: parseSubmissionActor(revision.actorSnapshot, revision.actorUserId),
       record: parsed.record,
       photos,
     };

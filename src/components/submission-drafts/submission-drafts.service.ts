@@ -364,7 +364,8 @@ export class SubmissionDraftsService {
     return draft;
   }
 
-  // Completed access is receipt-only. Draft mutation callers keep resolveDraft.
+  // Completed callers apply their own receipt or guest-view restrictions.
+  // Draft mutation callers keep resolveDraft.
   public async resolvePrivateSubmission(
     tx: Prisma.TransactionClient,
     authorization: string | undefined,

@@ -4,6 +4,11 @@ NestJS backend for the retreat management web app. Package manager: npm.
 
 ## Current slice
 
+Guests can reopen completed check-in/out answers and photos using their saved
+checklist token through GET /guest/submissions/current and the scoped photo-view
+route. This read-only slice needs no additional migration. See
+[the guest checklist viewing guide](docs/guest-submissions.md).
+
 Personal guest stay links now support administrator issuance/replacement/revocation,
 private stay context and linked check-in/out draft starts. Run the user-managed
 `npx prisma migrate dev --name add_guest_stay_links` before starting this version.

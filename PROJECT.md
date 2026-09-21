@@ -383,11 +383,12 @@ An active shared 기타 fallback is used/created transactionally; inactive categ
 are not reactivated. Preserve the fallback name until category management provides
 an explicit fallback setting. Matching retry fingerprints return the same receipt.
 
-Completed private access exposes only the original minimal receipt (property,
-type, visit/start/completion dates and counts), with the original seven-day expiry.
+This slice's completed private access exposes the original minimal receipt
+(property, type, visit/start/completion dates and counts), without extending expiry.
 The existing draft mutation/photo paths still reject completed submissions. No
 submitted answer/photo viewing, corrections, admin review/issue APIs, stay matching,
-schema changes, migration, new packages or new test/spec files are included.
+schema changes, migration, new packages or new test/spec files were included in
+this original slice. Later review slices below add scoped read access.
 
 ## Administrator submission review slice
 
@@ -524,6 +525,28 @@ is generated/applied by the assistant. Prisma client generation and mocked HTTP
 verification do not prove migrated PostgreSQL/browser behavior. No frontend,
 automatic delivery, guest corrections, resume/token-recovery, calendar matching,
 new test files or additional tables are part of this slice.
+
+## Guest completed-checklist viewing slice
+
+GuestSubmissionsModule owns GET /guest/submissions/current and
+GET /guest/submissions/photos/:id/view. GuestSubmissionAccessGuard lives under
+auth/guards and is provided by the guest feature. The existing submission token
+authorizes one SUBMITTED guest CHECK_IN/CHECK_OUT record; no parent invitation,
+property QR, staff work token or supplied name substitutes for that credential.
+The service reuses private submission access checks, including stay invitation
+version/revision/expiry and property activity, then reads the immutable current
+revision and validates its photo associations. See docs/guest-submissions.md.
+
+The response explicitly projects captured guest/template/answer/photo fields.
+Photo URLs are bounded by 120 seconds and the remaining submission token lifetime;
+authorization, revision and evidence ownership are rechecked after signing.
+The shared parser is now libs/submissions/submission-snapshot.ts, with neutral
+record types under libs/dto/submission-record. Administrator DTO names/shapes and
+snapshot validation remain unchanged by that mechanical extraction.
+
+No new schema/migration/packages/test files, frontend, guest corrections, history
+browsing or credential recovery. Runtime verification with replacement Prisma/S3
+providers does not establish live database/AWS/browser behavior.
 
 ## References
 

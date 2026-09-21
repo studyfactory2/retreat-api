@@ -17,6 +17,7 @@ import { AdminIssueCategoriesModule } from './admin-issue-categories/admin-issue
 import { GuestIssuesModule } from './guest-issues/guest-issues.module';
 import { AdminStayLinksModule } from './admin-stay-links/admin-stay-links.module';
 import { GuestStaysModule } from './guest-stays/guest-stays.module';
+import { GuestSubmissionsModule } from './guest-submissions/guest-submissions.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { GuestStaysModule } from './guest-stays/guest-stays.module';
     GuestIssuesModule,
     AdminStayLinksModule,
     GuestStaysModule,
+    GuestSubmissionsModule,
   ],
 })
 export class ComponentsModule {}
