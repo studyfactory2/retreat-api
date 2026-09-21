@@ -162,7 +162,7 @@ export class GuestSubmissionsService {
     return submission;
   }
 
-  private async readCurrent(
+  public async readCurrent(
     tx: Prisma.TransactionClient,
     authorization: string | undefined,
   ) {
@@ -276,7 +276,7 @@ export class GuestSubmissionsService {
       expiresAt: submission.privateTokenExpiresAt,
       photos,
     };
-    return { dto, revision };
+    return { dto, revision, submission, record, capturedPhotos };
   }
 
   private invalidAccess(): UnauthorizedException {

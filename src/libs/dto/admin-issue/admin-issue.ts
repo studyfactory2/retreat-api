@@ -1,47 +1,10 @@
-import type {
-  ActorSource,
-  ChecklistType,
-  IssueEventType,
-  IssueStatus,
-  Role,
-} from '@prisma/client';
+import type { ActorSource, IssueEventType, IssueStatus } from '@prisma/client';
 import type { DraftPhotoDto } from '../attachment/attachment';
 import type { ListDto } from '../common/list';
+import type { IssueActor, IssueRecord } from '../issue-record/issue-record';
 
-export interface AdminIssueRecordDto {
-  id: string;
-  property: { id: string; name: string; region: string | null };
-  category: { id: string; name: string };
-  title: string;
-  description: string | null;
-  areaLabel: string | null;
-  isUrgent: boolean;
-  status: IssueStatus;
-  sourceSubmissionId: string | null;
-  sourceItemId: string | null;
-  sourceRevisionId: string | null;
-  recurrenceOfIssueId: string | null;
-  currentVersion: number;
-  reportedAt: Date;
-  resolvedAt: Date | null;
-  resolvedByUserId: string | null;
-  cancelledAt: Date | null;
-  cancellationReason: string | null;
-  updatedAt: Date;
-  source: {
-    checklistType: ChecklistType;
-    templateId: string;
-    templateTitle: string;
-    templateVersion: number;
-    sectionId: string;
-  } | null;
-}
-
-export interface AdminIssueActorDto {
-  id: string | null;
-  role: Role;
-  name: string;
-}
+export type AdminIssueRecordDto = IssueRecord;
+export type AdminIssueActorDto = IssueActor;
 
 export interface AdminIssuePhotoDto extends DraftPhotoDto {
   sortOrder: number;

@@ -22,10 +22,10 @@ import type {
 } from '../../libs/dto/guest-issue/guest-issue.input';
 import { QrFlow } from '../../libs/dto/qr/qr';
 import {
-  buildAdminIssueSnapshot,
-  parseAdminIssueActor,
-  parseAdminIssueSnapshot,
-} from '../admin-issues/admin-issue-snapshot';
+  buildIssueSnapshot,
+  parseIssueActor,
+  parseIssueSnapshot,
+} from '../../libs/issues/issue-snapshot';
 import { QrService } from '../qr/qr.service';
 import { GuestIssuePhotoClaimsService } from '../guest-issue-photos/guest-issue-photo-claims.service';
 
@@ -178,7 +178,7 @@ export class GuestIssuesService {
               fromStatus: null,
               toStatus: IssueStatus.NEW,
               note: content.description,
-              snapshot: buildAdminIssueSnapshot(record, requestKey),
+              snapshot: buildIssueSnapshot(record, requestKey),
               createdAt: reportedAt,
             },
           });
@@ -233,12 +233,12 @@ export class GuestIssuesService {
       event.toStatus !== IssueStatus.NEW
     )
       throw this.invalidReport();
-    const original = parseAdminIssueSnapshot(event.snapshot, {
+    const original = parseIssueSnapshot(event.snapshot, {
       issueId: report.id,
       propertyId,
       version: 1,
     });
-    const actor = parseAdminIssueActor(event.actorSnapshot, null);
+    const actor = parseIssueActor(event.actorSnapshot, null);
     if (
       original.source !== null ||
       original.status !== IssueStatus.NEW ||

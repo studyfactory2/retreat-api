@@ -19,6 +19,7 @@ import type {
   PreparedSubmissionPhoto,
   SubmissionReceiptDto,
 } from '../../libs/dto/submission/submission';
+import { parseSubmissionSnapshot } from '../../libs/submissions/submission-snapshot';
 import { parseDraftAnswers } from '../submission-drafts/draft-answers';
 import {
   SubmissionDraftsService,
@@ -54,13 +55,31 @@ export class SubmissionsService {
             tx,
             authorization,
           );
-          const template = this.drafts.readTemplate(draft);
+          // Submitted retries retain revision one's template and answers even
+          // after a correction changes the submission's current answers.
+          const originalRevision =
+            draft.status === SubmissionStatus.SUBMITTED
+              ? await this.firstRevision(tx, draft.id)
+              : null;
+          const originalRecord = originalRevision
+            ? parseSubmissionSnapshot(originalRevision.snapshot, {
+                submissionId: draft.id,
+                propertyId: draft.propertyId,
+                type: draft.type,
+                version: 1,
+                status: SubmissionStatus.SUBMITTED,
+              }).record
+            : null;
+          const template =
+            originalRecord?.template ?? this.drafts.readTemplate(draft);
           const author = this.drafts.readAuthor(draft);
-          const answers = parseDraftAnswers(
-            draft.draftAnswers,
-            template.definition,
-            draft.type === ChecklistType.MAINTENANCE,
-          );
+          const answers =
+            originalRecord?.answers ??
+            parseDraftAnswers(
+              draft.draftAnswers,
+              template.definition,
+              draft.type === ChecklistType.MAINTENANCE,
+            );
           const photos = prepareSubmissionPhotos(
             input.photos,
             template.definition,
@@ -75,16 +94,18 @@ export class SubmissionsService {
               }),
             )
             .digest('hex');
-          if (draft.status === SubmissionStatus.SUBMITTED) {
-            const revision = await this.firstRevision(tx, draft.id);
-            if (readSubmissionRequestHash(revision.snapshot) !== requestHash) {
+          if (originalRevision) {
+            if (
+              readSubmissionRequestHash(originalRevision.snapshot) !==
+              requestHash
+            ) {
               throw new ConflictException({
                 code: 'CHECKLIST_ALREADY_SUBMITTED',
                 message:
                   '이미 제출된 체크리스트입니다. 제출 확인 화면을 확인해 주세요.',
               });
             }
-            return readSubmissionReceipt(revision.snapshot, draft);
+            return readSubmissionReceipt(originalRevision.snapshot, draft);
           }
           if (draft.updatedAt.toISOString() !== input.expectedUpdatedAt) {
             throw new ConflictException({

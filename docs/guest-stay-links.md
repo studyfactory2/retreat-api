@@ -106,8 +106,9 @@ The existing requestKey policy remains: duplicate creation requests return
 create a separate checklist; this slice does not deduplicate by stay/type or add
 a draft recovery/list endpoint. Future calendar review must account for duplicate
 submissions. The completed draft token now also supports read-only captured
-answers/photos through [guest checklist viewing](guest-submissions.md). Corrections
-remain a later slice; the original minimal receipt endpoint is unchanged.
+answers/photos through [guest checklist viewing](guest-submissions.md) and
+[answer/note corrections](guest-submission-corrections.md). The original minimal
+receipt endpoint is unchanged.
 
 ## Compatibility and follow-ups
 

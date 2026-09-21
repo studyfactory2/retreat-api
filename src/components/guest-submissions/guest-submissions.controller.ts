@@ -1,21 +1,30 @@
 import {
   BadRequestException,
+  Body,
   Controller,
   Get,
   Header,
   Headers,
+  HttpCode,
+  HttpStatus,
   Param,
   ParseUUIDPipe,
+  Post,
   Query,
   UseGuards,
 } from '@nestjs/common';
 import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
-import { GetGuestSubmissionInput } from '../../libs/dto/guest-submission/guest-submission.input';
+import {
+  CorrectGuestSubmissionInput,
+  GetGuestSubmissionInput,
+} from '../../libs/dto/guest-submission/guest-submission.input';
 import type {
+  GuestSubmissionCorrectionDto,
   GuestSubmissionDto,
   GuestSubmissionPhotoViewDto,
 } from '../../libs/dto/guest-submission/guest-submission';
 import { GuestSubmissionAccessGuard } from '../auth/guards/guest-submission-access.guard';
+import { GuestSubmissionCorrectionsService } from './guest-submission-corrections.service';
 import { GuestSubmissionsService } from './guest-submissions.service';
 
 const photoIdPipe = new ParseUUIDPipe({
@@ -33,6 +42,7 @@ const photoIdPipe = new ParseUUIDPipe({
 export class GuestSubmissionsController {
   constructor(
     private readonly guestSubmissionsService: GuestSubmissionsService,
+    private readonly guestSubmissionCorrectionsService: GuestSubmissionCorrectionsService,
   ) {}
 
   @Get('current')
@@ -56,6 +66,23 @@ export class GuestSubmissionsController {
     return await this.guestSubmissionsService.getPhotoView(
       authorization,
       id,
+      input,
+    );
+  }
+
+  @Post('correct')
+  @HttpCode(HttpStatus.OK)
+  @Header('Cache-Control', 'no-store')
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  public async correct(
+    @Headers('authorization') authorization: string | undefined,
+    @Query() query: GetGuestSubmissionInput,
+    @Body() input: CorrectGuestSubmissionInput,
+  ): Promise<GuestSubmissionCorrectionDto> {
+    void query;
+    console.log('POST: correctGuestSubmission');
+    return await this.guestSubmissionCorrectionsService.correct(
+      authorization,
       input,
     );
   }

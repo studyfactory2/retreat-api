@@ -22,8 +22,8 @@ Receipt access reveals only this record's property label, checklist type, visit
 date, start/completion times, original revision number, answer/photo/issue counts
 and link expiry. It does not expose answers, author/contact details, issue records,
 photos, revision history or other people's records. Guest answers/photos are now
-available through [guest checklist viewing](guest-submissions.md); corrections
-remain separate work. Administrator access is documented in
+available through [guest checklist viewing](guest-submissions.md), with answer/note
+edits through [guest corrections](guest-submission-corrections.md). Administrator access is documented in
 [administrator submission review](admin-submissions.md).
 
 ## Submit the latest saved answers

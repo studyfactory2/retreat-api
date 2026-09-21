@@ -1,19 +1,16 @@
 import { InternalServerErrorException } from '@nestjs/common';
 import { ChecklistType, IssueStatus, Role } from '@prisma/client';
 import type { Prisma } from '@prisma/client';
-import type {
-  AdminIssueActorDto,
-  AdminIssueRecordDto,
-} from '../../libs/dto/admin-issue/admin-issue';
+import type { IssueActor, IssueRecord } from '../dto/issue-record/issue-record';
 
 const UUID_V4 =
   /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const MAX_DATABASE_INT = 2_147_483_647;
 
-export function parseAdminIssueSnapshot(
+export function parseIssueSnapshot(
   value: Prisma.JsonValue,
   expected: { issueId: string; propertyId: string; version: number },
-): AdminIssueRecordDto {
+): IssueRecord {
   try {
     const root = object(value);
     const property = object(root.property);
@@ -91,10 +88,10 @@ export function parseAdminIssueSnapshot(
   }
 }
 
-export function parseAdminIssueActor(
+export function parseIssueActor(
   value: Prisma.JsonValue,
   actorUserId: string | null,
-): AdminIssueActorDto {
+): IssueActor {
   try {
     const actor = object(value);
     const id = nullableUuid(actor.id);
@@ -112,8 +109,8 @@ export function parseAdminIssueActor(
   }
 }
 
-export function buildAdminIssueSnapshot(
-  record: AdminIssueRecordDto,
+export function buildIssueSnapshot(
+  record: IssueRecord,
   requestKey: string,
 ): Prisma.InputJsonObject {
   try {
@@ -159,7 +156,7 @@ export function buildAdminIssueSnapshot(
               sectionId: record.source.sectionId,
             },
     };
-    parseAdminIssueSnapshot(snapshot, {
+    parseIssueSnapshot(snapshot, {
       issueId: record.id,
       propertyId: record.property.id,
       version: record.currentVersion,
@@ -173,7 +170,7 @@ export function buildAdminIssueSnapshot(
 function parseSource(
   value: Prisma.JsonValue | undefined,
   hasSubmission: boolean,
-): AdminIssueRecordDto['source'] {
+): IssueRecord['source'] {
   if (!hasSubmission) {
     if (value !== null) return invalidSnapshot();
     return null;

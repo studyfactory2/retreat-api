@@ -16,10 +16,10 @@ import type {
   AdminIssueRecordDto,
 } from '../../libs/dto/admin-issue/admin-issue';
 import {
-  buildAdminIssueSnapshot,
-  parseAdminIssueActor,
-  parseAdminIssueSnapshot,
-} from './admin-issue-snapshot';
+  buildIssueSnapshot,
+  parseIssueActor,
+  parseIssueSnapshot,
+} from '../../libs/issues/issue-snapshot';
 
 export const adminIssueInclude = {
   property: { select: { id: true, name: true, region: true } },
@@ -108,12 +108,12 @@ export class AdminIssueReader {
     event: { version: number; snapshot: Prisma.JsonValue },
   ): AdminIssueRecordDto {
     if (event.version !== issue.currentVersion) throw this.invalidRecord();
-    const record = parseAdminIssueSnapshot(event.snapshot, {
+    const record = parseIssueSnapshot(event.snapshot, {
       issueId: issue.id,
       propertyId: issue.propertyId,
       version: event.version,
     });
-    const snapshot = buildAdminIssueSnapshot(record, issue.requestKey);
+    const snapshot = buildIssueSnapshot(record, issue.requestKey);
     const fields = [
       'categoryId',
       'title',
@@ -198,7 +198,7 @@ export class AdminIssueReader {
       event.version > issue.currentVersion
     )
       throw this.invalidRecord();
-    const record = parseAdminIssueSnapshot(event.snapshot, {
+    const record = parseIssueSnapshot(event.snapshot, {
       issueId: issue.id,
       propertyId: issue.propertyId,
       version: event.version,
@@ -302,7 +302,7 @@ export class AdminIssueReader {
         version: event.version,
         type: event.type,
         actorSource: event.actorSource,
-        actor: parseAdminIssueActor(event.actorSnapshot, event.actorUserId),
+        actor: parseIssueActor(event.actorSnapshot, event.actorUserId),
         sourceRevisionId: event.sourceRevisionId,
         note: event.note,
         fromStatus: event.fromStatus,

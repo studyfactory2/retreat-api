@@ -548,6 +548,30 @@ No new schema/migration/packages/test files, frontend, guest corrections, histor
 browsing or credential recovery. Runtime verification with replacement Prisma/S3
 providers does not establish live database/AWS/browser behavior.
 
+## Guest answer/note correction slice
+
+GuestSubmissionsModule also owns POST /guest/submissions/correct through its
+GuestSubmissionCorrectionsService. It reuses the private submitted-record guard
+and reader, accepts only guest answers/notes plus expectedRevision/optional reason,
+and appends immutable CORRECTED snapshots in a serializable transaction. An exact
+successful retry is recovered from the next revision's normalized request digest;
+changed stale input returns 409. No-op edits do not create revisions. Neither
+submittedAt nor private access expiry is extended. See
+docs/guest-submission-corrections.md for request, history and photo behavior.
+
+Guest corrections reconcile changed item reports in the same transaction. New
+abnormalities create deduplicated issues; existing ones receive UPDATED events.
+Manager resolution/cancellation and original evidence/source references remain
+intact. Photos on still-abnormal answers are retained in the new revision; photos
+on cleared/normal answers remain only in original history/evidence. Replacement
+uploads and arbitrary photo selection are outside this slice. The neutral issue
+snapshot parser/builder lives under libs/issues with shared record DTOs, keeping
+guest correction logic independent of administrator feature modules.
+
+No schema/migration, package, frontend or test-file additions. The user retains
+control of commits/migrations/deployment; live database/AWS/browser verification
+remains separate from local synthetic HTTP/transaction checks.
+
 ## References
 
 - Nest configuration: https://docs.nestjs.com/techniques/configuration

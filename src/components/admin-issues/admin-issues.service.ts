@@ -32,7 +32,7 @@ import {
   adminIssueInclude,
   AdminIssueReader,
 } from './admin-issue-reader';
-import { buildAdminIssueSnapshot } from './admin-issue-snapshot';
+import { buildIssueSnapshot } from '../../libs/issues/issue-snapshot';
 
 @Injectable()
 export class AdminIssuesService {
@@ -282,7 +282,7 @@ export class AdminIssuesService {
           note: action.note,
           fromStatus: issue.status,
           toStatus: status,
-          snapshot: buildAdminIssueSnapshot(record, issue.requestKey),
+          snapshot: buildIssueSnapshot(record, issue.requestKey),
           createdAt: now,
         },
       });

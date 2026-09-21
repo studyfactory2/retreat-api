@@ -5,8 +5,9 @@ Guests can reopen one completed check-in/out checklist using the private
 from the saved `/draft#token=...` link and sends it in the Authorization Bearer
 header. A property QR or parent stay invitation cannot replace this token.
 
-This is a read-only slice. It adds no editing, history browsing, token recovery,
-list endpoint, frontend screen, messaging, schema change or migration.
+These viewing endpoints are read-only. Answer/note editing is now handled by the
+separate [correction operation](guest-submission-corrections.md) in the same guest
+feature. No guest history browser, token recovery or list endpoint is provided.
 
 ## Routes
 
@@ -65,5 +66,5 @@ feature never imports an administrator controller/service/module. The parser's
 validation behavior and administrator response contracts are unchanged.
 
 Existing submission receipts, draft mutations and administrator history remain
-available through their existing routes. Submitted guest corrections are a later
-slice because they must preserve revisions, evidence and related issue history.
+available through their existing routes. Submitted guest corrections preserve
+revisions, evidence and related issue history as described in the correction guide.

@@ -38,3 +38,11 @@ export interface GuestSubmissionPhotoViewDto {
   url: string;
   expiresAt: Date;
 }
+
+export interface GuestSubmissionCorrectionDto {
+  id: string;
+  status: 'SUBMITTED';
+  revision: number;
+  updatedAt: Date;
+  changed: boolean;
+}

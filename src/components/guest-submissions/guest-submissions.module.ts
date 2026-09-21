@@ -7,6 +7,7 @@ import { StorageModule } from '../../storage/storage.module';
 import { GuestSubmissionAccessGuard } from '../auth/guards/guest-submission-access.guard';
 import { QrNoStoreMiddleware } from '../qr/qr-no-store.middleware';
 import { SubmissionDraftsModule } from '../submission-drafts/submission-drafts.module';
+import { GuestSubmissionCorrectionsService } from './guest-submission-corrections.service';
 import { GuestSubmissionsController } from './guest-submissions.controller';
 import { GuestSubmissionsService } from './guest-submissions.service';
 
@@ -15,6 +16,7 @@ import { GuestSubmissionsService } from './guest-submissions.service';
   controllers: [GuestSubmissionsController],
   providers: [
     GuestSubmissionsService,
+    GuestSubmissionCorrectionsService,
     GuestSubmissionAccessGuard,
     QrNoStoreMiddleware,
   ],

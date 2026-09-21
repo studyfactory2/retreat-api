@@ -4,6 +4,11 @@ NestJS backend for the retreat management web app. Package manager: npm.
 
 ## Current slice
 
+Guests can correct submitted check-in/out answers and notes through
+POST /guest/submissions/correct. Each meaningful edit preserves the original and
+appends a revision plus related issue audit events. No additional migration is
+needed. See [the correction guide](docs/guest-submission-corrections.md).
+
 Guests can reopen completed check-in/out answers and photos using their saved
 checklist token through GET /guest/submissions/current and the scoped photo-view
 route. This read-only slice needs no additional migration. See
