@@ -4,6 +4,8 @@ import {
   Controller,
   Get,
   Header,
+  HttpCode,
+  HttpStatus,
   Param,
   ParseUUIDPipe,
   Post,
@@ -17,16 +19,23 @@ import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import { Role } from '@prisma/client';
 import type {} from 'multer';
 import {
+  ConfirmStayImportInput,
   CreateStayImportPreviewInput,
   EmptyStayImportQueryInput,
   GetStayImportPreviewInput,
+  ReviewStayImportInput,
 } from '../../libs/dto/stay-import/stay-import.input';
-import type { StayImportPreviewDto } from '../../libs/dto/stay-import/stay-import';
+import type {
+  StayImportConfirmationDto,
+  StayImportPreviewDto,
+} from '../../libs/dto/stay-import/stay-import';
 import type { AuthenticatedUser } from '../../libs/dto/user/user';
 import { AuthUser } from '../auth/decorators/auth.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { AdminImportUploadCapacityInterceptor } from './admin-import-upload-capacity.interceptor';
+import { AdminStayImportConfirmationService } from './admin-stay-import-confirmation.service';
+import { AdminStayImportReviewService } from './admin-stay-import-review.service';
 import { AdminStayImportsService } from './admin-stay-imports.service';
 
 const importIdPipe = new ParseUUIDPipe({
@@ -42,6 +51,8 @@ const importIdPipe = new ParseUUIDPipe({
 export class AdminStayImportsController {
   constructor(
     private readonly adminStayImportsService: AdminStayImportsService,
+    private readonly adminStayImportReviewService: AdminStayImportReviewService,
+    private readonly adminStayImportConfirmationService: AdminStayImportConfirmationService,
   ) {}
 
   @Roles(Role.ADMIN)
@@ -83,5 +94,43 @@ export class AdminStayImportsController {
   ): Promise<StayImportPreviewDto> {
     console.log('GET: getStayImportPreview');
     return await this.adminStayImportsService.getPreview(id, input);
+  }
+
+  @Roles(Role.ADMIN)
+  @UseGuards(RolesGuard, ThrottlerGuard)
+  @Post(':id/review')
+  @HttpCode(HttpStatus.OK)
+  @Header('Cache-Control', 'no-store')
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  public async review(
+    @Param('id', importIdPipe) id: string,
+    @Body() input: ReviewStayImportInput,
+    @Query() query: EmptyStayImportQueryInput,
+    @AuthUser() actor: AuthenticatedUser,
+  ): Promise<StayImportPreviewDto> {
+    void query;
+    console.log('POST: reviewStayImport');
+    return await this.adminStayImportReviewService.review(id, input, actor);
+  }
+
+  @Roles(Role.ADMIN)
+  @UseGuards(RolesGuard, ThrottlerGuard)
+  @Post(':id/confirm')
+  @HttpCode(HttpStatus.OK)
+  @Header('Cache-Control', 'no-store')
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  public async confirm(
+    @Param('id', importIdPipe) id: string,
+    @Body() input: ConfirmStayImportInput,
+    @Query() query: EmptyStayImportQueryInput,
+    @AuthUser() actor: AuthenticatedUser,
+  ): Promise<StayImportConfirmationDto> {
+    void query;
+    console.log('POST: confirmStayImport');
+    return await this.adminStayImportConfirmationService.confirm(
+      id,
+      input,
+      actor,
+    );
   }
 }

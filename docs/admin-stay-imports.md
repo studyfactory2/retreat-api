@@ -1,10 +1,11 @@
 # Excel roster preview
 
 The administrator can upload the client's fixed-format legacy `.xls` roster and
-retrieve a saved, paginated preview. This slice writes `Attachment`, `ImportBatch`
-and `ImportRow` only. It never creates or updates stays, guests, stay history, or
-calendar entries. Confirmation, reviewed corrections and applying rows are the
-following slice. No schema change or new migration is required.
+retrieve a saved, paginated preview, review candidate rows and explicitly confirm
+them into stays. Upload/review only save import data. Confirmation creates new
+`Stay` and `StayRevision` records together with the applied row references. It
+does not create guest accounts or overwrite existing stays. No schema change or
+new migration is required.
 
 ## Endpoints
 
@@ -12,8 +13,10 @@ following slice. No schema change or new migration is required.
 | --- | --- | --- |
 | POST | /admin/stay-imports/preview | 201: saved preview metadata, summary and first 20 rows |
 | GET | /admin/stay-imports/:id | 200: metadata, full summary and filtered page of rows |
+| POST | /admin/stay-imports/:id/review | 200: updated preview and first 20 rows |
+| POST | /admin/stay-imports/:id/confirm | 200: saved confirmation receipt |
 
-Both routes require an active ADMIN bearer token. Guest/staff QR, private links
+All routes require an active ADMIN bearer token. Guest/staff QR, private links
 and staff accounts do not grant access. All responses have no-store/no-referrer
 headers. Uploads recheck administrator activity before creating their attachment
 and again after storage, before saving the preview.
@@ -84,8 +87,89 @@ Cancelled stays are excluded. A later upload omitting a stay never cancels it.
 
 CREATE means a proposed action only. Invalid and review rows cannot be applied
 without a later explicit correction or skip. All non-stay rows have SKIP.
-Preview checks are point-in-time; confirmation must revalidate mappings, dates,
-overlaps and expected stay versions before writing operational data.
+Preview checks are point-in-time; confirmation revalidates properties, dates and
+overlaps inside the same transaction that creates stays.
+
+## Review candidate rows
+
+POST `/:id/review` accepts JSON with the current batch `expectedVersion` and
+1–100 row edits. Each edit references a row ID from that batch and chooses
+CREATE or SKIP. UPDATE is not supported. Other body/query fields are rejected.
+
+```json
+{
+  "expectedVersion": 1,
+  "rows": [
+    {
+      "id": "<candidate-row-uuid>",
+      "action": "CREATE",
+      "data": {
+        "propertyId": "<existing-property-uuid>",
+        "guestName": "Sample Guest",
+        "company": null,
+        "department": null,
+        "phone": null,
+        "notes": "Details checked against the original roster",
+        "checkInAt": "2026-10-01T15:00:00+09:00",
+        "checkOutAt": "2026-10-02T11:00:00+09:00"
+      }
+    },
+    { "id": "<other-candidate-row-uuid>", "action": "SKIP" }
+  ]
+}
+```
+
+CREATE submits the complete reviewed stay data using the manual stay creation
+field rules. Optional company/department/phone/notes omitted from the request
+become null; this is replacement, not a patch. Explicitly reviewing a complete
+row acknowledges the original parsing warnings, including an intentionally
+unavailable optional phone number. New times need an explicit timezone and a
+departure later than arrival. Times are normalized to UTC and local dates to
+Asia/Seoul. Unknown properties, duplicate row IDs and cross-batch row IDs fail.
+An existing but inactive property remains flagged for review.
+
+SKIP must omit data. Candidate normalized values remain available so that the
+administrator can later restore the row with a full CREATE review. Availability
+and unrelated rows have no normalized stay and cannot be promoted to CREATE.
+Original rawData and the stored source file are never changed. Candidate rows
+keep the latest review's actor/name/role, time and action in normalizedData.review;
+this is latest-review metadata, not a separate history of every preview edit.
+
+Every successful review increments the batch version once, even if supplied
+values match. It rechecks all remaining candidates and recalculates overlap
+warnings. Skipping an overlapping row can clear the warning on the other row.
+Static source warnings on untouched rows remain until explicitly reviewed.
+Concurrent/stale edits and changes to confirmed batches return 409.
+
+## Confirm reviewed stays
+
+POST `/:id/confirm` accepts only `{ "expectedVersion": <current-version> }`.
+All non-SKIP rows must be valid CREATE candidates. Unresolved rows block the
+whole confirmation with 409 IMPORT_ROWS_NOT_READY. The error's `errors` array
+identifies up to 100 affected row IDs and their current validation messages.
+These checks are fresh; a new conflict can block a previously valid preview.
+The saved preview is unchanged on failure. Review the affected rows to save a
+refreshed preview and then confirm its new version.
+
+Confirmation checks the current administrator and source state, then uses one
+serializable transaction for active-property/overlap checks, batch version claim,
+Stay creation, revision-1 snapshots and applied ImportRow links. Stay source is
+EXCEL, status ACTIVE, creator is the confirming administrator and guestUserId
+remains null. The import row's afterSnapshot and linked StayRevision preserve
+what was created. No existing stay is matched by name, updated or cancelled.
+
+The response is `{ batchId, status, version, confirmedAt, confirmedByUserId,
+createdCount, skippedCount }`. Batch version increments once and status becomes
+CONFIRMED. Retrying with the same pre-confirmation expectedVersion returns the
+original receipt without duplicate stays; another version returns 409. Later
+stay/profile/property changes do not rewrite the receipt or saved snapshots.
+An all-SKIP batch may be confirmed with createdCount 0.
+
+GET now includes confirmedAt/confirmedByUserId on the batch and stayId/appliedAt
+on each row. Use existing /admin/stays endpoints for later stay corrections.
+Import review/confirmation transactions allow 60 seconds, with a 10-second
+connection wait; writes are bounded in chunks. Serialization failures use the
+existing retry helper. A failure rolls back the entire transaction.
 
 ## Private source storage and failure handling
 
@@ -125,7 +209,7 @@ workers and two in-flight import uploads per process. Workbooks are limited to
 40 sheets, 2,000 rows per sheet, 5,000 retained rows total and 32 source columns.
 Only A:L are interpreted. The worker validates original dimensions so a truncated
 read cannot silently pass. Each source text cell is limited to 4,000 characters.
-POST is limited to 10/minute/IP/process and GET to 60; deployment proxy settings
+Each POST route is limited to 10/minute/IP/process and GET to 60; deployment proxy settings
 remain part of release configuration.
 
 The supplied workbook has 172 nonblank data rows: 83 guest candidates, three
@@ -133,7 +217,11 @@ managed availability rows and 86 unrelated rows. With all five properties mapped
 and no database conflicts, 67 candidates are ready and 16 require review.
 These numbers describe the sample, not an assumption for future uploads.
 
-Local parser/HTTP probes use fake database and S3 providers. Real PostgreSQL and
-AWS permissions/upload/failure behavior still require an integration check after
-the policy update. No live workbook upload, migration or deployment is performed
-by local verification.
+Parser and HTTP contract probes use replacement providers. Review/confirmation
+was also checked against disposable PostgreSQL fixtures, including simultaneous
+confirmation/review requests, competing manual bookings, rollback after database
+failure and a 5,000-row batch. The maximum-size local run took about 43 seconds;
+this does not establish performance on the deployment server. Live AWS
+permissions/upload/failure behavior and the deployed environment still require
+integration checks after the policy update. No live workbook upload, application
+migration or deployment is performed by local verification.

@@ -4,10 +4,17 @@ NestJS backend for the retreat management web app. Package manager: npm.
 
 ## Current slice
 
+Administrators can review or skip roster preview rows through
+POST /admin/stay-imports/:id/review, then confirm the batch through
+POST /admin/stay-imports/:id/confirm. Confirmation rechecks conflicts and saves
+new stays, original revision snapshots and import references atomically. Version
+checks prevent stale edits; repeated confirmation returns the saved receipt.
+No migration is needed. See [the import workflow guide](docs/admin-stay-imports.md).
+
 Administrators can upload the fixed-format `.xls` guest roster and retrieve a
 saved, paginated preview through POST /admin/stay-imports/preview and
 GET /admin/stay-imports/:id. The preview flags missing times, ambiguous rows,
-unmapped properties and overlaps; it does not apply stays yet. Add the documented
+unmapped properties and overlaps before explicit confirmation. Add the documented
 private `imports/*` S3 permissions before a live upload. No migration is needed.
 See [the roster preview guide](docs/admin-stay-imports.md).
 

@@ -48,6 +48,8 @@ const rowSelect = {
   normalizedData: true,
   validationMessages: true,
   rawData: true,
+  stayId: true,
+  appliedAt: true,
 } satisfies Prisma.ImportRowSelect;
 
 @Injectable()
@@ -219,6 +221,8 @@ export class AdminStayImportsService {
             parserVersion: true,
             timezone: true,
             createdAt: true,
+            confirmedAt: true,
+            confirmedByUserId: true,
             sourceAttachment: {
               select: {
                 kind: true,
@@ -282,6 +286,8 @@ export class AdminStayImportsService {
             parserVersion: batch.parserVersion,
             timezone: batch.timezone,
             createdAt: batch.createdAt,
+            confirmedAt: batch.confirmedAt,
+            confirmedByUserId: batch.confirmedByUserId,
             source: {
               filename: batch.sourceAttachment.originalFilename,
               sizeBytes: batch.sourceAttachment.sizeBytes,

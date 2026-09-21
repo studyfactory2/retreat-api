@@ -601,6 +601,32 @@ No schema/migration, frontend or test-file additions. The user retains control
 of commits and AWS configuration. Local parser and HTTP probes use synthetic
 database/S3 providers; live PostgreSQL/AWS integration remains unverified.
 
+## Administrator import review and confirmation slice
+
+AdminStayImportReviewService owns POST /admin/stay-imports/:id/review and
+AdminStayImportConfirmationService owns POST /admin/stay-imports/:id/confirm
+inside the existing admin-stay-imports feature. Both require ADMIN, current batch
+expectedVersion, strict JSON and empty queries. Shared validation reloads active
+administrator/property state, enforces final stay field rules, preserves untouched
+source warnings and recomputes dynamic conflicts. Review accepts 1-100 complete
+CREATE replacements or SKIP choices; no automatic UPDATE/matching is supported.
+Original source cells remain immutable, with latest review metadata stored beside
+the normalized data. See docs/admin-stay-imports.md for full contracts.
+
+Confirmation creates EXCEL/ACTIVE stays, revision-1 snapshots and import-row
+references in one serializable transaction, then returns a stored receipt. All
+unresolved candidates block confirmation; a fully skipped batch can confirm with
+zero stays. Conditional batch version writes and same-version replay prevent
+duplicate confirmations. Existing stays and guest profiles remain untouched.
+Rows expose applied stay IDs/timestamps; confirmed batch metadata is visible in
+the saved preview. Failed confirmation reports fresh row errors without partial
+stays or changing the saved preview.
+
+Bulk writes use bounded parameterized statements. The serializable helper now
+accepts optional timeout/maxWait settings; only import review/confirmation opt
+into 60s/10s, preserving other callers' defaults. No schema, migration, dependency,
+frontend or test-file additions. User owns commits and production operations.
+
 ## References
 
 - Nest configuration: https://docs.nestjs.com/techniques/configuration
