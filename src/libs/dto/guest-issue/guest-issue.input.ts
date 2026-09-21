@@ -1,12 +1,18 @@
-import { Transform } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import {
+  ArrayMaxSize,
+  ArrayUnique,
+  IsArray,
   IsNotEmpty,
+  IsObject,
   IsString,
   IsUUID,
   MaxLength,
   ValidateIf,
+  ValidateNested,
 } from 'class-validator';
 import { trimNullableText, trimText } from '../common/list.input';
+import { GuestIssuePhotoClaimInput } from '../guest-issue-photo/guest-issue-photo.input';
 
 export class GetGuestIssueCategoriesInput {}
 
@@ -36,4 +42,17 @@ export class ReportGuestIssueInput {
   @IsString({ message: '신고 내용은 문자열이어야 합니다.' })
   @MaxLength(2000, { message: '신고 내용은 2000자 이하여야 합니다.' })
   description?: string | null;
+
+  @ValidateIf((_object, value: unknown) => value !== undefined)
+  @IsArray({ message: '사진 목록은 배열이어야 합니다.' })
+  @ArrayMaxSize(10, { message: '사진은 10개까지 첨부할 수 있습니다.' })
+  @ArrayUnique(
+    (photo: GuestIssuePhotoClaimInput) =>
+      typeof photo?.id === 'string' ? photo.id.toLowerCase() : photo?.id,
+    { message: '같은 사진을 중복으로 첨부할 수 없습니다.' },
+  )
+  @IsObject({ each: true, message: '사진 정보의 형식을 확인해 주세요.' })
+  @ValidateNested({ each: true })
+  @Type(() => GuestIssuePhotoClaimInput)
+  photos?: GuestIssuePhotoClaimInput[];
 }

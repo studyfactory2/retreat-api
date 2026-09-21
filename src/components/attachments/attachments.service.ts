@@ -20,13 +20,13 @@ import type {
 } from '../../libs/dto/attachment/attachment';
 import { S3Service } from '../../storage/s3.service';
 import { SubmissionDraftsService } from '../submission-drafts/submission-drafts.service';
-import { PhotoImageService } from './photo-image.service';
+import { PhotoImageService } from '../photo-processing/photo-image.service';
 import {
   MAX_DRAFT_PHOTOS,
   MAX_PHOTO_BYTES,
   PHOTO_UPLOAD_LEASE_MS,
   PHOTO_VIEW_TTL_SECONDS,
-} from './photo-policy';
+} from '../photo-processing/photo-policy';
 
 const photoSelect = {
   id: true,

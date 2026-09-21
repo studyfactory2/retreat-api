@@ -10,6 +10,7 @@ import {
   Param,
   ParseUUIDPipe,
   Post,
+  Query,
   UploadedFile,
   UseGuards,
   UseInterceptors,
@@ -17,17 +18,16 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import type {} from 'multer';
-import { PhotoInput } from '../../libs/dto/attachment/attachment.input';
+import { GuestIssuePhotoInput } from '../../libs/dto/guest-issue-photo/guest-issue-photo.input';
 import type {
-  DraftPhotoDto,
-  DraftPhotoListDto,
-  DraftPhotoViewDto,
-  RemovedDraftPhotoDto,
-} from '../../libs/dto/attachment/attachment';
-import { AttachmentsService } from './attachments.service';
-import { DraftPhotoAccessGuard } from '../auth/guards/draft-photo-access.guard';
+  GuestIssuePhotoUploadDto,
+  GuestIssuePhotoViewDto,
+  RemovedGuestIssuePhotoDto,
+} from '../../libs/dto/guest-issue-photo/guest-issue-photo';
 import { MAX_PHOTO_BYTES } from '../photo-processing/photo-policy';
 import { PhotoUploadCapacityInterceptor } from '../photo-processing/photo-upload-capacity.interceptor';
+import { GuestIssuePhotoAccessGuard } from '../auth/guards/guest-issue-photo-access.guard';
+import { GuestIssuePhotosService } from './guest-issue-photos.service';
 
 const photoIdPipe = new ParseUUIDPipe({
   version: '4',
@@ -38,14 +38,17 @@ const photoIdPipe = new ParseUUIDPipe({
     }),
 });
 
-@Controller('submission-drafts/photos')
-@UseGuards(ThrottlerGuard, DraftPhotoAccessGuard)
+@Controller('guest/issues/photos')
+@UseGuards(ThrottlerGuard, GuestIssuePhotoAccessGuard)
 @Throttle({ default: { limit: 60, ttl: 60_000 } })
-export class AttachmentsController {
-  constructor(private readonly attachmentsService: AttachmentsService) {}
+export class GuestIssuePhotosController {
+  constructor(
+    private readonly guestIssuePhotosService: GuestIssuePhotosService,
+  ) {}
 
   @Post()
   @Header('Cache-Control', 'no-store')
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
   @UseInterceptors(
     PhotoUploadCapacityInterceptor,
     FileInterceptor('file', {
@@ -55,30 +58,30 @@ export class AttachmentsController {
   public async uploadPhoto(
     @Headers('authorization') authorization: string | undefined,
     @UploadedFile() file: Express.Multer.File | undefined,
-    @Body() input: PhotoInput,
-  ): Promise<DraftPhotoDto> {
+    @Body() input: GuestIssuePhotoInput,
+    @Query() query: GuestIssuePhotoInput,
+  ): Promise<GuestIssuePhotoUploadDto> {
     void input;
-    console.log('POST: uploadPhoto');
-    return await this.attachmentsService.uploadPhoto(authorization, file);
-  }
-
-  @Get()
-  @Header('Cache-Control', 'no-store')
-  public async listPhotos(
-    @Headers('authorization') authorization: string | undefined,
-  ): Promise<DraftPhotoListDto> {
-    console.log('GET: listPhotos');
-    return await this.attachmentsService.listPhotos(authorization);
+    void query;
+    console.log('POST: uploadGuestIssuePhoto');
+    return await this.guestIssuePhotosService.uploadPhoto(authorization, file);
   }
 
   @Get(':id/view')
   @Header('Cache-Control', 'no-store')
   public async getPhotoView(
     @Headers('authorization') authorization: string | undefined,
+    @Headers('x-photo-token') token: string | undefined,
     @Param('id', photoIdPipe) id: string,
-  ): Promise<DraftPhotoViewDto> {
-    console.log('GET: getPhotoView');
-    return await this.attachmentsService.getPhotoView(authorization, id);
+    @Query() input: GuestIssuePhotoInput,
+  ): Promise<GuestIssuePhotoViewDto> {
+    void input;
+    console.log('GET: getGuestIssuePhotoView');
+    return await this.guestIssuePhotosService.getPhotoView(
+      authorization,
+      id,
+      token,
+    );
   }
 
   @Post(':id/remove')
@@ -86,11 +89,18 @@ export class AttachmentsController {
   @Header('Cache-Control', 'no-store')
   public async removePhoto(
     @Headers('authorization') authorization: string | undefined,
+    @Headers('x-photo-token') token: string | undefined,
     @Param('id', photoIdPipe) id: string,
-    @Body() input: PhotoInput,
-  ): Promise<RemovedDraftPhotoDto> {
+    @Body() input: GuestIssuePhotoInput,
+    @Query() query: GuestIssuePhotoInput,
+  ): Promise<RemovedGuestIssuePhotoDto> {
     void input;
-    console.log('POST: removePhoto');
-    return await this.attachmentsService.removePhoto(authorization, id);
+    void query;
+    console.log('POST: removeGuestIssuePhoto');
+    return await this.guestIssuePhotosService.removePhoto(
+      authorization,
+      id,
+      token,
+    );
   }
 }

@@ -4,11 +4,14 @@ NestJS backend for the retreat management web app. Package manager: npm.
 
 ## Current slice
 
+Guest problem reports now accept up to 10 optional photos. Uploads use private
+per-photo tokens, JPEG normalization and private S3; submission claims the photos
+atomically as immutable report evidence. See [the guest photo guide](docs/guest-issue-photos.md).
+
 Guests can submit standalone text reports through their property's guest QR.
 GET /guest/issues/categories lists active choices; POST /guest/issues/report
 creates an issue and original report together, with safe duplicate retries.
-See [the guest reporting guide](docs/guest-issues.md). Complaint photos follow
-in a separate slice; existing checklist photo uploads are unchanged.
+See [the guest reporting guide](docs/guest-issues.md).
 
 Administrator issue categories now support paginated search, creation, renaming,
 display ordering and activation through GET/POST /admin/issue-categories.
@@ -68,8 +71,22 @@ Startup checks the database connection, and shutdown disconnects the client.
 
 The existing configuration, validation, error handling, and GET /health remain.
 The health endpoint reports application liveness only; it does not query the
-database on each request. Direct complaints and submitted-record corrections
-remain separate slices using the defined model.
+database on each request. Submitted-record corrections remain a separate slice
+using the defined model.
+
+## Source organization
+
+Each feature has its own folder and Nest module under src/components. Login and
+current-profile routes live in users; administrator staff management lives in
+admin-users. Public QR context/resolution lives in qr; administrator issuance
+and rotation live in admin-property-qr. URLs and request/response contracts are
+unchanged by this separation.
+
+All application guard files live in auth/guards. Feature-specific guards are
+registered by the module that provides the services they need. Shared image
+preparation, photo limits and upload capacity live in photo-processing and are
+reused by attachments and guest-issue-photos. Request/response DTOs remain under
+src/libs/dto/<feature>.
 
 ## Local setup
 

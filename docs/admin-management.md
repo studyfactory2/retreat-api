@@ -6,6 +6,10 @@ use GET/POST only and have no `/api` prefix. Each handler declares its own
 `@Roles(Role.ADMIN)` and `@UseGuards(RolesGuard)` decorators and logs only a static
 action name. Responses have `Cache-Control: no-store`.
 
+Staff routes are owned by AdminUsersModule/Controller/Service in
+src/components/admin-users. UsersModule retains login and current-profile routes;
+PropertiesModule retains property management and staff assignment.
+
 ## Routes
 
 | Method | Path | Result | Success |

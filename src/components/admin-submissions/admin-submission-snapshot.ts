@@ -13,7 +13,7 @@ import type {
 } from '../../libs/dto/admin-submission/admin-submission';
 import type { PreparedSubmissionPhoto } from '../../libs/dto/submission/submission';
 import type { SubmissionPhotoInput } from '../../libs/dto/submission/submission.input';
-import { MAX_DRAFT_PHOTOS } from '../attachments/photo-policy';
+import { MAX_DRAFT_PHOTOS } from '../photo-processing/photo-policy';
 import { parseChecklistDefinition } from '../checklist-templates/checklist-definition';
 import { parseDraftAnswers } from '../submission-drafts/draft-answers';
 import {

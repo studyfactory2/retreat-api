@@ -27,6 +27,7 @@ import {
   parseAdminIssueSnapshot,
 } from '../admin-issues/admin-issue-snapshot';
 import { QrService } from '../qr/qr.service';
+import { GuestIssuePhotoClaimsService } from '../guest-issue-photos/guest-issue-photo-claims.service';
 
 const reportSelect = {
   id: true,
@@ -34,6 +35,7 @@ const reportSelect = {
   events: {
     where: { version: 1 },
     select: {
+      id: true,
       type: true,
       actorSource: true,
       actorUserId: true,
@@ -60,6 +62,7 @@ export class GuestIssuesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly qrService: QrService,
+    private readonly photoClaims: GuestIssuePhotoClaimsService,
   ) {}
 
   public async getCategories(
@@ -106,8 +109,20 @@ export class GuestIssuesService {
             where: { requestKey },
             select: reportSelect,
           });
-          if (existing)
-            return this.existingReceipt(existing, property.id, content);
+          if (existing) {
+            const receipt = this.existingReceipt(
+              existing,
+              property.id,
+              content,
+            );
+            await this.photoClaims.assertReportedPhotos(
+              tx,
+              property.id,
+              existing.events[0].id,
+              input.photos ?? [],
+            );
+            return receipt;
+          }
 
           const category = await tx.issueCategory.findFirst({
             where: { id: content.categoryId, isActive: true },
@@ -146,7 +161,7 @@ export class GuestIssuesService {
             category,
             source: null,
           };
-          await tx.issueEvent.create({
+          const event = await tx.issueEvent.create({
             data: {
               issueId: issue.id,
               version: 1,
@@ -167,6 +182,12 @@ export class GuestIssuesService {
               createdAt: reportedAt,
             },
           });
+          await this.photoClaims.attachToReport(
+            tx,
+            property.id,
+            event.id,
+            input.photos ?? [],
+          );
           return {
             issueId: issue.id,
             status: 'RECEIVED',

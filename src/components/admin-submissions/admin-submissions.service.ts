@@ -27,7 +27,7 @@ import type {
 } from '../../libs/dto/admin-submission/admin-submission';
 import { S3Service } from '../../storage/s3.service';
 import { AuthService } from '../auth/auth.service';
-import { PHOTO_VIEW_TTL_SECONDS } from '../attachments/photo-policy';
+import { PHOTO_VIEW_TTL_SECONDS } from '../photo-processing/photo-policy';
 import {
   parseAdminSubmissionActor,
   parseAdminSubmissionSnapshot,

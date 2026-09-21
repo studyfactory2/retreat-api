@@ -28,7 +28,18 @@ tests may remain; use relevant existing checks, lint/build, and runtime probes.
 
 - src/main.ts: process startup, listening, graceful shutdown.
 - src/config/: validated runtime settings and shared HTTP setup.
-- src/components/: one module per feature, registered in components.module.ts.
+- src/components/: each feature owns its folder, module, controller and services.
+  Top-level route features are registered in components.module.ts; shared modules
+  are imported by the features that use them.
+- src/components/auth/guards/: all application-owned guard files. Feature guards
+  remain registered in the module that provides their dependencies; file location
+  does not require importing feature modules into AuthModule.
+- src/components/photo-processing/: shared image preparation, photo limits and
+  upload capacity, imported by both checklist and guest complaint uploads.
+- src/components/admin-users/: administrator staff management, separate from
+  users/ login and current-profile routes.
+- src/components/admin-property-qr/: administrator QR status and rotation,
+  separate from qr/ guest/staff context and scoped property resolution.
 - src/libs/dto/<feature>/: input DTOs and response contracts.
 - src/libs/filters/: common exception handling.
 - src/database/: global DatabaseModule and injectable PrismaService.
@@ -191,7 +202,8 @@ operational data; no separate persistence tables are required for these views.
 
 ## Administrator staff/property management slice
 
-AdminUsersController serves /admin/staff through UsersService; the original
+AdminUsersController serves /admin/staff through AdminUsersService in its own
+AdminUsersModule; the original
 UsersController keeps authentication endpoints. PropertiesController serves
 /admin/properties through PropertiesService. All nine new handlers explicitly
 require RolesGuard and ADMIN. See docs/admin-management.md for request examples,
@@ -288,7 +300,7 @@ wording must be supplied before configuring those actual guest templates.
 
 ## Property QR access slice
 
-QrModule adds ADMIN GET /admin/properties/:id/qr and POST
+AdminPropertyQrModule owns ADMIN GET /admin/properties/:id/qr and POST
 /admin/properties/:id/qr/guest/rotate plus /staff/rotate. Every rotation requires
 expectedRotatedAt (null before first issuance, otherwise the last UTC timestamp),
 checks an active property, and writes a new hash/monotonic timestamp atomically.
@@ -297,6 +309,11 @@ frontend URL fragment; stored SHA-256 digests include the flow. Save/print the
 returned link because status cannot reconstruct it. No expiry is imposed on
 printed property QR; rotate to replace. Property deactivation suspends access,
 and reactivation restores the same QR unless replaced.
+
+QrModule owns public guest/staff context and exports QrService for scoped
+property resolution. Issuance and resolution share the pure qr/qr-token.ts hash
+helper so existing printed QR tokens retain the same meaning. Each controller's
+own module applies the no-store/no-referrer middleware.
 
 GET /qr/guest and /qr/staff consume opaque tokens through Authorization: Bearer.
 They return only safe property labels and active flow-specific checklist definitions.
@@ -460,6 +477,29 @@ guest list/detail endpoint. See docs/guest-issues.md for the complete contract.
 No migrations, schema changes, packages, default category seeding, new tests,
 complaint photos, notifications, guest correction/private links or frontend
 screens are included in this slice.
+
+## Guest complaint photo slice
+
+GuestIssuePhotosModule owns upload, private view and remove under
+/guest/issues/photos. Guest QR access is checked before multipart parsing and
+inside state-changing transactions. Each READY upload returns a separate random
+photo token; only its domain-separated digest is stored. A property QR alone
+cannot list/view/remove somebody else's uploads. See docs/guest-issue-photos.md.
+
+ReportGuestIssueInput accepts up to 10 ordered {id, token} claims. The report
+transaction validates READY PHOTO ownership, consumes the 24-hour claim expiry
+and inserts IssueEventAttachment joins to the first REPORTED event atomically.
+Digests remain for authenticated retry comparisons, never in public DTOs. Submitted
+photos cannot be reused, replaced or removed via upload endpoints. Replays require
+the same photo IDs, order and valid tokens; text-only requests remain compatible.
+
+The existing Multer limits, PhotoImageService and S3Service are reused. A shared
+PhotoProcessingModule provides image processing and a shared four-upload capacity
+service; interceptor instances delegate to it across both upload features. The
+two-image-processing limit remains per process. No schema/migration/packages/new
+test files are added. Expired abandoned uploads need a deployment cleanup job
+that excludes linked evidence. Browser/device checks, live AWS verification and
+frontend implementation remain separate from local API probes.
 
 ## References
 

@@ -7,7 +7,7 @@ import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../database/prisma.service';
 import type { AdminIssuePhotoViewDto } from '../../libs/dto/admin-issue/admin-issue';
 import { S3Service } from '../../storage/s3.service';
-import { PHOTO_VIEW_TTL_SECONDS } from '../attachments/photo-policy';
+import { PHOTO_VIEW_TTL_SECONDS } from '../photo-processing/photo-policy';
 import { AuthService } from '../auth/auth.service';
 import {
   AdminIssueReader,

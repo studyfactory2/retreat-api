@@ -4,6 +4,11 @@ The backend issues secure links and resolves their property/flow. The future Rea
 frontend renders each link as a printable QR image. This slice does not render QR
 images or implement guest/staff forms, uploads, personal stay links, or submissions.
 
+AdminPropertyQrModule owns issuance/status routes and their service in
+src/components/admin-property-qr. QrModule owns public context and property
+resolution in src/components/qr. Both services use the same pure qr-token hash
+helper, preserving previously issued tokens and the existing HTTP contracts.
+
 ## Administrator routes
 
 These routes use the existing administrator Authorization: Bearer <JWT> header.

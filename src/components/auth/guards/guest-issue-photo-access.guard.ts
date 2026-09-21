@@ -4,17 +4,17 @@ import {
   type ExecutionContext,
 } from '@nestjs/common';
 import type { Request } from 'express';
-import { SubmissionDraftsService } from '../submission-drafts/submission-drafts.service';
+import { GuestIssuePhotosService } from '../../guest-issue-photos/guest-issue-photos.service';
 
 @Injectable()
-export class DraftPhotoAccessGuard implements CanActivate {
+export class GuestIssuePhotoAccessGuard implements CanActivate {
   constructor(
-    private readonly submissionDraftsService: SubmissionDraftsService,
+    private readonly guestIssuePhotosService: GuestIssuePhotosService,
   ) {}
 
   public async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<Request>();
-    await this.submissionDraftsService.getDraft(request.headers.authorization);
+    await this.guestIssuePhotosService.authorize(request.headers.authorization);
     return true;
   }
 }

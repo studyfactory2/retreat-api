@@ -1,7 +1,7 @@
 # Guest problem reports
 
 Guests can report a problem during a stay independently of check-in/check-out.
-This is the text-reporting slice; optional complaint photos are separate work.
+Optional photos use the [private guest photo flow](guest-issue-photos.md).
 There is no guest signup or login. The property QR identifies the property;
 the submitted guest name is self-reported and does not verify a stay or identity.
 
@@ -51,8 +51,11 @@ retries. Example body (replace the placeholder category ID):
 - title: a short summary, trimmed, nonblank, maximum 300 characters.
 - description: optional text, maximum 2000 characters after trimming. Omission,
   null or blank text all mean no description.
+- photos: optional ordered array of up to 10 {id, token} upload claims. Omitted
+  or [] means a text-only report. Null, duplicate IDs and arbitrary photo URLs
+  are rejected. See the photo guide for upload, preview and removal.
 
-No propertyId, userId, role, status, urgency flag, raw snapshot, photo IDs or
+No propertyId, userId, role, status, urgency flag, raw snapshot or
 other fields are accepted. The server gets the property from the QR and sets
 NEW status, version 1 and server timestamps. It saves Issue + REPORTED IssueEvent
 atomically, capturing the original category/property labels and guest name.
@@ -91,6 +94,9 @@ activity is checked. Category rename/deactivation, property rename and subsequen
 administrator notes/status updates do not change the original receipt. QR
 replacement or property deactivation still revokes the old request access.
 The key and property QR do not grant access to other guest reports or history.
+Photo submissions additionally require the same ordered photo claims on retries.
+Expired unsubmitted photos cannot be claimed. Submitted evidence retains its
+digest to validate retries even after the original upload expiry has been consumed.
 
 ## Administrator handoff and limits
 
@@ -107,6 +113,6 @@ remains a deployment task.
 Expected errors include 400 VALIDATION_ERROR, 401 INVALID_QR,
 409 ISSUE_CATEGORY_UNAVAILABLE / ISSUE_REQUEST_CHANGED / CONCURRENT_UPDATE,
 and 429 TOO_MANY_REQUESTS. Stored-record inconsistencies return a safe 500.
-No schema changes, migrations or new packages are required. Photo support will
-reuse image processing and private S3 storage with complaint-specific ownership;
-the current checklist draft photo routes must not be used for arbitrary reports.
+No schema changes, migrations or new packages are required. Complaint photos use
+their own private upload claims; checklist draft photo routes remain scoped to
+checklist drafts and cannot supply complaint evidence.

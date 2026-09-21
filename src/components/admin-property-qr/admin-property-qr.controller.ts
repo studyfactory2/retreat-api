@@ -17,7 +17,7 @@ import { QrFlow } from '../../libs/dto/qr/qr';
 import type { PropertyQrStatusDto, QrIssueDto } from '../../libs/dto/qr/qr';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
-import { QrService } from './qr.service';
+import { AdminPropertyQrService } from './admin-property-qr.service';
 
 const propertyIdPipe = new ParseUUIDPipe({
   version: '4',
@@ -30,7 +30,7 @@ const propertyIdPipe = new ParseUUIDPipe({
 
 @Controller('admin/properties')
 export class AdminPropertyQrController {
-  constructor(private readonly qrService: QrService) {}
+  constructor(private readonly qrService: AdminPropertyQrService) {}
 
   @Roles(Role.ADMIN)
   @UseGuards(RolesGuard)

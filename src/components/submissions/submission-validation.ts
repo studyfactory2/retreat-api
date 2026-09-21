@@ -4,7 +4,7 @@ import type { ChecklistDefinition } from '../../libs/dto/checklist-template/chec
 import type { DraftAnswers } from '../../libs/dto/submission-draft/submission-draft';
 import type { PreparedSubmissionPhoto } from '../../libs/dto/submission/submission';
 import type { SubmissionPhotoInput } from '../../libs/dto/submission/submission.input';
-import { MAX_DRAFT_PHOTOS } from '../attachments/photo-policy';
+import { MAX_DRAFT_PHOTOS } from '../photo-processing/photo-policy';
 
 const UUID_V4 =
   /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
