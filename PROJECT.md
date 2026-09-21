@@ -572,6 +572,35 @@ No schema/migration, package, frontend or test-file additions. The user retains
 control of commits/migrations/deployment; live database/AWS/browser verification
 remains separate from local synthetic HTTP/transaction checks.
 
+## Administrator Excel roster preview slice
+
+AdminStayImportsModule owns POST /admin/stay-imports/preview and paginated
+GET /admin/stay-imports/:id with explicit ADMIN/RolesGuard and no-store headers.
+Upload accepts one legacy .xls file up to 5 MiB plus optional propertyMappings
+JSON text. It saves only a private IMPORT_SOURCE Attachment and ImportBatch/Rows;
+no Stay, guest profile, StayRevision or calendar data is changed. See
+docs/admin-stay-imports.md for format, mappings, response and IAM instructions.
+
+SheetJS 0.20.3 is pinned to its official distribution. A bounded worker reads
+the original cell values/types/formats without evaluating formulas. The fixed
+template parser distinguishes managed stays, availability and unrelated sheets,
+preserves explicit Asia/Seoul times, and flags missing times or ambiguous guest
+columns. Mappings explicitly select existing properties; names never merge
+guests. Source and active-database overlaps require review. Cancelled stays do
+not block the preview. Original values and row numbers remain available.
+
+ImportSourceStorageService is separate from photo storage and uses the existing
+S3 configuration/credential chain with a private imports/ prefix. The IAM user
+and future EC2 role need PutObject/DeleteObject permissions for that prefix.
+The attachment becomes READY atomically with the complete saved preview; failed
+unreferenced uploads are marked FAILED and deletion is attempted. Referenced
+sources are protected during uncertain commit cleanup. Repeated uploads create
+separate previews. A future confirmation slice must revalidate before applying.
+
+No schema/migration, frontend or test-file additions. The user retains control
+of commits and AWS configuration. Local parser and HTTP probes use synthetic
+database/S3 providers; live PostgreSQL/AWS integration remains unverified.
+
 ## References
 
 - Nest configuration: https://docs.nestjs.com/techniques/configuration

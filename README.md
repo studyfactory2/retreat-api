@@ -4,6 +4,13 @@ NestJS backend for the retreat management web app. Package manager: npm.
 
 ## Current slice
 
+Administrators can upload the fixed-format `.xls` guest roster and retrieve a
+saved, paginated preview through POST /admin/stay-imports/preview and
+GET /admin/stay-imports/:id. The preview flags missing times, ambiguous rows,
+unmapped properties and overlaps; it does not apply stays yet. Add the documented
+private `imports/*` S3 permissions before a live upload. No migration is needed.
+See [the roster preview guide](docs/admin-stay-imports.md).
+
 Guests can correct submitted check-in/out answers and notes through
 POST /guest/submissions/correct. Each meaningful edit preserves the original and
 appends a revision plus related issue audit events. No additional migration is

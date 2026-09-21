@@ -18,6 +18,7 @@ import { GuestIssuesModule } from './guest-issues/guest-issues.module';
 import { AdminStayLinksModule } from './admin-stay-links/admin-stay-links.module';
 import { GuestStaysModule } from './guest-stays/guest-stays.module';
 import { GuestSubmissionsModule } from './guest-submissions/guest-submissions.module';
+import { AdminStayImportsModule } from './admin-stay-imports/admin-stay-imports.module';
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { GuestSubmissionsModule } from './guest-submissions/guest-submissions.mo
     AdminStayLinksModule,
     GuestStaysModule,
     GuestSubmissionsModule,
+    AdminStayImportsModule,
   ],
 })
 export class ComponentsModule {}
