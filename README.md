@@ -4,6 +4,14 @@ NestJS backend for the retreat management web app. Package manager: npm.
 
 ## Current slice
 
+GET /admin/dashboard summarizes the selected Seoul day's planned arrivals,
+departures and checklist evidence, plus maintenance starts/completions and current
+unfinished work/open issues. GET /admin/maintenance provides a paginated cleaning
+record list with captured staff identity and explicit expired/blocked/review states.
+These are separate administrator modules; neither endpoint changes records or
+asserts physical occupancy/room readiness. No migration is needed. See
+[the dashboard and maintenance guide](docs/admin-dashboard-maintenance.md).
+
 GET /admin/calendar returns paginated stays for an inclusive Seoul date range
 with separate entry/exit checklist states: scheduled, not submitted, submitted,
 or needs review. Duplicates and changed/uncertain stay associations are explicit;

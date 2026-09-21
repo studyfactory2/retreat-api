@@ -1,22 +1,14 @@
 import {
-  BadRequestException,
   Injectable,
+  InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
-import {
-  ChecklistType,
-  Prisma,
-  StayStatus,
-  SubmissionStatus,
-} from '@prisma/client';
+import { Prisma, StayStatus } from '@prisma/client';
 import { PrismaService } from '../../database/prisma.service';
 import type { GetAdminCalendarInput } from '../../libs/dto/admin-calendar/admin-calendar.input';
 import type { AdminCalendarDto } from '../../libs/dto/admin-calendar/admin-calendar';
-import {
-  calendarChecklist,
-  calendarSubmissionSelect,
-  seoulDay,
-} from './calendar-checklist';
+import { readStayChecklists } from '../../libs/calendar/checklist-status';
+import { seoulDateRange, seoulDay } from '../../libs/dates/seoul-date';
 
 const staySelect = {
   id: true,
@@ -35,7 +27,12 @@ export class AdminCalendarService {
   public async getCalendar(
     input: GetAdminCalendarInput,
   ): Promise<AdminCalendarDto> {
-    const { start, end } = this.range(input.from, input.to);
+    const { start, end } = seoulDateRange(
+      input.from,
+      input.to,
+      62,
+      'INVALID_CALENDAR_RANGE',
+    );
     const propertyId = input.propertyId?.toLowerCase();
     const asOf = new Date();
     const today = seoulDay(asOf);
@@ -67,68 +64,24 @@ export class AdminCalendarService {
           take: input.limit,
         });
         const total = await tx.stay.count({ where });
-        const groups = stays.length
-          ? await tx.checklistSubmission.groupBy({
-              by: ['stayId', 'type'],
-              where: {
-                stayId: { in: stays.map((stay) => stay.id) },
-                status: SubmissionStatus.SUBMITTED,
-                type: { in: [ChecklistType.CHECK_IN, ChecklistType.CHECK_OUT] },
-              },
-              _count: { _all: true },
-            })
-          : [];
-        const singletonGroups = groups.filter(
-          (group) => group._count._all === 1,
-        );
-        const submissions = singletonGroups.length
-          ? await tx.checklistSubmission.findMany({
-              where: {
-                status: SubmissionStatus.SUBMITTED,
-                OR: singletonGroups.map((group) => ({
-                  stayId: group.stayId,
-                  type: group.type,
-                })),
-              },
-              select: calendarSubmissionSelect,
-            })
-          : [];
-        const counts = new Map(
-          groups.map((group) => [
-            `${group.stayId}:${group.type}`,
-            group._count._all,
-          ]),
-        );
-        const records = new Map(
-          submissions.map((record) => [
-            `${record.stayId}:${record.type}`,
-            record,
-          ]),
-        );
+        const checklistStates = await readStayChecklists(tx, stays, today);
         return {
           from: input.from,
           to: input.to,
           timezone: 'Asia/Seoul',
           asOf,
           today,
-          items: stays.map(({ propertyId: _propertyId, ...stay }) => {
-            const context = { ...stay, propertyId: _propertyId };
+          items: stays.map((stay) => {
+            const checklists = checklistStates.get(stay.id);
+            if (!checklists) throw new InternalServerErrorException();
             return {
-              ...stay,
-              checkIn: calendarChecklist(
-                context,
-                'CHECK_IN',
-                counts.get(`${stay.id}:CHECK_IN`) ?? 0,
-                records.get(`${stay.id}:CHECK_IN`),
-                today,
-              ),
-              checkOut: calendarChecklist(
-                context,
-                'CHECK_OUT',
-                counts.get(`${stay.id}:CHECK_OUT`) ?? 0,
-                records.get(`${stay.id}:CHECK_OUT`),
-                today,
-              ),
+              id: stay.id,
+              property: stay.property,
+              guestName: stay.guestName,
+              checkInAt: stay.checkInAt,
+              checkOutAt: stay.checkOutAt,
+              currentRevision: stay.currentRevision,
+              ...checklists,
             };
           }),
           total,
@@ -139,39 +92,5 @@ export class AdminCalendarService {
       },
       { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead },
     );
-  }
-
-  private range(from: string, to: string): { start: Date; end: Date } {
-    const parse = (value: string): Date => {
-      if (
-        typeof value !== 'string' ||
-        !/^\d{4}-\d{2}-\d{2}$/.test(value) ||
-        value < '1900-01-01' ||
-        value > '2100-12-31'
-      )
-        throw this.invalidRange();
-      const date = new Date(`${value}T00:00:00.000Z`);
-      if (
-        !Number.isFinite(date.getTime()) ||
-        date.toISOString().slice(0, 10) !== value
-      )
-        throw this.invalidRange();
-      return date;
-    };
-    const startDay = parse(from);
-    const lastDay = parse(to);
-    const days = (lastDay.getTime() - startDay.getTime()) / 86400_000 + 1;
-    if (days < 1 || days > 62) throw this.invalidRange();
-    return {
-      start: new Date(startDay.getTime() - 9 * 3600_000),
-      end: new Date(lastDay.getTime() + 15 * 3600_000),
-    };
-  }
-
-  private invalidRange(): BadRequestException {
-    return new BadRequestException({
-      code: 'INVALID_CALENDAR_RANGE',
-      message: '조회 기간은 올바른 날짜 순서로 최대 62일까지 선택해 주세요.',
-    });
   }
 }

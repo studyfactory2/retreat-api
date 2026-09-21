@@ -685,6 +685,40 @@ No schema, migration, dependency or new test file is introduced. This is API wor
 frontend calendar, dashboard, exports, overdue policy and deployment remain
 separate. Calendar states do not assert physical guest presence or cleaning.
 
+## Administrator dashboard and maintenance progress slice
+
+AdminDashboardModule owns GET /admin/dashboard; AdminMaintenanceModule owns
+GET /admin/maintenance. Each has its own controller/service/DTOs, explicit ADMIN
+and RolesGuard, 60/minute/IP throttling, and no-store/no-referrer middleware.
+See docs/admin-dashboard-maintenance.md for filters, counts, states and drilldowns.
+
+Dashboard defaults to today's Seoul date. Arrival/entry counts use checkInAt;
+departure/exit counts use checkOutAt. It counts every ACTIVE stay with an event on
+that day, processing bounded batches in one repeatable-read transaction. Calendar
+and dashboard share libs/calendar/checklist-status.ts and libs/dates/seoul-date.ts
+so singleton evidence, duplicate handling and changed stay context agree. Calendar
+pagination and its date/error contract remain unchanged. The aggregate is not
+calculated from the first calendar page.
+
+Maintenance reads share libs/maintenance/maintenance-progress.ts. Started counts
+use startedAt; completed counts require valid current submitted evidence and use
+submittedAt. Invalid submitted evidence has its own review count. Unfinished
+counts include all current drafts, even those started before the selected date;
+open issues likewise include older noncancelled NEW/IN_PROGRESS records. These
+are present-state views over a selected day, not a historical reconstruction.
+
+Maintenance lists page in SQL before classifying at most 100 records. Optional
+from/to must be paired, ordered Seoul dates spanning at most 62 days. view selects
+ALL, UNFINISHED (drafts) or COMPLETED (submitted records); invalid submitted records
+still appear with NEEDS_REVIEW. Derived status is not an input filter. Staff names
+come from captured evidence, never a mutable profile fallback. Completed evidence
+uses captured property labels and is independent of current assignment/expiry.
+
+These routes are read-only and require no schema, migrations or new dependencies.
+No new test files are introduced. Cleaning records are not deduplicated work jobs,
+physical cleaner presence or automatic room-ready decisions. Frontend, exports,
+guides, vehicle registration, cleanup and deployment remain separate work.
+
 ## References
 
 - Nest configuration: https://docs.nestjs.com/techniques/configuration

@@ -7,9 +7,10 @@ import {
 import type {
   CalendarChecklistDto,
   CalendarReviewReason,
-} from '../../libs/dto/admin-calendar/admin-calendar';
-import { parseSubmissionSnapshot } from '../../libs/submissions/submission-snapshot';
-import type { SubmissionRecord } from '../../libs/dto/submission-record/submission-record';
+} from '../dto/admin-calendar/admin-calendar';
+import { parseSubmissionSnapshot } from '../submissions/submission-snapshot';
+import type { SubmissionRecord } from '../dto/submission-record/submission-record';
+import { seoulDay } from '../dates/seoul-date';
 
 export const calendarSubmissionSelect = {
   id: true,
@@ -49,8 +50,63 @@ export interface CalendarStayContext {
   checkOutAt: Date;
 }
 
-export function seoulDay(value: Date): string {
-  return new Date(value.getTime() + 9 * 3600_000).toISOString().slice(0, 10);
+export async function readStayChecklists(
+  tx: Prisma.TransactionClient,
+  stays: CalendarStayContext[],
+  today: string,
+): Promise<
+  Map<string, { checkIn: CalendarChecklistDto; checkOut: CalendarChecklistDto }>
+> {
+  if (!stays.length) return new Map();
+  const groups = await tx.checklistSubmission.groupBy({
+    by: ['stayId', 'type'],
+    where: {
+      stayId: { in: stays.map((stay) => stay.id) },
+      status: SubmissionStatus.SUBMITTED,
+      type: { in: [ChecklistType.CHECK_IN, ChecklistType.CHECK_OUT] },
+    },
+    _count: { _all: true },
+  });
+  const singletons = groups.filter((group) => group._count._all === 1);
+  const submissions = singletons.length
+    ? await tx.checklistSubmission.findMany({
+        where: {
+          status: SubmissionStatus.SUBMITTED,
+          OR: singletons.map((group) => ({
+            stayId: group.stayId,
+            type: group.type,
+          })),
+        },
+        select: calendarSubmissionSelect,
+      })
+    : [];
+  const counts = new Map(
+    groups.map((group) => [`${group.stayId}:${group.type}`, group._count._all]),
+  );
+  const records = new Map(
+    submissions.map((record) => [`${record.stayId}:${record.type}`, record]),
+  );
+  return new Map(
+    stays.map((stay) => [
+      stay.id,
+      {
+        checkIn: calendarChecklist(
+          stay,
+          'CHECK_IN',
+          counts.get(`${stay.id}:CHECK_IN`) ?? 0,
+          records.get(`${stay.id}:CHECK_IN`),
+          today,
+        ),
+        checkOut: calendarChecklist(
+          stay,
+          'CHECK_OUT',
+          counts.get(`${stay.id}:CHECK_OUT`) ?? 0,
+          records.get(`${stay.id}:CHECK_OUT`),
+          today,
+        ),
+      },
+    ]),
+  );
 }
 
 export function calendarChecklist(
