@@ -183,7 +183,7 @@ After applying the initial migration, create the first administrator locally:
     npm run admin:create
 
 The command asks for a login ID, name, and hidden password with confirmation.
-Use at least 12 characters and at most 72 UTF-8 bytes. It refuses to run if any
+Use at least 10 characters and at most 72 UTF-8 bytes. It refuses to run if any
 ADMIN already exists and never overwrites accounts. There is no public signup
 or default administrator password.
 

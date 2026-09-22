@@ -139,7 +139,7 @@ Tokens retain the copied 7-day lifetime, or 30 days for autoLogin. No refresh or
 server logout/revocation table is implemented. Login throttling is 10/minute/IP,
 in memory per process; deployment needs topology-specific proxy configuration.
 Credentials and names are not logged by auth. Password hashing uses bcrypt cost
-12, with 12-character minimum and 72 UTF-8 byte maximum for new passwords.
+12, with 10-character minimum and 72 UTF-8 byte maximum for new passwords.
 
 npm run admin:create is an interactive first-admin command, never a startup seed.
 It refuses any existing ADMIN and does not overwrite user records. The user runs

@@ -18,10 +18,10 @@ export class AuthService {
   ) {}
 
   public async hashPassword(password: string): Promise<string> {
-    if ([...password].length < 12 || Buffer.byteLength(password, 'utf8') > 72) {
+    if ([...password].length < 8 || Buffer.byteLength(password, 'utf8') > 72) {
       throw new BadRequestException({
         code: 'INVALID_PASSWORD',
-        message: '비밀번호는 12자 이상, UTF-8 기준 72바이트 이하여야 합니다.',
+        message: '비밀번호는 8자 이상, UTF-8 기준 72바이트 이하여야 합니다.',
       });
     }
     return bcrypt.hash(password, 12);

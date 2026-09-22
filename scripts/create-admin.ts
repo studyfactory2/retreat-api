@@ -65,10 +65,10 @@ async function main(): Promise<void> {
 
     const ask = async (label: string, secret = false): Promise<string> => {
       cancellation.signal.throwIfAborted();
-      process.stdout.write(label);
+      if (secret) process.stdout.write(label);
       hideInput = secret;
       try {
-        return await terminal.question('', { signal: cancellation.signal });
+        return await terminal.question(label, { signal: cancellation.signal });
       } finally {
         hideInput = false;
         if (secret) process.stdout.write('\n');
@@ -84,9 +84,9 @@ async function main(): Promise<void> {
       throw new SetupError('Name must contain 1 to 100 characters.');
     }
     const password = await ask('Password (input hidden): ', true);
-    if ([...password].length < 12 || Buffer.byteLength(password, 'utf8') > 72) {
+    if ([...password].length < 10 || Buffer.byteLength(password, 'utf8') > 72) {
       throw new SetupError(
-        'Password must contain at least 12 characters and at most 72 UTF-8 bytes.',
+        'Password must contain at least 10 characters and at most 72 UTF-8 bytes.',
       );
     }
     const confirmation = await ask('Confirm password (input hidden): ', true);
