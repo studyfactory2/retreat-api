@@ -21,6 +21,7 @@ import type { GuestIssuePhotoUploadDto } from '../../libs/dto/guest-issue-photo/
 import { QrFlow } from '../../libs/dto/qr/qr';
 import { S3Service } from '../../storage/s3.service';
 import { PhotoImageService } from '../photo-processing/photo-image.service';
+import { recoverPhotoUpload } from '../photo-processing/recover-photo-upload';
 import {
   PHOTO_UPLOAD_LEASE_MS,
   PHOTO_VIEW_TTL_SECONDS,
@@ -284,18 +285,11 @@ export class GuestIssuePhotosService {
 
   private async failUpload(photo: PhotoRecord): Promise<void> {
     try {
-      const result = await this.prisma.attachment.updateMany({
-        where: {
-          id: photo.id,
-          status: AttachmentStatus.PENDING,
-          issuePhotos: { none: {} },
-          submissionPhotos: { none: {} },
-        },
-        data: { status: AttachmentStatus.FAILED },
+      await recoverPhotoUpload(this.prisma, this.storage, {
+        id: photo.id,
+        bucket: photo.storageBucket,
+        key: photo.storageKey,
       });
-      // Do not delete if READY committed but its database response was lost.
-      if (result.count === 1)
-        await this.storage.deletePhoto(photo.storageBucket, photo.storageKey);
     } catch {
       this.logger.warn('Guest issue photo upload cleanup requires retry.');
     }

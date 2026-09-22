@@ -423,6 +423,8 @@ model Attachment {
   uploadExpiresAt  DateTime?        @db.Timestamptz(3)
   readyAt          DateTime?        @db.Timestamptz(3)
   deletedAt        DateTime?        @db.Timestamptz(3)
+  storageDeletedAt DateTime?        @db.Timestamptz(3)
+  storageCleanupAttemptedAt DateTime? @db.Timestamptz(3)
   createdAt        DateTime         @default(now()) @db.Timestamptz(3)
 
   property         Property?                      @relation(fields: [propertyId], references: [id], onDelete: Restrict)
@@ -436,6 +438,7 @@ model Attachment {
   @@index([submissionId, propertyId])
   @@index([propertyId, createdAt])
   @@index([status, uploadExpiresAt])
+  @@index([kind, storageDeletedAt, storageCleanupAttemptedAt])
   @@index([uploadedByUserId])
 }
 

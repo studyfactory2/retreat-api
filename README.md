@@ -278,6 +278,15 @@ migration SQL in Git. Use development migrations only against a development DB.
 
 Reference: https://www.prisma.io/docs/orm/v6/prisma-migrate/workflows/development-and-production
 
+## Abandoned photo cleanup
+
+`npm run uploads:cleanup` previews eligible abandoned photos. Deletion requires
+`--execute`; `--limit` accepts 1–500 (default 100). The user first runs
+`npx prisma migrate dev --name add_upload_cleanup_tracking` for the new tracking
+columns. Historical evidence and all import source workbooks are preserved.
+See [the cleanup guide](docs/upload-cleanup.md) for exact rules, retries and limits.
+Scheduling and live S3 verification remain deployment work.
+
 ## Working agreement
 
 Work one approved slice at a time. Report verification results and provide a

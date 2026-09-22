@@ -59,8 +59,9 @@ Failed uploads are marked FAILED and storage cleanup is attempted. If a failure
 response follows an already-committed READY state, cleanup preserves that photo.
 Process termination or a cleanup/storage failure can leave abandoned records or
 objects. The five-minute upload lease prevents their late finalization; an
-operator reconciliation/cleanup job is still a deployment follow-up. Expired
-PENDING reservations continue to count until reconciled.
+operator can reconcile eligible files with the [cleanup command](upload-cleanup.md).
+Expired PENDING reservations count until reconciled. Scheduling remains a
+deployment follow-up.
 
 Removal is allowed only from an accessible draft with no submitted-revision,
 issue-event or import references. It marks the row DELETED before removing the

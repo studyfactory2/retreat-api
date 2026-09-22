@@ -816,6 +816,26 @@ per-process throttling. No package, seed, new test file, frontend, migration or
 deployment is included. Cleanup, final content/configuration and release checks
 remain separate work.
 
+## Abandoned photo cleanup slice
+
+UploadCleanupModule owns a bounded operator service. The isolated command module
+loads configuration/database/storage without the HTTP application; npm run
+uploads:cleanup previews by default and --execute explicitly applies deletion.
+No route or scheduler is installed. See docs/upload-cleanup.md for eligibility,
+the one-hour grace period, batch options, output and completion boundaries.
+
+Cleanup preserves every historical/import reference and all IMPORT_SOURCE files.
+It rechecks eligible PHOTO rows in serializable transactions, marks DELETED before
+S3 work and retains tombstones. Attachment.storageDeletedAt records successful
+deletion; storageCleanupAttemptedAt orders retries and fences stale acknowledgements.
+Shared upload recovery reopens deletion after a late upload without deleting READY
+photos after an ambiguous commit. No network calls occur inside transactions.
+
+The user runs npx prisma migrate dev --name add_upload_cleanup_tracking. No
+migration, business seed, new dependency, new test file or actual cleanup execution
+is performed by the assistant. Content/configuration, full integration checks,
+EC2 scheduling/deployment and frontend work remain separate.
+
 ## References
 
 - Nest configuration: https://docs.nestjs.com/techniques/configuration

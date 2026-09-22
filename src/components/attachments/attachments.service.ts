@@ -21,6 +21,7 @@ import type {
 import { S3Service } from '../../storage/s3.service';
 import { SubmissionDraftsService } from '../submission-drafts/submission-drafts.service';
 import { PhotoImageService } from '../photo-processing/photo-image.service';
+import { recoverPhotoUpload } from '../photo-processing/recover-photo-upload';
 import {
   MAX_DRAFT_PHOTOS,
   MAX_PHOTO_BYTES,
@@ -272,14 +273,11 @@ export class AttachmentsService {
 
   private async failUpload(photo: PhotoRecord): Promise<void> {
     try {
-      const failed = await this.prisma.attachment.updateMany({
-        where: { id: photo.id, status: AttachmentStatus.PENDING },
-        data: { status: AttachmentStatus.FAILED },
+      await recoverPhotoUpload(this.prisma, this.storage, {
+        id: photo.id,
+        bucket: photo.storageBucket,
+        key: photo.storageKey,
       });
-      // A lost response after a committed READY transition must never delete evidence.
-      if (failed.count === 1) {
-        await this.storage.deletePhoto(photo.storageBucket, photo.storageKey);
-      }
     } catch {
       this.logger.warn('Photo upload cleanup requires retry.');
     }

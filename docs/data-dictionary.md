@@ -360,6 +360,8 @@ Private uploaded object metadata, verified status, and ownership.
 | uploadExpiresAt | DateTime? / Timestamptz(3) | nullable | Expiration of a pending upload/claim. |
 | readyAt | DateTime? / Timestamptz(3) | nullable | Upload verification completion instant. |
 | deletedAt | DateTime? / Timestamptz(3) | nullable | Deletion marker for permitted unreferenced files only. |
+| storageDeletedAt | DateTime? / Timestamptz(3) | nullable | Confirmed storage deletion for the current attempt generation; cleared by late upload recovery. |
+| storageCleanupAttemptedAt | DateTime? / Timestamptz(3) | nullable | Monotonic attempt generation and retry ordering for photo cleanup. |
 | createdAt | DateTime / Timestamptz(3) | required; default now() | Creation instant. |
 
 Foreign keys:
@@ -374,6 +376,7 @@ Composite keys/indexes:
 - `@@index([submissionId, propertyId])`
 - `@@index([propertyId, createdAt])`
 - `@@index([status, uploadExpiresAt])`
+- `@@index([kind, storageDeletedAt, storageCleanupAttemptedAt])`
 - `@@index([uploadedByUserId])`
 
 ## SubmissionRevisionAttachment

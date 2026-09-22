@@ -114,9 +114,8 @@ through guest upload routes, even by the uploader.
 
 No migrations, packages, default data, new test files or AWS policy changes are
 required. Existing S3 permission for photos/* covers the new object prefix.
-This slice does not configure scheduled abandoned-upload cleanup. A deployment
-cleanup job must select expired unlinked PENDING/READY/FAILED/DELETED rows and
-recheck that no issue/checklist/import references exist before deletion. Never
+The manual [cleanup command](upload-cleanup.md) reconciles eligible abandoned
+photos and rechecks all references before deletion. Scheduling remains separate. Never
 apply blanket age-based S3 expiry to the issues prefix: submitted evidence lives
 there too, and its claim expiry is null. Multi-instance throttling, trusted proxy
 configuration, actual browser/device upload tests and live S3 verification remain

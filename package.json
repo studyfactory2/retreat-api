@@ -22,7 +22,8 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "NODE_ENV=test DATABASE_URL=postgresql://retreat@127.0.0.1:1/retreat_test JWT_SECRET=retreat-http-test-only-secret-not-for-runtime jest --config ./test/jest-e2e.json",
-    "admin:create": "ts-node scripts/create-admin.ts"
+    "admin:create": "ts-node scripts/create-admin.ts",
+    "uploads:cleanup": "ts-node scripts/cleanup-uploads.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "3.1133.0",
