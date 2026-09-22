@@ -787,6 +787,35 @@ The user runs npx prisma migrate dev --name add_property_guides. No migration,
 business seed, new package or new test file is created by the assistant. Actual
 guide content, frontend, vehicle capture, cleanup and deployment remain separate.
 
+## Guest stay vehicle slice
+
+Property.vehicleRegistrationEnabled defaults false and is managed through the
+existing administrator property create/update DTOs. Property reads and the
+private guest stay context expose it. No property is automatically enabled.
+StayVehicle holds one current nullable plate per stay, its own version, the
+captured stayRevision and timestamps. Plate saves never change the stay/link
+revision or checklist evidence. The user runs npx prisma migrate dev --name
+add_stay_vehicles; the assistant does not generate/apply migrations.
+
+GuestStayVehiclesModule owns GET/POST /guest/stays/vehicle through the existing
+GuestStayAccessGuard and private stay resolver inside each transaction. It accepts
+no client-selected stay/property ID. Disabled properties hide guest plate data
+and reject saves; stale versions and concurrent first saves return 409. Null
+explicitly clears the plate while preserving its edit version. New invitations
+for changed stay revisions hide the old plate and request reconfirmation.
+
+AdminStayVehiclesModule owns GET /admin/stays/:id/vehicle with ADMIN/RolesGuard.
+It retains visibility of disabled/cancelled/inactive historical context and flags
+non-cleared plates from older stay revisions as needsReview. Vehicle input bounds
+do not verify a legal registration; this feature collects details for the manager
+without integrating a parking provider. See docs/stay-vehicles.md for complete
+contracts, plain-data rendering, edit semantics and completion boundaries.
+
+All new routes use no-store/no-referrer, strict DTOs/empty queries and existing
+per-process throttling. No package, seed, new test file, frontend, migration or
+deployment is included. Cleanup, final content/configuration and release checks
+remain separate work.
+
 ## References
 
 - Nest configuration: https://docs.nestjs.com/techniques/configuration

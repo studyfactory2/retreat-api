@@ -6,6 +6,11 @@ export interface GuestStayDto {
   checkInAt: Date;
   checkOutAt: Date;
   expiresAt: Date;
-  property: { id: string; name: string; region: string | null };
+  property: {
+    id: string;
+    name: string;
+    region: string | null;
+    vehicleRegistrationEnabled: boolean;
+  };
   checklists: QrChecklistDto[];
 }

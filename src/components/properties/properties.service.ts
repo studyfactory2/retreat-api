@@ -24,6 +24,7 @@ const propertySelect = {
   region: true,
   isActive: true,
   staffUserId: true,
+  vehicleRegistrationEnabled: true,
   staff: {
     select: {
       id: true,
@@ -49,6 +50,7 @@ export class PropertiesService {
           name: input.name,
           region: input.region,
           isActive: true,
+          vehicleRegistrationEnabled: input.vehicleRegistrationEnabled,
         },
         select: propertySelect,
       });
@@ -118,7 +120,8 @@ export class PropertiesService {
     if (
       input.name === undefined &&
       input.region === undefined &&
-      input.isActive === undefined
+      input.isActive === undefined &&
+      input.vehicleRegistrationEnabled === undefined
     ) {
       throw new BadRequestException({
         code: 'EMPTY_UPDATE',
@@ -145,6 +148,7 @@ export class PropertiesService {
             name: input.name,
             region: input.region,
             isActive: input.isActive,
+            vehicleRegistrationEnabled: input.vehicleRegistrationEnabled,
           },
           select: propertySelect,
         });

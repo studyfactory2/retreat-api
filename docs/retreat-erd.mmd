@@ -6,6 +6,7 @@ erDiagram
   Property {
     String id PK
     String staffUserId
+    Boolean vehicleRegistrationEnabled
   }
   Stay {
     String id PK
@@ -33,6 +34,15 @@ erDiagram
     String actorUserId
     String importRowId
   }
+  StayVehicle {
+    String stayId PK,FK
+    String plateNumber
+    Int version
+    Int stayRevision
+    DateTime createdAt
+    DateTime updatedAt
+  }
+  Stay ||--o| StayVehicle : vehicle_details
   ImportBatch {
     String id PK
     String sourceAttachmentId

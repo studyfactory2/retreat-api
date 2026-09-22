@@ -23,6 +23,10 @@ export class CreatePropertyInput {
   @IsString({ message: '지역은 문자열이어야 합니다.' })
   @MaxLength(100, { message: '지역은 100자 이하여야 합니다.' })
   region?: string | null;
+
+  @ValidateIf((_object, value: unknown) => value !== undefined)
+  @IsBoolean({ message: '차량 등록 사용 여부는 true 또는 false여야 합니다.' })
+  vehicleRegistrationEnabled?: boolean;
 }
 
 export class UpdatePropertyInput {
@@ -44,6 +48,10 @@ export class UpdatePropertyInput {
   @ValidateIf((_object, value: unknown) => value !== undefined)
   @IsBoolean({ message: '활성 여부는 true 또는 false여야 합니다.' })
   isActive?: boolean;
+
+  @ValidateIf((_object, value: unknown) => value !== undefined)
+  @IsBoolean({ message: '차량 등록 사용 여부는 true 또는 false여야 합니다.' })
+  vehicleRegistrationEnabled?: boolean;
 }
 
 export class AssignStaffInput {

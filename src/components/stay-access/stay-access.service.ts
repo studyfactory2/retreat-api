@@ -19,7 +19,13 @@ const stayAccessSelect = {
   guestLinkVersion: true,
   guestLinkStayRevision: true,
   property: {
-    select: { id: true, name: true, region: true, isActive: true },
+    select: {
+      id: true,
+      name: true,
+      region: true,
+      isActive: true,
+      vehicleRegistrationEnabled: true,
+    },
   },
 } satisfies Prisma.StaySelect;
 

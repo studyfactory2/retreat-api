@@ -147,6 +147,7 @@ model Property {
   region           String?
   isActive         Boolean   @default(true)
   staffUserId      String?
+  vehicleRegistrationEnabled Boolean @default(false)
 
   guestQrTokenHash String?   @unique
   staffQrTokenHash String?   @unique
@@ -217,12 +218,24 @@ model Stay {
   revisions   StayRevision[]
   importRows  ImportRow[]
   submissions ChecklistSubmission[]
+  vehicle     StayVehicle?
 
   @@unique([id, propertyId])
   @@index([propertyId, status, checkInAt])
   @@index([propertyId, status, checkOutAt])
   @@index([guestUserId])
   @@index([createdByUserId])
+}
+
+model StayVehicle {
+  stayId       String   @id
+  plateNumber  String?
+  version      Int      @default(1)
+  stayRevision Int
+  createdAt    DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime @updatedAt @db.Timestamptz(3)
+
+  stay Stay @relation(fields: [stayId], references: [id], onDelete: Restrict)
 }
 
 

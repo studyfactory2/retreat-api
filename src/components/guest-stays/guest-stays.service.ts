@@ -55,6 +55,8 @@ export class GuestStaysService {
             id: stay.property.id,
             name: stay.property.name,
             region: stay.property.region,
+            vehicleRegistrationEnabled:
+              stay.property.vehicleRegistrationEnabled,
           },
           checklists: templates.map((template) => ({
             id: template.id,

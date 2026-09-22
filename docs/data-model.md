@@ -4,7 +4,8 @@ This is the complete first-release **schema baseline**, not completed feature AP
 Prisma 5.22.0 and PostgreSQL remain unchanged. The administrator authentication
 already implemented continues to use the same User fields.
 
-The model has **16 tables**: the original 15-table baseline plus PropertyGuide.
+The model has **17 tables**: the original 15-table baseline plus PropertyGuide
+and StayVehicle.
 A property is one entire retreat.
 There is no separate room, booking-payment, subscription, or tenant model.
 
@@ -13,7 +14,7 @@ See [the full column dictionary](data-dictionary.md) for every stored field and
 
 ![Core table relationships](retreat-erd.svg)
 
-The visual overview shows the original core relationships; PropertyGuide is
+The visual overview shows the original core relationships; PropertyGuide and StayVehicle are
 included in the ER source and inline diagram below. The ER source includes every
 foreign key, and the column dictionary defines the exact field names.
 
@@ -25,6 +26,7 @@ foreign key, and the column dictionary defines the exact field names.
 | Property | One whole retreat | Region, current worker assignment, separate guest/staff QR digests. |
 | PropertyGuide | The current plain-text guest guide for one property | Admin-managed content, publication state, version and last editor. |
 | Stay | One planned guest visit | Calendar dates, guest details, current cancellation state. |
+| StayVehicle | Current optional vehicle plate for one stay | Guest-submitted details, independent edit version and captured stay revision. |
 | StayRevision | One immutable version of a stay | Preserve manual and imported corrections and cancellations. |
 | ImportBatch | One uploaded roster and its preview | Confirm an upload once before changing the calendar. |
 | ImportRow | One source sheet/row within that upload | Retain original cells, mapping, validation, decision, and applied changes. |
@@ -47,6 +49,7 @@ erDiagram
   User ||--o{ PropertyGuide : last_edited
   User o|--o{ Stay : guest_profile
   Property ||--o{ Stay : schedules
+  Stay ||--o| StayVehicle : vehicle_details
   Stay ||--|{ StayRevision : preserves
   Attachment ||--o| ImportBatch : source_workbook
   ImportBatch ||--o{ ImportRow : previews

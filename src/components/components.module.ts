@@ -26,6 +26,8 @@ import { AdminMaintenanceModule } from './admin-maintenance/admin-maintenance.mo
 import { AdminReportsModule } from './admin-reports/admin-reports.module';
 import { AdminPropertyGuidesModule } from './admin-property-guides/admin-property-guides.module';
 import { GuestPropertyGuidesModule } from './guest-property-guides/guest-property-guides.module';
+import { AdminStayVehiclesModule } from './admin-stay-vehicles/admin-stay-vehicles.module';
+import { GuestStayVehiclesModule } from './guest-stay-vehicles/guest-stay-vehicles.module';
 
 @Module({
   imports: [
@@ -56,6 +58,8 @@ import { GuestPropertyGuidesModule } from './guest-property-guides/guest-propert
     AdminReportsModule,
     AdminPropertyGuidesModule,
     GuestPropertyGuidesModule,
+    AdminStayVehiclesModule,
+    GuestStayVehiclesModule,
   ],
 })
 export class ComponentsModule {}

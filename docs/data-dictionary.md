@@ -60,6 +60,7 @@ An entire retreat, its current worker, and QR capabilities.
 | region | String? / text | nullable | region |
 | isActive | Boolean / boolean | required; default true | Soft deactivation flag. |
 | staffUserId | String? / text | nullable; foreign key | Current assigned active STAFF profile. |
+| vehicleRegistrationEnabled | Boolean / boolean | required; default false | Enables guest vehicle collection through personal stay links. |
 | guestQrTokenHash | String? / text | nullable; unique | SHA-256 digests of independent random guest/staff QR capabilities; never plaintext tokens. |
 | staffQrTokenHash | String? / text | nullable; unique | staffQrTokenHash |
 | guestQrRotatedAt | DateTime? / Timestamptz(3) | nullable | Last guest QR issuance/rotation instant. |
@@ -118,6 +119,25 @@ Composite keys/indexes:
 - `@@index([propertyId, status, checkOutAt])`
 - `@@index([guestUserId])`
 - `@@index([createdByUserId])`
+
+## StayVehicle
+
+Current vehicle details for one stay; at most one row per stay. See
+[vehicle API contracts](stay-vehicles.md).
+
+| Column | Prisma / PostgreSQL type | Constraints | Meaning |
+|---|---|---|---|
+| stayId | String / text | primary key; foreign key | Parent stay; no name-based matching. |
+| plateNumber | String? / text | nullable | Normalized plate, null if explicitly cleared. |
+| version | Int / integer | default 1 | Independent optimistic edit version, including clears. |
+| stayRevision | Int / integer | required | Stay revision authenticated at the most recent vehicle save. |
+| createdAt | DateTime / Timestamptz(3) | default now() | First-save instant. |
+| updatedAt | DateTime / Timestamptz(3) | @updatedAt | Latest-save instant. |
+
+Foreign key: stayId → Stay(id), Restrict deletion. Vehicle saves do not advance
+Stay.currentRevision. After any stay revision change, guests must re-enter their
+plate through a current invitation; the old plate is admin-only until replaced.
+Versions prevent stale overwrites, but do not create a vehicle history archive.
 
 ## StayRevision
 

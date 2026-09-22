@@ -13,6 +13,7 @@ export interface PropertyDto {
   region: string | null;
   isActive: boolean;
   staffUserId: string | null;
+  vehicleRegistrationEnabled: boolean;
   staff: PropertyStaffDto | null;
   createdAt: Date;
   updatedAt: Date;
