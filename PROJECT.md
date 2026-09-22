@@ -759,6 +759,34 @@ No schema, migration, new package, new test file, frontend or deployment changes
 are included. Guides, vehicle registration, final client configuration, upload
 cleanup and release verification remain separate slices.
 
+## Property usage guide slice
+
+AdminPropertyGuidesModule owns GET/POST /admin/properties/:id/guide with explicit
+ADMIN/RolesGuard. POST fully replaces title/content/isPublished and requires
+expectedVersion (0 only on first creation). Serializable saves recheck the active
+administrator, reject stale versions and map concurrent creation conflicts to
+409 PROPERTY_GUIDE_CHANGED. Inactive properties can be configured for later use.
+
+GuestPropertyGuidesModule independently owns GET /guest/property-guides/qr and
+/guest/property-guides/stay. Each accepts only its designated guest Bearer token
+through the existing QR/stay resolver. The resolved property and published guide
+are read in one RepeatableRead transaction; missing/hidden guides return null.
+No property ID selection, private guest details or editor IDs appear in guest
+responses. Existing QR and guest-stay context contracts remain unchanged.
+
+New PropertyGuide is a one-to-one optional property table with plain-text content,
+publication state, version, last administrator ID and timestamps. There is no
+guide revision archive or separate published/draft copy. General instructions
+are equally available through valid guest QR and private links; restricted entry
+codes/private guest data require a separate access design. Frontend must render
+escaped text, never HTML. See docs/property-guides.md for DTOs and error cases.
+
+All guide routes reject unexpected query parameters and send no-store/no-referrer
+headers. Read limits are 60/min/IP/process; admin save limit is 20/min/IP/process.
+The user runs npx prisma migrate dev --name add_property_guides. No migration,
+business seed, new package or new test file is created by the assistant. Actual
+guide content, frontend, vehicle capture, cleanup and deployment remain separate.
+
 ## References
 
 - Nest configuration: https://docs.nestjs.com/techniques/configuration

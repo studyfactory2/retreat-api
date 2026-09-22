@@ -4,8 +4,8 @@ This is the complete first-release **schema baseline**, not completed feature AP
 Prisma 5.22.0 and PostgreSQL remain unchanged. The administrator authentication
 already implemented continues to use the same User fields.
 
-The model has **15 tables**: the original 11-model sketch plus StayRevision,
-ImportRow, and two photo-link tables. A property is one entire retreat.
+The model has **16 tables**: the original 15-table baseline plus PropertyGuide.
+A property is one entire retreat.
 There is no separate room, booking-payment, subscription, or tenant model.
 
 See [the full column dictionary](data-dictionary.md) for every stored field and
@@ -13,7 +13,8 @@ See [the full column dictionary](data-dictionary.md) for every stored field and
 
 ![Core table relationships](retreat-erd.svg)
 
-The visual overview shows the main relationships. The ER source includes every
+The visual overview shows the original core relationships; PropertyGuide is
+included in the ER source and inline diagram below. The ER source includes every
 foreign key, and the column dictionary defines the exact field names.
 
 ## What each table means
@@ -22,6 +23,7 @@ foreign key, and the column dictionary defines the exact field names.
 |---|---|---|
 | User | A person profile with ADMIN, STAFF, or GUEST role | Shared people model; only administrators need login credentials now. |
 | Property | One whole retreat | Region, current worker assignment, separate guest/staff QR digests. |
+| PropertyGuide | The current plain-text guest guide for one property | Admin-managed content, publication state, version and last editor. |
 | Stay | One planned guest visit | Calendar dates, guest details, current cancellation state. |
 | StayRevision | One immutable version of a stay | Preserve manual and imported corrections and cancellations. |
 | ImportBatch | One uploaded roster and its preview | Confirm an upload once before changing the calendar. |
@@ -41,6 +43,8 @@ foreign key, and the column dictionary defines the exact field names.
 ```mermaid
 erDiagram
   User o|--o{ Property : assigned_worker
+  Property ||--o| PropertyGuide : provides
+  User ||--o{ PropertyGuide : last_edited
   User o|--o{ Stay : guest_profile
   Property ||--o{ Stay : schedules
   Stay ||--|{ StayRevision : preserves

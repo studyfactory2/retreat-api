@@ -24,6 +24,8 @@ import { AdminCalendarModule } from './admin-calendar/admin-calendar.module';
 import { AdminDashboardModule } from './admin-dashboard/admin-dashboard.module';
 import { AdminMaintenanceModule } from './admin-maintenance/admin-maintenance.module';
 import { AdminReportsModule } from './admin-reports/admin-reports.module';
+import { AdminPropertyGuidesModule } from './admin-property-guides/admin-property-guides.module';
+import { GuestPropertyGuidesModule } from './guest-property-guides/guest-property-guides.module';
 
 @Module({
   imports: [
@@ -52,6 +54,8 @@ import { AdminReportsModule } from './admin-reports/admin-reports.module';
     AdminDashboardModule,
     AdminMaintenanceModule,
     AdminReportsModule,
+    AdminPropertyGuidesModule,
+    GuestPropertyGuidesModule,
   ],
 })
 export class ComponentsModule {}

@@ -136,6 +136,7 @@ model User {
   uploadedAttachments Attachment[]
   resolvedIssues      Issue[]               @relation("IssueResolver")
   issueEvents         IssueEvent[]
+  updatedPropertyGuides PropertyGuide[] @relation("PropertyGuideEditor")
 
   @@index([role, isActive])
 }
@@ -161,8 +162,25 @@ model Property {
   submissions        ChecklistSubmission[]
   attachments        Attachment[]
   issues             Issue[]
+  guide              PropertyGuide?
 
   @@index([staffUserId])
+}
+
+model PropertyGuide {
+  propertyId      String   @id
+  title           String
+  content         String
+  isPublished     Boolean  @default(false)
+  version         Int      @default(1)
+  updatedByUserId  String
+  createdAt       DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime @updatedAt @db.Timestamptz(3)
+
+  property  Property @relation(fields: [propertyId], references: [id], onDelete: Restrict)
+  updatedBy User     @relation("PropertyGuideEditor", fields: [updatedByUserId], references: [id], onDelete: Restrict)
+
+  @@index([updatedByUserId])
 }
 
 

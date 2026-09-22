@@ -479,6 +479,27 @@ Composite keys/indexes:
 - `@@index([actorUserId])`
 - `@@index([sourceRevisionId])`
 
+## PropertyGuide
+
+One optional current guide per property. General guest instructions are plain
+text; unpublished content is administrator-only. Guides have optimistic versions,
+not immutable revision history. See [the API contract](property-guides.md).
+
+| Column | Prisma / PostgreSQL type | Constraints | Meaning |
+|---|---|---|---|
+| propertyId | String / text | primary key; foreign key | Exactly one guide per property at most. |
+| title | String / text | required | Plain-text title, API maximum 100 characters. |
+| content | String / text | required | Plain-text instructions, API maximum 20,000 characters. |
+| isPublished | Boolean / boolean | default false | Guest visibility; parent property/link must also be accessible. |
+| version | Int / integer | default 1 | Incremented on every save; expectedVersion prevents lost updates. |
+| updatedByUserId | String / text | required; foreign key | Last authenticated administrator who saved the guide. |
+| createdAt | DateTime / Timestamptz(3) | default now() | First-save instant. |
+| updatedAt | DateTime / Timestamptz(3) | @updatedAt | Latest-save instant. |
+
+Foreign keys: propertyId → Property(id), updatedByUserId → User(id), both Restrict
+deletion. Index: `@@index([updatedByUserId])`. API validation enforces content and
+actor rules; the database foreign key alone does not assert administrator role.
+
 ## IssueEventAttachment
 
 Historical photo evidence attached to an issue event.
