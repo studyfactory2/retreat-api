@@ -87,3 +87,34 @@ export class ChangeAdminIssueStatusInput extends AdminIssueVersionInput {
   @MaxLength(2000, { message: '처리 메모는 2000자 이하여야 합니다.' })
   note?: string;
 }
+
+class AdminIssueReasonInput extends AdminIssueVersionInput {
+  @Transform(trimText)
+  @IsString({ message: '변경 사유는 문자열이어야 합니다.' })
+  @IsNotEmpty({ message: '변경 사유를 입력해 주세요.' })
+  @MaxLength(500, { message: '변경 사유는 500자 이하여야 합니다.' })
+  note: string;
+}
+
+export class ChangeAdminIssueUrgencyInput extends AdminIssueReasonInput {
+  @IsBoolean({ message: '긴급 여부는 true 또는 false여야 합니다.' })
+  isUrgent: boolean;
+}
+
+export class ChangeAdminIssueRecurrenceInput extends AdminIssueReasonInput {
+  @ValidateIf((_object, value: unknown) => value !== null)
+  @IsUUID('4', { message: '연결할 이상사항 ID를 확인해 주세요.' })
+  recurrenceOfIssueId: string | null;
+}
+
+export class GetAdminIssueRecurrenceCandidatesInput extends PaginationInput {
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === 'string' && /^[0-9]+(?![\s\S])/u.test(value)
+      ? Number(value)
+      : value,
+  )
+  @IsInt({ message: '이상사항 버전은 정수여야 합니다.' })
+  @Min(1, { message: '이상사항 버전은 1 이상이어야 합니다.' })
+  @Max(2147483646, { message: '이상사항 버전을 확인해 주세요.' })
+  expectedVersion: number;
+}

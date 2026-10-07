@@ -16,8 +16,11 @@ import {
 import { Role } from '@prisma/client';
 import {
   AddAdminIssueNoteInput,
+  ChangeAdminIssueRecurrenceInput,
   ChangeAdminIssueStatusInput,
+  ChangeAdminIssueUrgencyInput,
   GetAdminIssueHistoryInput,
+  GetAdminIssueRecurrenceCandidatesInput,
   GetAdminIssuesInput,
 } from '../../libs/dto/admin-issue/admin-issue.input';
 import type {
@@ -102,6 +105,23 @@ export class AdminIssuesController {
 
   @Roles(Role.ADMIN)
   @UseGuards(RolesGuard)
+  @Get(':id/recurrence-candidates')
+  @Header('Cache-Control', 'no-store')
+  public async getRecurrenceCandidates(
+    @Param('id', issueIdPipe) id: string,
+    @Query() input: GetAdminIssueRecurrenceCandidatesInput,
+    @AuthUser('id') adminId: string,
+  ): Promise<AdminIssueListDto> {
+    console.log('GET: getRecurrenceCandidates');
+    return await this.adminIssuesService.getRecurrenceCandidates(
+      id,
+      input,
+      adminId,
+    );
+  }
+
+  @Roles(Role.ADMIN)
+  @UseGuards(RolesGuard)
   @Get(':id/events/:eventId/photos/:photoId/view')
   @Header('Cache-Control', 'no-store')
   public async getPhotoView(
@@ -145,5 +165,33 @@ export class AdminIssuesController {
   ): Promise<AdminIssueDetailDto> {
     console.log('POST: changeStatus');
     return await this.adminIssuesService.changeStatus(id, input, adminId);
+  }
+
+  @Roles(Role.ADMIN)
+  @UseGuards(RolesGuard)
+  @Post(':id/urgency')
+  @HttpCode(HttpStatus.OK)
+  @Header('Cache-Control', 'no-store')
+  public async changeUrgency(
+    @Param('id', issueIdPipe) id: string,
+    @Body() input: ChangeAdminIssueUrgencyInput,
+    @AuthUser('id') adminId: string,
+  ): Promise<AdminIssueDetailDto> {
+    console.log('POST: changeUrgency');
+    return await this.adminIssuesService.changeUrgency(id, input, adminId);
+  }
+
+  @Roles(Role.ADMIN)
+  @UseGuards(RolesGuard)
+  @Post(':id/recurrence')
+  @HttpCode(HttpStatus.OK)
+  @Header('Cache-Control', 'no-store')
+  public async changeRecurrence(
+    @Param('id', issueIdPipe) id: string,
+    @Body() input: ChangeAdminIssueRecurrenceInput,
+    @AuthUser('id') adminId: string,
+  ): Promise<AdminIssueDetailDto> {
+    console.log('POST: changeRecurrence');
+    return await this.adminIssuesService.changeRecurrence(id, input, adminId);
   }
 }

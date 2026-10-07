@@ -887,3 +887,49 @@ real PostgreSQL transactions, HTTP/JWT/QR/S3 or browser/mobile acceptance. No re
 database, environment, dependency versions, service lifecycle, staging or commits
 were changed. See docs/admin-management.md, docs/qr-access.md,
 docs/guest-stay-links.md and docs/guest-issues.md for the updated contracts.
+
+## Redesign slice 3 — administrator urgency and recurring problems
+
+AdminIssuesModule adds POST /admin/issues/:id/urgency and /recurrence plus paginated
+GET /admin/issues/:id/recurrence-candidates. All require ADMIN JWT authorization,
+strict UUID/DTO validation and current-version checks. Reasons use note, trimmed
+and required at 1–500 Unicode characters; urgency requires an actual boolean.
+Recurrence requires a UUID target or explicit null for unlink. The existing schema
+and UPDATED event type are reused; no migration or new event enum is needed.
+
+Serializable writes recheck the active administrator and noncancelled source,
+reject stale/unchanged requests and conditionally update the source/version while
+atomically appending a complete event. Urgency/relationship changes preserve
+status, resolution, source and original report/photos. Targets retain independent
+versions, statuses and history. Initial REPORTED snapshots are never rewritten;
+identical standalone guest-report retries continue returning original urgency.
+
+Candidates use the existing summary-page response, with required expectedVersion,
+page and limit. Same-property, noncancelled records must have strictly earlier
+reportedAt; equal timestamps are ineligible. Filtering/counting precede pagination,
+with reportedAt/ID descending order. The source/current target are excluded. Each
+page rechecks ADMIN and the source version inside RepeatableRead. This browse list
+checks direct eligibility; final saves also revalidate target detail/evidence and
+ancestry, so concurrent changes or invalid legacy chains can still reject a choice.
+
+Ancestry traversal rejects self-links, cycles, cross-property or invalid chronology
+and missing records, and fails closed above 100 visited targets with a distinct
+review-required error. Cancelled ancestors may remain historical context; the
+selected direct target must not be cancelled. Unlinking skips all old-target reads
+and eligibility checks, allowing removal of a mistaken/ineligible connection.
+See docs/admin-issues.md for exact payloads, responses, errors and boundaries.
+
+No cancellation controls, new issue creation, notifications, migrations, permanent
+test files, dependency changes, Git writes or service operations are included.
+Temporary probes replace the database and exercise real DTOs/controllers/services/
+readers, including rollback, original guest replay and existing note/status flows.
+They do not establish live PostgreSQL transaction, authenticated HTTP or browser
+acceptance. The user controls live verification and deployment.
+
+Verification: TypeScript, source/scripts ESLint without --fix, exact changed-source
+Prettier and Nest build passed in the isolated copy. Temporary backend probes
+passed 297 assertions, including strict DTOs, ADMIN/UUID route metadata, actual
+service/reader history, original guest replay, recurrence eligibility/cycles,
+link/change/unlink, pagination, version/CAS rollback and existing note/status flows.
+Prisma generation happened only in the isolated dependency copy; schema/migration
+files were unchanged and no database or running service was accessed.

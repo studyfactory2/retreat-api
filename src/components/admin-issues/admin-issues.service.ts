@@ -16,8 +16,11 @@ import { PrismaService } from '../../database/prisma.service';
 import { runSerializableTransaction } from '../../database/serializable-transaction';
 import type {
   AddAdminIssueNoteInput,
+  ChangeAdminIssueRecurrenceInput,
   ChangeAdminIssueStatusInput,
+  ChangeAdminIssueUrgencyInput,
   GetAdminIssueHistoryInput,
+  GetAdminIssueRecurrenceCandidatesInput,
   GetAdminIssuesInput,
 } from '../../libs/dto/admin-issue/admin-issue.input';
 import type {
@@ -31,8 +34,13 @@ import {
   adminIssueEventSelect,
   adminIssueInclude,
   AdminIssueReader,
+  type AdminIssueRow,
 } from './admin-issue-reader';
 import { buildIssueSnapshot } from '../../libs/issues/issue-snapshot';
+import {
+  assertRecurrenceTarget,
+  recurrenceCandidatesWhere,
+} from './admin-issue-recurrence';
 
 @Injectable()
 export class AdminIssuesService {
@@ -161,6 +169,63 @@ export class AdminIssuesService {
     );
   }
 
+  public async getRecurrenceCandidates(
+    id: string,
+    input: GetAdminIssueRecurrenceCandidatesInput,
+    adminId: string,
+  ): Promise<AdminIssueListDto> {
+    return await this.prisma.$transaction(
+      async (tx) => {
+        await this.requireAdministrator(tx, adminId);
+        const issue = await this.reader.findIssue(tx, id);
+        this.requireMutableVersion(issue, input.expectedVersion);
+        await this.reader.readDetail(tx, issue);
+        const where = recurrenceCandidatesWhere(issue);
+        const rows = await tx.issue.findMany({
+          where,
+          include: {
+            ...adminIssueInclude,
+            events: {
+              orderBy: { version: 'desc' },
+              take: 1,
+              select: { version: true, snapshot: true },
+            },
+          },
+          orderBy: [{ reportedAt: 'desc' }, { id: 'desc' }],
+          skip: (input.page - 1) * input.limit,
+          take: input.limit,
+        });
+        const total = await tx.issue.count({ where });
+        const items = rows.map((row): AdminIssueSummaryDto => {
+          const latest = row.events[0];
+          if (!latest) throw new InternalServerErrorException();
+          const record = this.reader.currentRecord(row, latest);
+          return {
+            id: record.id,
+            property: record.property,
+            category: record.category,
+            title: record.title,
+            areaLabel: record.areaLabel,
+            isUrgent: record.isUrgent,
+            status: record.status,
+            currentVersion: record.currentVersion,
+            reportedAt: record.reportedAt,
+            resolvedAt: record.resolvedAt,
+            updatedAt: record.updatedAt,
+          };
+        });
+        return {
+          items,
+          total,
+          page: input.page,
+          limit: input.limit,
+          totalPages: Math.ceil(total / input.limit),
+        };
+      },
+      { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead },
+    );
+  }
+
   public async addNote(
     id: string,
     input: AddAdminIssueNoteInput,
@@ -184,48 +249,66 @@ export class AdminIssuesService {
     });
   }
 
+  public async changeUrgency(
+    id: string,
+    input: ChangeAdminIssueUrgencyInput,
+    adminId: string,
+  ): Promise<AdminIssueDetailDto> {
+    return await this.recordAction(id, input.expectedVersion, adminId, {
+      note: this.reason(input.note),
+      isUrgent: input.isUrgent,
+    });
+  }
+
+  public async changeRecurrence(
+    id: string,
+    input: ChangeAdminIssueRecurrenceInput,
+    adminId: string,
+  ): Promise<AdminIssueDetailDto> {
+    return await this.recordAction(id, input.expectedVersion, adminId, {
+      note: this.reason(input.note),
+      recurrenceOfIssueId: input.recurrenceOfIssueId?.toLowerCase() ?? null,
+    });
+  }
+
   private async recordAction(
     id: string,
     expectedVersion: number,
     adminId: string,
-    action: { note: string | null; status?: IssueStatus },
+    action: {
+      note: string | null;
+      status?: IssueStatus;
+      isUrgent?: boolean;
+      recurrenceOfIssueId?: string | null;
+    },
   ): Promise<AdminIssueDetailDto> {
     return await runSerializableTransaction(this.prisma, async (tx) => {
-      const actor = await tx.user.findUnique({
-        where: { id: adminId },
-        select: {
-          id: true,
-          name: true,
-          role: true,
-          isActive: true,
-          loginId: true,
-          passwordHash: true,
-        },
-      });
-      if (
-        !actor?.isActive ||
-        actor.role !== Role.ADMIN ||
-        !actor.loginId ||
-        !actor.passwordHash
-      ) {
-        throw new UnauthorizedException({
-          code: 'UNAUTHENTICATED',
-          message: '로그인이 필요합니다. 다시 로그인해 주세요.',
-        });
-      }
+      const actor = await this.requireAdministrator(tx, adminId);
       const issue = await this.reader.findIssue(tx, id);
-      if (issue.cancelledAt) {
+      this.requireMutableVersion(issue, expectedVersion);
+      const current = await this.reader.readDetail(tx, issue);
+      if (action.isUrgent !== undefined && action.isUrgent === issue.isUrgent) {
         throw new ConflictException({
-          code: 'ISSUE_CANCELLED',
-          message: '취소된 이상사항은 변경할 수 없습니다.',
+          code: 'ISSUE_URGENCY_UNCHANGED',
+          message: '긴급 여부가 이미 같습니다. 최신 내용을 확인해 주세요.',
         });
       }
-      if (
-        issue.currentVersion !== expectedVersion ||
-        issue.currentVersion >= 2147483647
-      )
-        throw this.changed();
-      const current = await this.reader.readDetail(tx, issue);
+      if (action.recurrenceOfIssueId !== undefined) {
+        if (action.recurrenceOfIssueId === issue.recurrenceOfIssueId) {
+          throw new ConflictException({
+            code: 'ISSUE_RECURRENCE_UNCHANGED',
+            message:
+              '이전 이상사항 연결이 이미 같습니다. 최신 내용을 확인해 주세요.',
+          });
+        }
+        if (action.recurrenceOfIssueId !== null) {
+          await assertRecurrenceTarget(tx, issue, action.recurrenceOfIssueId);
+          await this.reader.readDetail(
+            tx,
+            await this.reader.findIssue(tx, action.recurrenceOfIssueId),
+          );
+        }
+      }
       const status = action.status ?? issue.status;
       const type =
         action.status === undefined
@@ -234,6 +317,10 @@ export class AdminIssuesService {
       const now = new Date(Math.max(Date.now(), issue.updatedAt.getTime() + 1));
       const data = {
         status,
+        ...(action.isUrgent === undefined ? {} : { isUrgent: action.isUrgent }),
+        ...(action.recurrenceOfIssueId === undefined
+          ? {}
+          : { recurrenceOfIssueId: action.recurrenceOfIssueId }),
         currentVersion: issue.currentVersion + 1,
         updatedAt: now,
         resolvedAt:
@@ -288,6 +375,64 @@ export class AdminIssuesService {
       });
       return await this.reader.readDetail(tx, { ...issue, ...data });
     });
+  }
+
+  private async requireAdministrator(
+    tx: Prisma.TransactionClient,
+    adminId: string,
+  ) {
+    const actor = await tx.user.findUnique({
+      where: { id: adminId },
+      select: {
+        id: true,
+        name: true,
+        role: true,
+        isActive: true,
+        loginId: true,
+        passwordHash: true,
+      },
+    });
+    if (
+      !actor?.isActive ||
+      actor.role !== Role.ADMIN ||
+      !actor.loginId ||
+      !actor.passwordHash
+    ) {
+      throw new UnauthorizedException({
+        code: 'UNAUTHENTICATED',
+        message: '로그인이 필요합니다. 다시 로그인해 주세요.',
+      });
+    }
+    return actor;
+  }
+
+  private requireMutableVersion(
+    issue: AdminIssueRow,
+    expectedVersion: number,
+  ): void {
+    if (issue.cancelledAt) {
+      throw new ConflictException({
+        code: 'ISSUE_CANCELLED',
+        message: '취소된 이상사항은 변경할 수 없습니다.',
+      });
+    }
+    if (
+      issue.currentVersion !== expectedVersion ||
+      issue.currentVersion >= 2147483647
+    ) {
+      throw this.changed();
+    }
+  }
+
+  private reason(value: string): string {
+    const note = typeof value === 'string' ? value.trim() : '';
+    if (!note || [...note].length > 500) {
+      throw new BadRequestException({
+        code: 'ISSUE_REASON_REQUIRED',
+        message: '변경 사유를 1자 이상 500자 이하로 입력해 주세요.',
+      });
+    }
+    return note;
   }
 
   private statusEvent(
