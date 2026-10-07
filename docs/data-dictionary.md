@@ -58,6 +58,7 @@ An entire retreat, its current worker, and QR capabilities.
 | id | String / text | required; primary key; default uuid() | Stable record identifier. |
 | name | String / text | required; unique | Display name; historical records keep their own label snapshots. |
 | region | String? / text | nullable | region |
+| publicContactPhone | String? / text | nullable | Explicit public manager contact for authorized guest contexts; never copied from a staff or administrator profile. |
 | isActive | Boolean / boolean | required; default true | Soft deactivation flag. |
 | staffUserId | String? / text | nullable; foreign key | Current assigned active STAFF profile. |
 | vehicleRegistrationEnabled | Boolean / boolean | required; default false | Enables guest vehicle collection through personal stay links. |

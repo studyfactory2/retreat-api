@@ -93,7 +93,12 @@ Both responses contain flow, property { id, name, region }, and active checklist
 CHECK_OUT. Staff context includes only MAINTENANCE plus assignedStaff { id, name }
 or null. Assignment is returned only for a currently active STAFF profile.
 
-No roster, stay details, phone numbers, guest names, passwords, administrator
+Guest property context additionally includes nullable `publicContactPhone`,
+explicitly configured for guest contact in property settings. An unconfigured
+number is null; no administrator or assigned worker phone is substituted. Staff
+QR context remains unchanged and does not include this new field.
+
+No roster, stay details, personal profile phone numbers, guest names, passwords, administrator
 profiles, QR digests, historical submissions, or issue records are returned.
 Only the property attached to the supplied token is resolved. Supplying a property
 ID in a query cannot change that scope.

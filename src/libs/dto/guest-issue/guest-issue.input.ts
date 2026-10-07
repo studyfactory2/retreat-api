@@ -3,6 +3,7 @@ import {
   ArrayMaxSize,
   ArrayUnique,
   IsArray,
+  IsBoolean,
   IsNotEmpty,
   IsObject,
   IsString,
@@ -42,6 +43,10 @@ export class ReportGuestIssueInput {
   @IsString({ message: '신고 내용은 문자열이어야 합니다.' })
   @MaxLength(2000, { message: '신고 내용은 2000자 이하여야 합니다.' })
   description?: string | null;
+
+  @ValidateIf((_object, value: unknown) => value !== undefined)
+  @IsBoolean({ message: '긴급 여부는 true 또는 false여야 합니다.' })
+  isUrgent?: boolean;
 
   @ValidateIf((_object, value: unknown) => value !== undefined)
   @IsArray({ message: '사진 목록은 배열이어야 합니다.' })

@@ -55,6 +55,7 @@ export class GuestStaysService {
             id: stay.property.id,
             name: stay.property.name,
             region: stay.property.region,
+            publicContactPhone: stay.property.publicContactPhone,
             vehicleRegistrationEnabled:
               stay.property.vehicleRegistrationEnabled,
           },

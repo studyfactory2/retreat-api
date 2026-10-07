@@ -840,3 +840,50 @@ EC2 scheduling/deployment and frontend work remain separate.
 
 - Nest configuration: https://docs.nestjs.com/techniques/configuration
 - Nest CORS: https://docs.nestjs.com/security/cors
+
+## Redesign slice 2 — public manager contact and standalone report urgency
+
+Property.publicContactPhone is a dedicated optional guest-visible contact number.
+The existing administrator list/detail/create/update APIs expose it. Omitted
+updates preserve it; null or ordinary-space-only input clears it. Validation
+allows 7–15 ASCII digits with an optional leading + and single ordinary-space or
+hyphen separators, at most 32 display characters. Only outer ordinary spaces are
+trimmed. Controls, markup, unsupported punctuation and non-string/non-null values
+are rejected. This checks format, not number ownership or reachability.
+Existing serializable partial-update behavior and same-field last-write-wins
+semantics remain; no version requirement or new endpoint was introduced.
+
+GET /qr/guest and GET /guest/stays/current explicitly project this one public
+field after their existing scoped access checks. No staff or administrator phone
+is inferred, and the staff response contract remains unchanged. Contact data is
+current property configuration, separate from historical report receipts.
+
+POST /guest/issues/report accepts optional isUrgent with strict boolean validation.
+Omission means false; null, strings and numbers are invalid. The chosen value is
+stored on Issue and its original REPORTED event snapshot and returned in the
+receipt. Replays compare urgency as well as existing content/photo claims against
+the original event, preserving its receipt even if an administrator later changes
+the issue. Reusing a key with different urgency returns 409 ISSUE_REQUEST_CHANGED.
+Only missing urgency in a validated legacy standalone report snapshot defaults to
+false; explicit corrupt values still fail. Existing admin list/detail/filter APIs
+already read this field. QR-only authorization, photo handling, transaction/replay
+races and access checks remain. No SMS, push, automatic call or new personal-link
+reporting flow was added.
+
+For this approved slice the assistant supplied the explicitly requested migration
+file prisma/migrations/20261007020000_add_property_public_contact/migration.sql.
+It adds one nullable TEXT column; there is no backfill from private phone numbers.
+The migration has NOT been applied. The user must apply the pending migration and
+regenerate the real backend Prisma client before running the new code against the
+database. Earlier slice notes about assistant-created migrations describe their
+historical boundaries; this file was explicitly authorized by the Slice 2 request.
+
+Verification: Prisma schema validation, isolated client generation, TypeScript,
+source/scripts ESLint without --fix, changed-source exact Prettier and Nest build
+passed. Temporary in-memory service/DTO probes exercise contact save/edit/clear,
+authorized projections, strict urgency, legacy/same-key replay, photo associations,
+access changes and existing administrator urgency handling. These do not prove
+real PostgreSQL transactions, HTTP/JWT/QR/S3 or browser/mobile acceptance. No real
+database, environment, dependency versions, service lifecycle, staging or commits
+were changed. See docs/admin-management.md, docs/qr-access.md,
+docs/guest-stay-links.md and docs/guest-issues.md for the updated contracts.

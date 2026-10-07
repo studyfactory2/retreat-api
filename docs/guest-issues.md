@@ -41,7 +41,8 @@ retries. Example body (replace the placeholder category ID):
   "categoryId": "<category-uuid>",
   "guestName": "홍길동",
   "title": "욕실 온수가 나오지 않습니다",
-  "description": "샤워기에서 찬물만 나옵니다."
+  "description": "샤워기에서 찬물만 나옵니다.",
+  "isUrgent": true
 }
 ```
 
@@ -51,13 +52,17 @@ retries. Example body (replace the placeholder category ID):
 - title: a short summary, trimmed, nonblank, maximum 300 characters.
 - description: optional text, maximum 2000 characters after trimming. Omission,
   null or blank text all mean no description.
+- isUrgent: optional boolean, default false when omitted. Only JSON true/false
+  are accepted; null, strings and numbers are rejected. This is an administrator
+  priority flag, not an emergency notification or automatic call.
 - photos: optional ordered array of up to 10 {id, token} upload claims. Omitted
   or [] means a text-only report. Null, duplicate IDs and arbitrary photo URLs
   are rejected. See the photo guide for upload, preview and removal.
 
-No propertyId, userId, role, status, urgency flag, raw snapshot or
+No propertyId, userId, role, status, raw snapshot or
 other fields are accepted. The server gets the property from the QR and sets
-NEW status, version 1 and server timestamps. It saves Issue + REPORTED IssueEvent
+NEW status, version 1 and server timestamps. It saves the chosen urgency on both
+Issue and its immutable REPORTED IssueEvent snapshot
 atomically, capturing the original category/property labels and guest name.
 The actor has role GUEST, source GUEST_QR and no user ID. No User or Stay is created
 or matched; all checklist source links remain null.
@@ -68,12 +73,14 @@ Response:
 {
   "issueId": "<issue-uuid>",
   "status": "RECEIVED",
+  "isUrgent": true,
   "property": { "id": "<property-uuid>", "name": "가평 휴양소" },
   "receivedAt": "2026-09-17T01:00:00.000Z"
 }
 ```
 
 RECEIVED acknowledges the original submission, not the current repair status.
+isUrgent also describes the original submission, including on a replay.
 The receipt omits names, report text, internal request keys and administrator
 history. It is returned directly from POST; this slice adds no guest issue
 listing, detail lookup, receipt lookup or private edit/view link.
@@ -89,7 +96,7 @@ ISSUE_REQUEST_CHANGED; this does not edit the original report. A genuinely new
 report needs a new key. Distinct keys intentionally create distinct reports.
 
 Keys are scoped to the property. Replays compare the immutable first event,
-including category ID, guest name, title and description, before current category
+including category ID, guest name, title, description and urgency, before current category
 activity is checked. Category rename/deactivation, property rename and subsequent
 administrator notes/status updates do not change the original receipt. QR
 replacement or property deactivation still revokes the old request access.
@@ -98,9 +105,17 @@ Photo submissions additionally require the same ordered photo claims on retries.
 Expired unsubmitted photos cannot be claimed. Submitted evidence retains its
 digest to validate retries even after the original upload expiry has been consumed.
 
+For earlier clients, omitted isUrgent and explicit false describe the same report.
+A legacy first guest-report snapshot without isUrgent is treated as false only
+when replaying that validated standalone guest event; explicitly invalid values
+remain stored-record errors. Changing false to true (or true to false/omitted)
+with the same requestKey returns ISSUE_REQUEST_CHANGED. Replay never takes the
+urgency value from the mutable current Issue record.
+
 ## Administrator handoff and limits
 
 New reports appear in the existing /admin/issues list/detail/history APIs, with
+their isUrgent flag available to existing urgency filters and badges and
 the submitted name and original text available to the administrator. Existing
 notes and NEW → IN_PROGRESS → RESOLVED management apply. No external notification
 or automatic SMS/Kakao message is sent.

@@ -89,10 +89,12 @@ cover several properties; each property has at most one current assignee. Assign
 only an active STAFF profile. Reassign or unassign their properties before
 deactivating a worker. Retain old authors in stored snapshots.
 
-The single manager's shared call/SMS contact can use the active administrator's
-User.phone. The public contact response exposes only that intended contact number;
-it never returns a general User record. Setup must configure this phone before
-showing an enabled contact button. This does not implement automatic SMS delivery.
+Property.publicContactPhone is an optional, explicitly configured guest contact
+number. Authorized guest QR and personal-stay contexts expose only that public
+number, never a User record or a fallback from administrator/assigned staff phones.
+Setup must configure it before showing an enabled call action. Clearing it returns
+the guest UI to an unconfigured state. This does not implement automatic calls or
+SMS delivery.
 
 ### 2. Calendar and roster import
 

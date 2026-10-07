@@ -76,9 +76,15 @@ Responses/errors use Cache-Control: no-store and Referrer-Policy: no-referrer.
 | POST | /guest/stays/drafts/start | Start a linked check-in/out draft; 201 |
 
 The current response explicitly includes stayId, guestName, checkInAt, checkOutAt,
-expiresAt, property {id,name,region}, and active CHECK_IN/CHECK_OUT checklist
+expiresAt, property {id,name,region,vehicleRegistrationEnabled,publicContactPhone},
+and active CHECK_IN/CHECK_OUT checklist
 definitions. It does not expose internal notes, account IDs, credentials, other
 stays or the whole roster. Unknown query/body fields are rejected.
+
+`publicContactPhone` is the nullable, explicitly configured guest contact number
+from property settings. It never falls back to a staff or administrator profile
+phone. It grants no new reporting authorization: standalone guest issue reporting
+still requires the property's guest QR credential.
 
 Start body:
 

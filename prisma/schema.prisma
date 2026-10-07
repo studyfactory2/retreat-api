@@ -145,6 +145,7 @@ model Property {
   id               String    @id @default(uuid())
   name             String    @unique
   region           String?
+  publicContactPhone String?
   isActive         Boolean   @default(true)
   staffUserId      String?
   vehicleRegistrationEnabled Boolean @default(false)

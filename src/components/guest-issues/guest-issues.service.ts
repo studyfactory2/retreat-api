@@ -28,6 +28,7 @@ import {
 } from '../../libs/issues/issue-snapshot';
 import { QrService } from '../qr/qr.service';
 import { GuestIssuePhotoClaimsService } from '../guest-issue-photos/guest-issue-photo-claims.service';
+import { normalizeLegacyGuestReportSnapshot } from './guest-issue-snapshot';
 
 const reportSelect = {
   id: true,
@@ -55,6 +56,7 @@ type ReportContent = Pick<
   'categoryId' | 'guestName' | 'title'
 > & {
   description: string | null;
+  isUrgent: boolean;
 };
 
 @Injectable()
@@ -93,6 +95,7 @@ export class GuestIssuesService {
       guestName: input.guestName.trim(),
       title: input.title.trim(),
       description: input.description?.trim() || null,
+      isUrgent: input.isUrgent === undefined ? false : input.isUrgent,
     };
     // A concurrent insert can win the unique request key before this transaction.
     // Re-enter with a fresh snapshot to return its receipt or reject changed content.
@@ -144,7 +147,7 @@ export class GuestIssuesService {
               categoryId: category.id,
               title: content.title,
               description: content.description,
-              isUrgent: false,
+              isUrgent: content.isUrgent,
               status: IssueStatus.NEW,
               currentVersion: 1,
               reportedAt,
@@ -191,6 +194,7 @@ export class GuestIssuesService {
           return {
             issueId: issue.id,
             status: 'RECEIVED',
+            isUrgent: content.isUrgent,
             property: { id: property.id, name: property.name },
             receivedAt: reportedAt,
           };
@@ -233,11 +237,14 @@ export class GuestIssuesService {
       event.toStatus !== IssueStatus.NEW
     )
       throw this.invalidReport();
-    const original = parseIssueSnapshot(event.snapshot, {
-      issueId: report.id,
-      propertyId,
-      version: 1,
-    });
+    const original = parseIssueSnapshot(
+      normalizeLegacyGuestReportSnapshot(event.snapshot),
+      {
+        issueId: report.id,
+        propertyId,
+        version: 1,
+      },
+    );
     const actor = parseIssueActor(event.actorSnapshot, null);
     if (
       original.source !== null ||
@@ -250,6 +257,7 @@ export class GuestIssuesService {
       original.category.id !== content.categoryId ||
       original.title !== content.title ||
       original.description !== content.description ||
+      original.isUrgent !== content.isUrgent ||
       actor.name !== content.guestName
     ) {
       throw new ConflictException({
@@ -260,6 +268,7 @@ export class GuestIssuesService {
     return {
       issueId: report.id,
       status: 'RECEIVED',
+      isUrgent: original.isUrgent,
       property: { id: original.property.id, name: original.property.name },
       receivedAt: original.reportedAt,
     };

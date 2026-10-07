@@ -11,6 +11,7 @@ export interface PropertyDto {
   id: string;
   name: string;
   region: string | null;
+  publicContactPhone: string | null;
   isActive: boolean;
   staffUserId: string | null;
   vehicleRegistrationEnabled: boolean;

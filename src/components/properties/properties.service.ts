@@ -22,6 +22,7 @@ const propertySelect = {
   id: true,
   name: true,
   region: true,
+  publicContactPhone: true,
   isActive: true,
   staffUserId: true,
   vehicleRegistrationEnabled: true,
@@ -49,6 +50,7 @@ export class PropertiesService {
         data: {
           name: input.name,
           region: input.region,
+          publicContactPhone: input.publicContactPhone,
           isActive: true,
           vehicleRegistrationEnabled: input.vehicleRegistrationEnabled,
         },
@@ -120,6 +122,7 @@ export class PropertiesService {
     if (
       input.name === undefined &&
       input.region === undefined &&
+      input.publicContactPhone === undefined &&
       input.isActive === undefined &&
       input.vehicleRegistrationEnabled === undefined
     ) {
@@ -147,6 +150,7 @@ export class PropertiesService {
           data: {
             name: input.name,
             region: input.region,
+            publicContactPhone: input.publicContactPhone,
             isActive: input.isActive,
             vehicleRegistrationEnabled: input.vehicleRegistrationEnabled,
           },

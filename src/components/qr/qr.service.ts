@@ -30,6 +30,7 @@ export class QrService {
             id: property.id,
             name: property.name,
             region: property.region,
+            publicContactPhone: property.publicContactPhone,
           },
           checklists: await this.getChecklists(tx, property.id, [
             ChecklistType.CHECK_IN,
@@ -103,6 +104,7 @@ export class QrService {
         id: true,
         name: true,
         region: true,
+        publicContactPhone: true,
         isActive: true,
         staffUserId: true,
       },

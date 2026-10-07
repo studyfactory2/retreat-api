@@ -42,7 +42,7 @@ export interface QrChecklistDto {
 
 export interface GuestQrContextDto {
   flow: QrFlow.GUEST;
-  property: PublicQrPropertyDto;
+  property: PublicQrPropertyDto & { publicContactPhone: string | null };
   checklists: QrChecklistDto[];
 }
 

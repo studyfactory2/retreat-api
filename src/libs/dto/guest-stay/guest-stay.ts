@@ -10,6 +10,7 @@ export interface GuestStayDto {
     id: string;
     name: string;
     region: string | null;
+    publicContactPhone: string | null;
     vehicleRegistrationEnabled: boolean;
   };
   checklists: QrChecklistDto[];

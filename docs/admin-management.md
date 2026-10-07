@@ -76,6 +76,21 @@ nullable, and at most 100 characters. Exact duplicate property names return 409
 `PROPERTY_NAME_EXISTS`; inactive properties still reserve their names. Property
 creation always starts active and unassigned. Use the assignment route next.
 
+`publicContactPhone` optionally configures the number explicitly intended for
+guests. It defaults to null and never uses an administrator or assigned worker's
+profile phone as a fallback. Create/update accepts null or an ordinary-space-only
+blank string to clear it; omitting it on update preserves the current number.
+Outer ordinary spaces are removed; display separators are retained. A configured
+number may contain 7–15 ASCII digits, optional leading `+`, and single ordinary
+spaces or hyphens between digit groups, with at most 32 characters. For example,
+`02-1234-5678`, `010-1234-5678`, and `+82 10 1234 5678` are valid. Controls,
+newlines, repeated separators, extensions, protocols, and other punctuation are
+rejected. This validates safe dialing syntax, not ownership or reachability.
+
+Only authorized guest QR and private-stay context reads expose this configured
+number, as `property.publicContactPhone`. The administration form must make guest
+visibility explicit. There is no automatic calling or messaging.
+
 Update with `POST /admin/properties/:id/update`:
 
 ```json
@@ -137,7 +152,8 @@ empty items array with the actual total and totalPages.
 Staff responses contain id, name, role, phone, company, department, isActive,
 createdAt, updatedAt, and assignedProperties (id, name, region, isActive).
 Property responses contain id, name, region, isActive, staffUserId, createdAt,
-updatedAt, and staff (id, name, phone, isActive) or null. Dates serialize as ISO
+updatedAt, publicContactPhone, vehicleRegistrationEnabled, and staff (id, name,
+phone, isActive) or null. Dates serialize as ISO
 strings. Credentials, tokens, and QR hashes are never returned.
 
 ## Validation and completion boundary
@@ -151,5 +167,11 @@ Assignment and deactivation validate and write in serializable transactions so
 competing requests cannot leave an inactive worker assigned. Serialization
 conflicts retry up to three attempts, then return 409 `CONCURRENT_UPDATE`.
 
-No schema changes, migrations, staff login, guest verification, QR issuance,
-Excel import, checklists, uploads, or frontend changes belong to this slice.
+Property updates retain the existing partial-update convention: omitted fields
+are preserved, while competing updates to the same provided field are last-write
+wins after transaction serialization. There is no expected-version input on this
+route; public contact uses the same rule.
+
+The public-contact extension adds nullable `Property.publicContactPhone` and the
+`20261007020000_add_property_public_contact` migration file. The user applies the
+migration; no data backfill or automatic profile-phone exposure is performed.

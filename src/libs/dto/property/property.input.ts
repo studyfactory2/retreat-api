@@ -5,11 +5,34 @@ import {
   IsString,
   IsUUID,
   MaxLength,
+  ValidateBy,
   ValidateIf,
 } from 'class-validator';
 import { ListInput, trimNullableText, trimText } from '../common/list.input';
+import {
+  isPublicContactPhone,
+  trimPublicContactPhone,
+} from '../common/public-contact-phone';
 
-export class CreatePropertyInput {
+class PropertyPublicContactInput {
+  @Transform(trimPublicContactPhone)
+  @ValidateIf(
+    (_object, value: unknown) => value !== undefined && value !== null,
+  )
+  @ValidateBy(
+    {
+      name: 'publicContactPhone',
+      validator: { validate: isPublicContactPhone },
+    },
+    {
+      message:
+        '공개 연락처는 숫자 7~15자리와 하이픈, 공백, 맨 앞의 +만 사용할 수 있습니다.',
+    },
+  )
+  publicContactPhone?: string | null;
+}
+
+export class CreatePropertyInput extends PropertyPublicContactInput {
   @Transform(trimText)
   @IsString({ message: '휴양소 이름은 문자열이어야 합니다.' })
   @IsNotEmpty({ message: '휴양소 이름을 입력해 주세요.' })
@@ -29,7 +52,7 @@ export class CreatePropertyInput {
   vehicleRegistrationEnabled?: boolean;
 }
 
-export class UpdatePropertyInput {
+export class UpdatePropertyInput extends PropertyPublicContactInput {
   @Transform(trimText)
   @ValidateIf((_object, value: unknown) => value !== undefined)
   @IsString({ message: '휴양소 이름은 문자열이어야 합니다.' })

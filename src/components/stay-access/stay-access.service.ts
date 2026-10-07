@@ -23,6 +23,7 @@ const stayAccessSelect = {
       id: true,
       name: true,
       region: true,
+      publicContactPhone: true,
       isActive: true,
       vehicleRegistrationEnabled: true,
     },
