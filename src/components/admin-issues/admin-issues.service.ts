@@ -62,7 +62,12 @@ export class AdminIssuesService {
       });
     }
     const where: Prisma.IssueWhereInput = {
-      cancelledAt: null,
+      ...(input.cancellation === 'all'
+        ? {}
+        : {
+            cancelledAt:
+              input.cancellation === 'cancelled' ? { not: null } : null,
+          }),
       currentVersion: { gte: 1 },
       propertyId: input.propertyId?.toLowerCase(),
       status: input.status,
@@ -108,6 +113,7 @@ export class AdminIssuesService {
             currentVersion: record.currentVersion,
             reportedAt: record.reportedAt,
             resolvedAt: record.resolvedAt,
+            cancelledAt: record.cancelledAt,
             updatedAt: record.updatedAt,
           };
         });
@@ -211,6 +217,7 @@ export class AdminIssuesService {
             currentVersion: record.currentVersion,
             reportedAt: record.reportedAt,
             resolvedAt: record.resolvedAt,
+            cancelledAt: record.cancelledAt,
             updatedAt: record.updatedAt,
           };
         });

@@ -21,11 +21,14 @@ including failures. No schema change, migration or new package is required.
 | POST | /admin/issues/:id/status | Change status; 200 detail response |
 | POST | /admin/issues/:id/urgency | Change urgency with a reason; 200 detail response |
 | POST | /admin/issues/:id/recurrence | Link, change or remove an earlier-report relationship; 200 detail response |
+| POST | /admin/issues/:id/cancel | Cancel a report; 200 historical-capable action receipt |
+| POST | /admin/issues/:id/restore | Undo cancellation; 200 historical-capable action receipt |
 
 ## Finding issues
 
 The list accepts optional `propertyId`, `status` (NEW/IN_PROGRESS/RESOLVED),
-`isUrgent` (exact true/false), and `from`/`to` (YYYY-MM-DD). Both dates are inclusive
+`isUrgent` (exact true/false), `cancellation` (active/cancelled/all; default active),
+and `from`/`to` (YYYY-MM-DD). Both dates are inclusive
 **Korean calendar days of reportedAt**, not checklist visit dates. For example,
 `from=2026-09-17&to=2026-09-17` covers 2026-09-16 15:00 UTC up to, but excluding,
 2026-09-17 15:00 UTC. Impossible dates, reversed ranges and timestamps are rejected.
@@ -35,12 +38,15 @@ maximum 100). Responses are `{ items, total, page, limit, totalPages }`. Sorting
 uses reportedAt descending then ID descending; history uses version descending.
 Each read uses a repeatable-read transaction for consistent counts and records.
 
-The list excludes cancelled issues. Direct detail/history links retain cancelled
-records for review, but all mutations reject them. Inactive properties,
-staff reassignment and expired guest links do not hide administrator history.
+The list excludes cancelled issues by default. Set cancellation=cancelled or all
+to find them; this predicate applies before pagination/counting. Direct detail/
+history links retain cancelled records. Existing note/status/urgency/recurrence
+actions reject them; the new restore action makes them active reports again.
+Inactive properties, staff reassignment and expired guest links do not hide
+administrator history.
 
 Summaries contain ID, captured property/category labels, title, area, urgency,
-status, version and timestamps. Detail returns `{ issue, report, latestEvent }`.
+status, version and timestamps, including nullable cancelledAt. Detail returns `{ issue, report, latestEvent }`.
 `issue` includes description, source submission/item/revision, original template
 context, resolution/cancellation metadata and current version. `report` retains
 the initial reporter and evidence even after newer administrator notes exist.
@@ -48,8 +54,9 @@ the initial reporter and evidence even after newer administrator notes exist.
 Events expose type, actor identity/name/role, source, note, from/to status, time,
 resulting historical record and photo metadata. Internal request keys, credentials
 and raw snapshots/storage fields are not exposed. Labels and actor names remain
-captured in each event. New administrator events capture current property/category
-labels without rewriting earlier events. Guest identity is self-reported; staff
+captured in each event. Existing note/status/urgency/recurrence actions capture
+current property/category labels without rewriting earlier events; cancellation/
+restoration preserve the current saved record labels. Guest identity is self-reported; staff
 identity reflects the confirmed assignment, not a password-verified login.
 
 ## Notes and status changes
@@ -199,5 +206,9 @@ New action errors include `400 ISSUE_REASON_REQUIRED`, `409 ISSUE_URGENCY_UNCHAN
 Category editing is documented in [admin-issue-categories.md](admin-issue-categories.md).
 Standalone guest text reports now use this workflow; see [guest-issues.md](guest-issues.md).
 Complaint photo uploads use [guest-issue-photos.md](guest-issue-photos.md).
-Cancellation controls, notifications and deployment remain separate work.
+Cancellation/restoration are documented in
+[admin-issue-cancellation.md](admin-issue-cancellation.md), including the strict
+reason/version payload, minimal historical receipt, exact-success replay and
+unchanged processing status/source evidence. Notifications and deployment remain
+separate work.
 Checklist abnormalities still use the existing shared 기타 fallback.

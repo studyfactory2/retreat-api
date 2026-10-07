@@ -1036,3 +1036,63 @@ original receipt/replay and administrator readers, with in-memory Prisma/signing
 These do not establish real PostgreSQL isolation, JWT/HTTP/S3 or browser acceptance.
 Prisma generation happened only in the isolated dependencies; no database or
 running service was accessed. The user owns live acceptance and deployment.
+
+## Slice 5 — administrator issue-report cancellation and restoration
+
+POST /admin/issues/:id/cancel and /restore require active ADMIN JWT, UUID v4 issue
+ID, strict numeric expectedVersion and a trimmed nonblank reason of 1–1000 Unicode
+characters. Unsupported fields and query parameters are rejected. These inputs
+use reason; existing note/status/urgency/recurrence payloads and limits are unchanged.
+Existing cancellation columns and CANCELLED/RESTORED event types suffice; no schema
+or migration change is needed.
+
+AdminIssueCancellationService uses the existing serializable transaction helper,
+rechecks the active administrator and current/original issue evidence, conditionally
+updates only cancellation metadata/currentVersion/updatedAt, and appends an immutable
+ADMIN_SESSION event with the required reason and full resulting snapshot. Cancellation
+accepts noncancelled NEW/IN_PROGRESS/RESOLVED; restoration accepts cancelled records.
+Processing status and resolution metadata stay unchanged, so a resolved report stays
+resolved. Original REPORTED evidence, reportedAt, urgency, description, category,
+source references and recurrence remain. No source checklist/stay/related report,
+prior event, photo association or stored file is changed.
+
+The receipt is { id, eventId, version, status, updatedAt, cancelledAt,
+cancellationReason }. status remains the processing status. Exact retries bind the
+same administrator/action/expectedVersion/normalized reason to the immutable next
+event's digest. A matching older request returns that original event receipt without
+writes, even after a later opposite action or source-derived update. Stale/different
+requests return ISSUE_CHANGED; current same-state requests return
+INVALID_ISSUE_CANCELLATION_TRANSITION. The frontend must refresh current detail and
+history instead of applying a potentially historical receipt as current state.
+
+GET /admin/issues adds cancellation=active|cancelled|all, default active. SQL filters
+apply before both count and pagination. Existing property/status/urgency/Seoul date
+filters and reportedAt/ID descending order remain. Issue and recurrence-candidate
+summaries add nullable cancelledAt; direct recurrence candidates remain noncancelled.
+Historical issue/detail/photo access still works at inactive properties.
+
+Existing ordinary administrator actions remain blocked while cancelled. Recurrence
+relationships and historical cancelled ancestors remain readable without rewriting
+links, while cancelled reports remain ineligible as newly selected direct targets.
+Operational issue counts/exports exclude cancelled reports and include restored
+reports according to preserved status/date rules. Existing submission-correction
+behavior remains: a cancelled source issue can receive the established correction
+audit/update, and restoration keeps that latest saved content. Guest correction
+retains its existing urgency semantics. Original standalone guest-report receipts
+and exact request replay continue reading unchanged REPORTED evidence.
+
+See docs/admin-issue-cancellation.md and docs/admin-issues.md for the complete API,
+filter, retry, preservation and operational contracts. No guest/staff authorization,
+schema/migration, dependency, environment, permanent test or service changes are
+included. The user owns staging/commits and operational acceptance/deployment.
+
+Verification: TypeScript, source/scripts ESLint without --fix, exact changed-source
+Prettier and Nest build passed in isolated source/dependency copies. Temporary
+actual-service/DTO probes passed 423 lifecycle/list assertions and 297 prior Slice 3
+regressions. Independent compatibility probes passed 753 assertions covering all
+processing states and source types, correction-after-cancel, preserved latest
+restoration, recurrence rules, issue history/photos, inactive-property access,
+operational counts/exports and original guest-report replay. These use in-memory
+Prisma/auth/signing fixtures; they do not establish live PostgreSQL isolation,
+authenticated HTTP/JWT/S3 or browser/device acceptance. Prisma generation ran only
+in isolated dependencies. No database or running service was accessed.

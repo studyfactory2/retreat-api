@@ -44,6 +44,7 @@ export type AdminIssueSummaryDto = Pick<
   | 'currentVersion'
   | 'reportedAt'
   | 'resolvedAt'
+  | 'cancelledAt'
   | 'updatedAt'
 >;
 
@@ -53,4 +54,14 @@ export type AdminIssueHistoryDto = ListDto<AdminIssueEventDto>;
 export interface AdminIssuePhotoViewDto {
   url: string;
   expiresAt: Date;
+}
+
+export interface AdminIssueCancellationDto {
+  id: string;
+  eventId: string;
+  version: number;
+  status: IssueStatus;
+  updatedAt: Date;
+  cancelledAt: Date | null;
+  cancellationReason: string | null;
 }

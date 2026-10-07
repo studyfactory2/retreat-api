@@ -6,6 +6,7 @@ import {
 import { StorageModule } from '../../storage/storage.module';
 import { AuthModule } from '../auth/auth.module';
 import { QrNoStoreMiddleware } from '../qr/qr-no-store.middleware';
+import { AdminIssueCancellationService } from './admin-issue-cancellation.service';
 import { AdminIssuePhotosService } from './admin-issue-photos.service';
 import { AdminIssueReader } from './admin-issue-reader';
 import { AdminIssuesController } from './admin-issues.controller';
@@ -16,6 +17,7 @@ import { AdminIssuesService } from './admin-issues.service';
   controllers: [AdminIssuesController],
   providers: [
     AdminIssuesService,
+    AdminIssueCancellationService,
     AdminIssueReader,
     AdminIssuePhotosService,
     QrNoStoreMiddleware,

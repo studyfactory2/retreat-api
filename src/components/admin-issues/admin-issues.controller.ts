@@ -13,9 +13,12 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
+import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import { Role } from '@prisma/client';
 import {
   AddAdminIssueNoteInput,
+  ChangeAdminIssueCancellationInput,
+  EmptyAdminIssueCancellationQueryInput,
   ChangeAdminIssueRecurrenceInput,
   ChangeAdminIssueStatusInput,
   ChangeAdminIssueUrgencyInput,
@@ -24,6 +27,7 @@ import {
   GetAdminIssuesInput,
 } from '../../libs/dto/admin-issue/admin-issue.input';
 import type {
+  AdminIssueCancellationDto,
   AdminIssueDetailDto,
   AdminIssueHistoryDto,
   AdminIssueListDto,
@@ -32,6 +36,7 @@ import type {
 import { AuthUser } from '../auth/decorators/auth.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
+import { AdminIssueCancellationService } from './admin-issue-cancellation.service';
 import { AdminIssuePhotosService } from './admin-issue-photos.service';
 import { AdminIssuesService } from './admin-issues.service';
 
@@ -67,7 +72,42 @@ export class AdminIssuesController {
   constructor(
     private readonly adminIssuesService: AdminIssuesService,
     private readonly adminIssuePhotosService: AdminIssuePhotosService,
+    private readonly cancellation: AdminIssueCancellationService,
   ) {}
+
+  @Roles(Role.ADMIN)
+  @UseGuards(RolesGuard, ThrottlerGuard)
+  @Post(':id/cancel')
+  @HttpCode(HttpStatus.OK)
+  @Header('Cache-Control', 'no-store')
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  public async cancelIssue(
+    @Param('id', issueIdPipe) id: string,
+    @Body() input: ChangeAdminIssueCancellationInput,
+    @Query() query: EmptyAdminIssueCancellationQueryInput,
+    @AuthUser('id') adminId: string,
+  ): Promise<AdminIssueCancellationDto> {
+    void query;
+    console.log('POST: cancelAdminIssue');
+    return await this.cancellation.cancel(id, input, adminId);
+  }
+
+  @Roles(Role.ADMIN)
+  @UseGuards(RolesGuard, ThrottlerGuard)
+  @Post(':id/restore')
+  @HttpCode(HttpStatus.OK)
+  @Header('Cache-Control', 'no-store')
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  public async restoreIssue(
+    @Param('id', issueIdPipe) id: string,
+    @Body() input: ChangeAdminIssueCancellationInput,
+    @Query() query: EmptyAdminIssueCancellationQueryInput,
+    @AuthUser('id') adminId: string,
+  ): Promise<AdminIssueCancellationDto> {
+    void query;
+    console.log('POST: restoreAdminIssue');
+    return await this.cancellation.restore(id, input, adminId);
+  }
 
   @Roles(Role.ADMIN)
   @UseGuards(RolesGuard)
