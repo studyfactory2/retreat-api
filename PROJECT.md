@@ -982,3 +982,57 @@ original final receipts, evidence corruption, issue preservation, photo/repair
 consequences, contention and atomic rollback. Prisma generation ran only in the
 isolated dependencies. No real JWT/HTTP, database, S3, browser or mobile acceptance
 was performed, and no migrations or running services were touched.
+
+## Slice 4B — administrator checklist cancellation and restoration
+
+POST /admin/submissions/:id/cancel and /restore require ADMIN JWT, expectedRevision
+and a trimmed nonblank reason of 1–1000 Unicode characters. Strict DTOs reject
+extra fields and query parameters. Cancellation accepts SUBMITTED; restoration
+accepts CANCELLED; both cover CHECK_IN, CHECK_OUT and MAINTENANCE. Historical
+inactive properties remain manageable without guest/staff private-link access.
+Existing schema status/actions are reused; no migration is required.
+
+AdminSubmissionStatusService rechecks the active administrator and validated current
+record inside the existing serializable transaction, conditionally updates status,
+cancelledAt/currentRevision/updatedAt, and appends a complete immutable CANCELLED or
+RESTORED revision with ADMIN_SESSION actor/reason and current photo associations.
+All writes roll back together. The shared mutation reader opts into cancelled
+evidence only for these actions; the existing correction wrapper remains
+SUBMITTED-only. Answers, original author/property/template/visit/submitted times,
+stay association, token fields, prior revisions and files are unchanged.
+
+Restoration clears cancelledAt and retains the current saved evidence; it does not
+recover photo associations or repair data removed by earlier corrections. Neither
+action reads or writes linked issues or the associated stay. Active issues remain
+readable with a cancelled checklist as historical source; urgency/status/resolution/
+cancellation/recurrence and original issue evidence remain entirely independent.
+
+Receipts return { id, status, revision, updatedAt, cancelledAt }. Same-state requests
+at the current revision return INVALID_SUBMISSION_TRANSITION. Stale/conflicting
+requests return SUBMISSION_CHANGED unless the immutable expectedRevision+1 revision
+matches the same administrator, action and normalized request digest. That exact
+successful replay returns its original receipt without new writes, including after
+a later opposite transition. It never reapplies an old cancellation/restoration.
+Original guest/staff final-submission receipts and replay behavior are unchanged.
+
+Existing calendar/dashboard/maintenance/export filters exclude cancelled records
+and include restored records under their original dates/eligibility. Restoring one
+of multiple matching records can legitimately restore a duplicate warning. Linked
+issue counts are unchanged. Cancelled private access is rejected; restoration keeps
+expiry, revocation, assignment, property and parent-stay checks intact. Correction
+and stay linking reject cancelled records. No compatibility source changes were
+needed beyond the narrow opt-in current-record validation.
+
+See docs/admin-submission-status.md and docs/admin-submissions.md for the exact
+contract, operational effects, concurrency and replay rules. No schema, migration,
+dependency, permanent test, environment or service-lifecycle changes are included.
+
+Verification: TypeScript, source/scripts ESLint without --fix, exact changed-source
+Prettier and Nest build passed in isolated source/dependency copies. Temporary
+actual-service/DTO probes passed 788 status assertions and 328 Slice 4A regression
+assertions. Independent compatibility probes passed 427 assertions around real
+calendar/dashboard/maintenance/report, issue history, private access, guest photo,
+original receipt/replay and administrator readers, with in-memory Prisma/signing.
+These do not establish real PostgreSQL isolation, JWT/HTTP/S3 or browser acceptance.
+Prisma generation happened only in the isolated dependencies; no database or
+running service was accessed. The user owns live acceptance and deployment.

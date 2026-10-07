@@ -25,11 +25,17 @@ import type {
   AdminSubmissionHistoryDto,
   AdminSubmissionListDto,
   AdminSubmissionPhotoViewDto,
+  AdminSubmissionStatusDto,
 } from '../../libs/dto/admin-submission/admin-submission';
 import {
   CorrectAdminSubmissionInput,
   EmptyAdminSubmissionCorrectionQueryInput,
 } from '../../libs/dto/admin-submission/admin-submission-correction.input';
+import {
+  ChangeAdminSubmissionStatusInput,
+  EmptyAdminSubmissionStatusQueryInput,
+} from '../../libs/dto/admin-submission/admin-submission-status.input';
+import { AdminSubmissionStatusService } from './admin-submission-status.service';
 import type { AuthenticatedUser } from '../../libs/dto/user/user';
 import { AuthUser } from '../auth/decorators/auth.decorator';
 import { AdminSubmissionCorrectionsService } from './admin-submission-corrections.service';
@@ -69,6 +75,7 @@ export class AdminSubmissionsController {
   constructor(
     private readonly adminSubmissionsService: AdminSubmissionsService,
     private readonly corrections: AdminSubmissionCorrectionsService,
+    private readonly status: AdminSubmissionStatusService,
   ) {}
 
   @Roles(Role.ADMIN)
@@ -86,6 +93,40 @@ export class AdminSubmissionsController {
     void query;
     console.log('POST: correctAdminSubmission');
     return await this.corrections.correct(id, input, actor);
+  }
+
+  @Roles(Role.ADMIN)
+  @UseGuards(RolesGuard, ThrottlerGuard)
+  @Post(':id/cancel')
+  @HttpCode(HttpStatus.OK)
+  @Header('Cache-Control', 'no-store')
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  public async cancelSubmission(
+    @Param('id', submissionIdPipe) id: string,
+    @Body() input: ChangeAdminSubmissionStatusInput,
+    @Query() query: EmptyAdminSubmissionStatusQueryInput,
+    @AuthUser() actor: AuthenticatedUser,
+  ): Promise<AdminSubmissionStatusDto> {
+    void query;
+    console.log('POST: cancelAdminSubmission');
+    return await this.status.cancel(id, input, actor);
+  }
+
+  @Roles(Role.ADMIN)
+  @UseGuards(RolesGuard, ThrottlerGuard)
+  @Post(':id/restore')
+  @HttpCode(HttpStatus.OK)
+  @Header('Cache-Control', 'no-store')
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  public async restoreSubmission(
+    @Param('id', submissionIdPipe) id: string,
+    @Body() input: ChangeAdminSubmissionStatusInput,
+    @Query() query: EmptyAdminSubmissionStatusQueryInput,
+    @AuthUser() actor: AuthenticatedUser,
+  ): Promise<AdminSubmissionStatusDto> {
+    void query;
+    console.log('POST: restoreAdminSubmission');
+    return await this.status.restore(id, input, actor);
   }
 
   @Roles(Role.ADMIN)

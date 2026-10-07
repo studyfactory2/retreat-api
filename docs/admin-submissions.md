@@ -17,11 +17,14 @@ do not grant administrator access. All responses, including access errors, use
 | GET | /admin/submissions/:id | Current saved revision in full |
 | GET | /admin/submissions/:id/history | Paginated full revisions, newest first |
 | GET | /admin/submissions/:id/revisions/:revisionId/photos/:photoId/view | Private photo URL and expiry |
+| POST | /admin/submissions/:id/correct | Correct submitted answers/notes with history |
+| POST | /admin/submissions/:id/cancel | Cancel a submitted record without deleting evidence |
+| POST | /admin/submissions/:id/restore | Restore the currently saved cancelled record |
 
 Path identifiers must be UUID v4 values. DRAFT and nonexistent submissions return
-404 on individual-record routes. Only SUBMITTED/CANCELLED records with a saved
-revision and submission timestamp enter the list. This slice does not implement
-corrections or cancellations; it can read the corresponding stored statuses.
+404 on individual-record read routes. Only SUBMITTED/CANCELLED records with a
+saved revision and submission timestamp enter the list. Mutations use their own
+strict transition/version contracts documented below.
 
 ## List and filters
 
@@ -98,10 +101,11 @@ URL when needed; do not persist it as the photo's permanent address.
 
 ## Boundary
 
-These four endpoints are reads. The separate AdminSubmissionStaysModule owns
-candidate discovery and administrator linking under the same URL namespace;
-see [the linking guide](admin-submission-stays.md). No migration or dependency is
-needed. Calendar calculation, React screens and deployment remain separate work.
+The read routes preserve access to historical and cancelled records. The separate
+AdminSubmissionStaysModule owns candidate discovery and administrator linking
+under the same URL namespace; see [the linking guide](admin-submission-stays.md).
+Correction and status actions use the existing revision infrastructure and need
+no migration or new dependency. Deployment remains user-managed.
 
 ## Administrator answer correction
 
@@ -112,3 +116,12 @@ original author and historical evidence are preserved. See
 [Administrator submitted-checklist corrections](admin-submission-corrections.md)
 for strict payloads, atomic issue/photo consequences, independent issue urgency,
 maintenance repair preservation, conflict handling and replay behavior.
+
+## Administrator cancellation and restoration
+
+Submitted records can be cancelled; cancelled records can be restored through
+the two status routes above. Both require expectedRevision and a trimmed reason
+of 1–1000 characters, preserve current answers/photos and original attribution,
+and leave linked issues unchanged. See [the status-action guide](admin-submission-status.md)
+for exact receipts, actor-bound historical retries, access/operational effects
+and immutable-history guarantees.

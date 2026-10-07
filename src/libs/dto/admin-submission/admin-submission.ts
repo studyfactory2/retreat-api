@@ -78,3 +78,11 @@ export interface AdminSubmissionCorrectionDto {
   updatedAt: Date;
   changed: boolean;
 }
+
+export interface AdminSubmissionStatusDto {
+  id: string;
+  status: 'SUBMITTED' | 'CANCELLED';
+  revision: number;
+  updatedAt: Date;
+  cancelledAt: Date | null;
+}

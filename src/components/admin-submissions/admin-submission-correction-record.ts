@@ -94,6 +94,16 @@ export async function readAdminSubmissionCorrectionRecord(
   tx: Prisma.TransactionClient,
   id: string,
 ): Promise<AdminSubmissionCorrectionRecord> {
+  return readAdminSubmissionMutationRecord(tx, id);
+}
+
+// Cancellation/restoration opt into cancelled evidence. Existing correction
+// callers retain their submitted-only eligibility rule through the wrapper.
+export async function readAdminSubmissionMutationRecord(
+  tx: Prisma.TransactionClient,
+  id: string,
+  options: { allowCancelled?: boolean } = {},
+): Promise<AdminSubmissionCorrectionRecord> {
   const submission = await tx.checklistSubmission.findUnique({
     where: { id: id.toLowerCase() },
     select: submissionSelect,
@@ -105,19 +115,27 @@ export async function readAdminSubmissionCorrectionRecord(
     });
   }
   if (
-    submission.status !== SubmissionStatus.SUBMITTED ||
+    (submission.status !== SubmissionStatus.SUBMITTED &&
+      !(
+        options.allowCancelled &&
+        submission.status === SubmissionStatus.CANCELLED
+      )) ||
     !Object.values(ChecklistType).includes(submission.type)
   ) {
     throw new ConflictException({
       code: 'INELIGIBLE_SUBMISSION',
-      message: '제출 완료된 체크리스트만 정정할 수 있습니다.',
+      message: options.allowCancelled
+        ? '제출 완료 또는 취소된 체크리스트만 변경할 수 있습니다.'
+        : '제출 완료된 체크리스트만 정정할 수 있습니다.',
     });
   }
   if (
     !Number.isSafeInteger(submission.currentRevision) ||
     submission.currentRevision < 1 ||
     !submission.submittedAt ||
-    submission.cancelledAt !== null
+    (submission.status === SubmissionStatus.SUBMITTED
+      ? submission.cancelledAt !== null
+      : submission.cancelledAt === null)
   ) {
     throw invalidRecord();
   }
@@ -134,7 +152,7 @@ export async function readAdminSubmissionCorrectionRecord(
     !revision ||
     revision.submissionId !== submission.id ||
     revision.version !== submission.currentRevision ||
-    revision.status !== SubmissionStatus.SUBMITTED
+    revision.status !== submission.status
   ) {
     throw invalidRecord();
   }
