@@ -102,3 +102,13 @@ These four endpoints are reads. The separate AdminSubmissionStaysModule owns
 candidate discovery and administrator linking under the same URL namespace;
 see [the linking guide](admin-submission-stays.md). No migration or dependency is
 needed. Calendar calculation, React screens and deployment remain separate work.
+
+## Administrator answer correction
+
+Submitted guest and maintenance details now support
+`POST /admin/submissions/:id/correct` with the current expectedRevision, full
+editable answers/generalNote and a required reason. The captured template,
+original author and historical evidence are preserved. See
+[Administrator submitted-checklist corrections](admin-submission-corrections.md)
+for strict payloads, atomic issue/photo consequences, independent issue urgency,
+maintenance repair preservation, conflict handling and replay behavior.

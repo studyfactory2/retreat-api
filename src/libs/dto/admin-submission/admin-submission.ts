@@ -70,3 +70,11 @@ export interface AdminSubmissionPhotoViewDto {
   url: string;
   expiresAt: Date;
 }
+
+export interface AdminSubmissionCorrectionDto {
+  id: string;
+  status: 'SUBMITTED';
+  revision: number;
+  updatedAt: Date;
+  changed: boolean;
+}

@@ -1,25 +1,38 @@
 import {
   BadRequestException,
+  Body,
   Controller,
   Get,
   Header,
   Headers,
+  HttpCode,
+  HttpStatus,
   Param,
   ParseUUIDPipe,
+  Post,
   Query,
   UseGuards,
 } from '@nestjs/common';
+import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import { Role } from '@prisma/client';
 import {
   GetAdminSubmissionHistoryInput,
   GetAdminSubmissionsInput,
 } from '../../libs/dto/admin-submission/admin-submission.input';
 import type {
+  AdminSubmissionCorrectionDto,
   AdminSubmissionDetailDto,
   AdminSubmissionHistoryDto,
   AdminSubmissionListDto,
   AdminSubmissionPhotoViewDto,
 } from '../../libs/dto/admin-submission/admin-submission';
+import {
+  CorrectAdminSubmissionInput,
+  EmptyAdminSubmissionCorrectionQueryInput,
+} from '../../libs/dto/admin-submission/admin-submission-correction.input';
+import type { AuthenticatedUser } from '../../libs/dto/user/user';
+import { AuthUser } from '../auth/decorators/auth.decorator';
+import { AdminSubmissionCorrectionsService } from './admin-submission-corrections.service';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { AdminSubmissionsService } from './admin-submissions.service';
@@ -55,7 +68,25 @@ const photoIdPipe = new ParseUUIDPipe({
 export class AdminSubmissionsController {
   constructor(
     private readonly adminSubmissionsService: AdminSubmissionsService,
+    private readonly corrections: AdminSubmissionCorrectionsService,
   ) {}
+
+  @Roles(Role.ADMIN)
+  @UseGuards(RolesGuard, ThrottlerGuard)
+  @Post(':id/correct')
+  @HttpCode(HttpStatus.OK)
+  @Header('Cache-Control', 'no-store')
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  public async correctSubmission(
+    @Param('id', submissionIdPipe) id: string,
+    @Body() input: CorrectAdminSubmissionInput,
+    @Query() query: EmptyAdminSubmissionCorrectionQueryInput,
+    @AuthUser() actor: AuthenticatedUser,
+  ): Promise<AdminSubmissionCorrectionDto> {
+    void query;
+    console.log('POST: correctAdminSubmission');
+    return await this.corrections.correct(id, input, actor);
+  }
 
   @Roles(Role.ADMIN)
   @UseGuards(RolesGuard)

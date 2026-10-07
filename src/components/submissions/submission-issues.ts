@@ -8,7 +8,8 @@ import {
   IssueStatus,
   PhotoPurpose,
 } from '@prisma/client';
-import type { ActorSource, Issue, Prisma } from '@prisma/client';
+import { ActorSource, Role, type Issue, type Prisma } from '@prisma/client';
+import { parseIssueActor } from '../../libs/issues/issue-snapshot';
 import { randomUUID } from 'node:crypto';
 import { FALLBACK_ISSUE_CATEGORY_NAME } from '../../libs/constants/issue-category';
 import type {
@@ -38,6 +39,16 @@ type SubmissionIssuesInput = {
   answers: DraftAnswers;
   photos: SubmissionIssuePhoto[];
   submittedAt: Date;
+  correctionActor?: {
+    source: typeof ActorSource.ADMIN_SESSION;
+    userId: string;
+    snapshot: {
+      schemaVersion: 1;
+      id: string;
+      name: string;
+      role: typeof Role.ADMIN;
+    };
+  };
 };
 
 export async function createSubmissionIssues(
@@ -76,7 +87,8 @@ export async function createSubmissionIssues(
     }
   }
 
-  const actorSnapshot: Prisma.InputJsonObject = {
+  const actorSnapshot: Prisma.InputJsonObject = input.correctionActor
+    ?.snapshot ?? {
     schemaVersion: 1,
     id: input.authorUserId,
     name: input.author.name,
@@ -85,6 +97,17 @@ export async function createSubmissionIssues(
     department: input.author.department,
     phone: input.author.phone,
   };
+  const actorSource = input.correctionActor?.source ?? input.authorSource;
+  const actorUserId = input.correctionActor?.userId ?? input.authorUserId;
+  if (input.correctionActor) {
+    const actor = parseIssueActor(input.correctionActor.snapshot, actorUserId);
+    if (
+      actorSource !== ActorSource.ADMIN_SESSION ||
+      actor.role !== Role.ADMIN
+    ) {
+      throw new InternalServerErrorException();
+    }
+  }
   const issues: Issue[] = [];
   const events: Prisma.IssueEventCreateManyInput[] = [];
   const eventPhotos: Prisma.IssueEventAttachmentCreateManyInput[] = [];
@@ -130,8 +153,8 @@ export async function createSubmissionIssues(
       issueId: issue.id,
       version: 1,
       type: IssueEventType.REPORTED,
-      actorSource: input.authorSource,
-      actorUserId: input.authorUserId,
+      actorSource,
+      actorUserId,
       actorSnapshot,
       sourceRevisionId: input.revisionId,
       note: answer.description,
@@ -148,8 +171,8 @@ export async function createSubmissionIssues(
         issueId: issue.id,
         version: 2,
         type: IssueEventType.REPAIR_REPORTED,
-        actorSource: input.authorSource,
-        actorUserId: input.authorUserId,
+        actorSource,
+        actorUserId,
         actorSnapshot,
         sourceRevisionId: input.revisionId,
         note: answer.repairNote,

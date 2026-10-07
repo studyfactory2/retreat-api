@@ -6,13 +6,20 @@ import {
 import { StorageModule } from '../../storage/storage.module';
 import { AuthModule } from '../auth/auth.module';
 import { QrNoStoreMiddleware } from '../qr/qr-no-store.middleware';
+import { AdminIssueReader } from '../admin-issues/admin-issue-reader';
+import { AdminSubmissionCorrectionsService } from './admin-submission-corrections.service';
 import { AdminSubmissionsController } from './admin-submissions.controller';
 import { AdminSubmissionsService } from './admin-submissions.service';
 
 @Module({
   imports: [AuthModule, StorageModule],
   controllers: [AdminSubmissionsController],
-  providers: [AdminSubmissionsService, QrNoStoreMiddleware],
+  providers: [
+    AdminSubmissionsService,
+    AdminSubmissionCorrectionsService,
+    AdminIssueReader,
+    QrNoStoreMiddleware,
+  ],
 })
 export class AdminSubmissionsModule implements NestModule {
   public configure(consumer: MiddlewareConsumer): void {

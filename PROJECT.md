@@ -933,3 +933,52 @@ service/reader history, original guest replay, recurrence eligibility/cycles,
 link/change/unlink, pagination, version/CAS rollback and existing note/status flows.
 Prisma generation happened only in the isolated dependency copy; schema/migration
 files were unchanged and no database or running service was accessed.
+
+## Slice 4A — administrator submitted-checklist corrections
+
+POST /admin/submissions/:id/correct accepts submitted CHECK_IN, CHECK_OUT and
+MAINTENANCE records under ADMIN JWT authorization. It requires expectedRevision,
+full desired items, explicit nullable generalNote and a trimmed nonblank reason
+of 1–1000 Unicode characters. Captured template IDs, required items, strict fields,
+NORMAL/ABNORMAL rules and existing text limits govern validation. Repair/photo/
+identity/context fields are excluded. Historical inactive properties and expired
+private links remain manageable through administrator authorization; DRAFT and
+CANCELLED records cannot be corrected.
+
+The serializable transaction rechecks the active administrator, validates current
+snapshot/cached answers/template/author/scalars and photo evidence, then performs
+a conditional current-record update, CORRECTED revision, retained photo joins and
+linked-issue reconciliation atomically. ADMIN_SESSION records the administrator's
+identity and reason; original author/property/template/visit/submitted time/stay
+and prior revisions are preserved. Unchanged normalized answers/note create no
+revision. Actor-bound exact-success replay reads the immutable expectedRevision+1
+receipt; its digest covers normalized requested editable fields and reason, not
+later maintenance state. Original final-submission receipts/replays are unchanged.
+
+Existing issue priority remains independent of answer urgency. Current issue and
+original REPORTED evidence are validated before affected issue updates. Existing
+status, resolution, cancellation, recurrence, priority and original references/
+photos remain unchanged; NORMAL never resolves a report. Newly abnormal items
+without an existing source issue create one with corrected urgency and ADMIN
+attribution. A neutral issue-creation helper accepts an optional explicit admin
+actor; existing guest/staff callers retain their previous behavior.
+
+Maintenance repair metadata survives only while its answer remains ABNORMAL.
+NORMAL or omission clears dependent repair fields in the new revision. DEFECT and
+REPAIR associations remain only when their answer/repair requirements remain valid.
+Valid MAINTENANCE_BEFORE/AFTER locations survive normal or omitted answers. Removed
+current associations and repair data remain available in earlier history; uploads
+and original issue evidence are never deleted or automatically reattached.
+
+See docs/admin-submission-corrections.md for payloads, strict validation, transaction,
+replay, issue-priority and photo rules. No schema/migration, dependency, environment,
+notification, cancellation or service-lifecycle changes are included.
+
+Verification: TypeScript, source/scripts ESLint without --fix, exact changed-source
+Prettier and Nest build passed in an isolated source/dependency copy. Temporary
+actual DTO/controller/service/reader probes passed 328 synthetic assertions covering
+all types, administrator access, historical eligibility, reasons, no-op/replay,
+original final receipts, evidence corruption, issue preservation, photo/repair
+consequences, contention and atomic rollback. Prisma generation ran only in the
+isolated dependencies. No real JWT/HTTP, database, S3, browser or mobile acceptance
+was performed, and no migrations or running services were touched.
