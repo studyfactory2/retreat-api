@@ -1125,7 +1125,7 @@ not been run. The user owns live acceptance, Git and deployment.
 
 `bash deploy.sh` now documents separate pull, prepare, db, migrate, admin, up,
 status and logs commands. The user runs them on EC2. Pull fast-forwards the clean
-`develop` checkout only; preparation validates server configuration and builds
+`master` checkout only; preparation validates server configuration and builds
 API/operator images sequentially, tagged with the full Git commit ID. There is
 no automatic Git reset, migration, seed, image pruning or volume removal.
 

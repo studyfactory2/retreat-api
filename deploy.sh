@@ -6,7 +6,7 @@ usage() {
 Usage: bash deploy.sh COMMAND
 
 Run from your EC2 checkout as its owner. Each command is a separate step:
-  pull      Fast-forward the clean develop checkout from origin/develop
+  pull      Fast-forward the clean master checkout from origin/master
   prepare   Validate .env and build API/operator images for this Git commit
   db        Start PostgreSQL and wait; preserve an existing DB container
   migrate   Apply committed migrations, then show migration status
@@ -27,8 +27,8 @@ fail() {
 }
 
 require_clean_checkout() {
-  [[ "$(git branch --show-current)" == develop ]] ||
-    fail 'Switch to develop before preparing or deploying a release.'
+  [[ "$(git branch --show-current)" == master ]] ||
+    fail 'Switch to master before preparing or deploying a release.'
   [[ -z "$(git status --porcelain --untracked-files=normal)" ]] ||
     fail 'Commit or move local changes first. This script never resets or stashes files.'
 }
@@ -90,7 +90,7 @@ main() {
   if [[ "$action" == pull ]]; then
     # Replace this process: a pull may update deploy.sh itself. The next command
     # starts a new shell reading the newly pulled script.
-    exec git pull --ff-only origin develop
+    exec git pull --ff-only origin master
   fi
 
   [[ -f .env ]] || fail 'Create the server .env first; see docs/backend-containers.md.'

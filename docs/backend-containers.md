@@ -97,7 +97,7 @@ The server `.env` is parsed by Compose, never executed as shell code. Inherited
 application environment variables are cleared so the server file supplies the
 five required settings. Configuration validation does not print their values.
 
-The deployment checkout uses `develop`. `pull`, `prepare`, `migrate`, `admin`, and
+The deployment checkout uses `master`. `pull`, `prepare`, `migrate`, `admin`, and
 `up` require a clean checkout, including untracked files. The ignored `.env` is
 preserved. The script never resets, stashes, switches branches, or commits.
 
@@ -107,7 +107,7 @@ Fetch and fast-forward the deployment branch when an update is available:
 bash deploy.sh pull
 ```
 
-This performs only `git pull --ff-only origin develop`, using your existing GitHub
+This performs only `git pull --ff-only origin master`, using your existing GitHub
 authentication. It does not build or start anything. A conflict or divergence
 stops the pull. Run the next command separately so it reads the updated script.
 
