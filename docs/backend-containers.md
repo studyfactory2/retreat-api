@@ -76,64 +76,109 @@ three ceilings plus the OS exceed this server's RAM. These are unbenchmarked
 limits, not capacity guarantees, and they do not limit Docker build memory. Swap
 provides a slower buffer; measure real photo/import workloads before client use.
 
-Validate without printing resolved secrets:
+Use `bash deploy.sh help` to see the available commands. Run the script as the
+checkout owner, without `sudo`; it uses `sudo` for Docker when necessary. It can
+be invoked from another directory because it resolves its own repository path.
+The server `.env` is parsed by Compose, never executed as shell code. Inherited
+application environment variables are cleared so the server file supplies the
+five required settings. Configuration validation does not print their values.
+
+The deployment checkout uses `develop`. `pull`, `prepare`, `migrate`, `admin`, and
+`up` require a clean checkout, including untracked files. The ignored `.env` is
+preserved. The script never resets, stashes, switches branches, or commits.
+
+Fetch and fast-forward the deployment branch when an update is available:
 
 ```sh
-sudo docker compose --env-file .env -f compose.production.yml config --quiet
+bash deploy.sh pull
 ```
 
-Build the API and operator sequentially; this does not start services:
+This performs only `git pull --ff-only origin develop`, using your existing GitHub
+authentication. It does not build or start anything. A conflict or divergence
+stops the pull. Run the next command separately so it reads the updated script.
+
+Validate configuration and build both images sequentially:
 
 ```sh
-sudo docker compose --env-file .env -f compose.production.yml --parallel 1 build api operator
+bash deploy.sh prepare
 ```
 
-Start only PostgreSQL and wait for it to become ready:
+The API and operator images are tagged with the full current Git commit ID.
+Every later command uses that same checkout's commit; after pulling another
+commit, run `prepare` again. This avoids deploying an old `local` image by mistake.
+Preparation never starts services or applies migrations. Image tags are local;
+there is no registry upload or automatic image pruning in this script.
+
+Start only PostgreSQL and wait for it to become healthy:
 
 ```sh
-sudo docker compose --env-file .env -f compose.production.yml up -d --wait --wait-timeout 120 db
+bash deploy.sh db
 ```
 
-Apply the existing committed migrations to the fresh production database. Use
-`migrate deploy`, not `migrate dev` or `db push`:
+This preserves an existing database container with `--no-recreate`. Changes to
+PostgreSQL configuration or its image therefore need a separately planned update.
+It does not recreate the database when you deploy a new API release.
+
+Apply existing committed migrations to the fresh production database:
 
 ```sh
-sudo docker compose --env-file .env -f compose.production.yml run --rm --no-deps operator node node_modules/prisma/build/index.js migrate deploy
-sudo docker compose --env-file .env -f compose.production.yml run --rm --no-deps operator node node_modules/prisma/build/index.js migrate status
+bash deploy.sh migrate
 ```
 
-Create the first administrator using the existing interactive command. Do not add
-`-T`: the command requires a terminal and hides password entry. It refuses to
-overwrite an existing administrator.
+This runs Prisma `migrate deploy`, followed by `migrate status`, using the operator
+image. It requires that image and an already healthy database. Before migrating
+an existing production database, take a verified backup and review the migrations.
+This command does not run `migrate dev`, `db push`, or seed any data.
+
+Create your first administrator interactively:
 
 ```sh
-sudo docker compose --env-file .env -f compose.production.yml run --rm --no-deps operator npm run admin:create
+bash deploy.sh admin
 ```
 
-Start the API using the built image, then check it from the EC2 terminal:
+Enter your login ID, administrator name, password, and password confirmation at
+the prompts. Password entry is hidden. The existing `admin:create` script refuses
+if any administrator already exists. Run it in a terminal, without piping input;
+the wrapper preserves the interactive terminal. Later, use those credentials at
+the frontend's `/admin/login` page. There is no public administrator signup.
+
+Start the API using the prepared image, then check it from the EC2 terminal:
 
 ```sh
-sudo docker compose --env-file .env -f compose.production.yml up -d --no-build --wait --wait-timeout 120 api
+bash deploy.sh up
 curl --fail http://127.0.0.1:8081/health
 ```
 
-Expected response: `{"status":"ok","service":"retreat-api"}`. This host-only
-endpoint is not the future public API address. Do not open EC2 port 5432 or 3100;
-HTTPS ingress/proxy handling is the next infrastructure step.
+`up` first checks Prisma migration status and stops if it fails. It does not apply
+migrations. It starts or updates only the API, without rebuilding, pulling an API
+image, or restarting PostgreSQL, and waits up to 120 seconds for API health.
+A failed health check returns an error; it does not automatically roll back the
+container or the database. Inspect the logs before taking the next action.
+
+Expected health response: `{"status":"ok","service":"retreat-api"}`. This is
+application liveness, not full database/S3 acceptance. The host-only address is not
+the future public API address. Do not open EC2 port 5432 or 3100; public HTTPS and
+proxy configuration remain a separate infrastructure step.
 
 Inspect status or bounded logs if a command fails:
 
 ```sh
-sudo docker compose --env-file .env -f compose.production.yml ps
-sudo docker compose --env-file .env -f compose.production.yml logs --tail=100 api db
+bash deploy.sh status
+bash deploy.sh logs
 ```
 
-Before updating a populated database, take a verified backup and review the new
-migrations. The API never applies migrations itself, and this step adds no new
-migration or seed data. Separate `deploy.sh` scripts come later.
+These two commands remain available with local Git changes so diagnostics are
+not blocked. Keep the server `.env` available for Compose configuration parsing.
+For later API updates, the sequence is `pull`, `prepare`, an explicit `migrate`
+when appropriate after backup/review, then `up`. Do not repeat `admin`. On this
+small server, arrange a maintenance window if running the operator alongside the
+API would exceed available memory. HTTPS setup and workload testing still need
+to be completed before serving users.
 
 ## References
 
 - [Compose database startup ordering](https://docs.docker.com/compose/how-tos/startup-order/)
 - [Explicit one-off services using profiles](https://docs.docker.com/compose/how-tos/profiles/)
 - [Official PostgreSQL image and initialization behavior](https://hub.docker.com/_/postgres)
+- [Compose one-off command options](https://docs.docker.com/reference/cli/docker/compose/run/)
+- [Compose startup and health options](https://docs.docker.com/reference/cli/docker/compose/up/)

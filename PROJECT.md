@@ -1120,3 +1120,26 @@ found no blocking configuration/command mismatch. Operator help runs without DB
 access. Step 1's isolated Mac build/pruning/native-library checks passed; Linux
 image builds, PostgreSQL initialization/migrations and container/S3 operation have
 not been run. The user owns live acceptance, Git and deployment.
+
+## Explicit backend deployment commands — 2026-10-12
+
+`bash deploy.sh` now documents separate pull, prepare, db, migrate, admin, up,
+status and logs commands. The user runs them on EC2. Pull fast-forwards the clean
+`develop` checkout only; preparation validates server configuration and builds
+API/operator images sequentially, tagged with the full Git commit ID. There is
+no automatic Git reset, migration, seed, image pruning or volume removal.
+
+Compose parses the server `.env` without shell sourcing. Inherited application
+variables are cleared and the release tag is supplied after optional Docker sudo;
+Git runs as the checkout owner. Release commands reject dirty/wrong-branch trees,
+require local images for the current commit and check database health. Database
+startup preserves an existing container; API startup checks migration status,
+then changes only the API and waits for health. Admin setup remains interactive.
+The guide describes first setup, later updates, memory limits and failure handling.
+
+Validation: Bash syntax/help checks and 36 isolated command-flow probes passed,
+including sudo tag propagation, clean-branch gating, missing configuration/images,
+migration/build/health failures and interactive admin dispatch. All Git/Docker/sudo
+calls in the probes were mocked. Independent static review found no blocking
+issues. Actual Git pulls, Docker builds/services, PostgreSQL migrations, admin
+creation and deployment were not run. Frontend and HTTPS remain the next slices.
