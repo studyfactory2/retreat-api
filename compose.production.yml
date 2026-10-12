@@ -60,7 +60,10 @@ services:
       target: runtime
     init: true
     restart: unless-stopped
-    environment: *api-environment
+    environment:
+      <<: *api-environment
+      # Only this private API sits behind the single CloudFront/Nginx gateway.
+      TRUST_PROXY: 'true'
     depends_on:
       db:
         condition: service_healthy
@@ -68,8 +71,11 @@ services:
     ports:
       - '127.0.0.1:8081:3100'
     networks:
-      - database
-      - egress
+      database: {}
+      egress: {}
+      proxy:
+        aliases:
+          - retreat-api
     cap_drop:
       - ALL
     security_opt:
@@ -108,3 +114,8 @@ networks:
     internal: true
 
   egress: {}
+
+  # Backend owns this shared network; only the API and frontend gateway join it.
+  proxy:
+    name: retreat-proxy
+    internal: true

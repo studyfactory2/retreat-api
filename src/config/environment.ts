@@ -1,6 +1,7 @@
 export interface RuntimeEnvironment {
   NODE_ENV: 'development' | 'test' | 'production';
   PORT: number;
+  TRUST_PROXY: boolean;
   CORS_ORIGINS: string[];
   DATABASE_URL: string;
   JWT_SECRET: string;
@@ -22,6 +23,16 @@ export function validateEnvironment(
     nodeEnv !== 'production'
   ) {
     throw new Error('NODE_ENV must be development, test, or production.');
+  }
+
+  const trustProxyInput =
+    input.TRUST_PROXY === undefined ? 'false' : input.TRUST_PROXY;
+  if (trustProxyInput !== 'true' && trustProxyInput !== 'false') {
+    throw new Error('TRUST_PROXY must be true or false.');
+  }
+  const trustProxy = trustProxyInput === 'true';
+  if (trustProxy && nodeEnv !== 'production') {
+    throw new Error('TRUST_PROXY may only be enabled in production.');
   }
 
   const portInput = input.PORT ?? 3100;
@@ -156,6 +167,7 @@ export function validateEnvironment(
   return {
     NODE_ENV: nodeEnv,
     PORT: port,
+    TRUST_PROXY: trustProxy,
     CORS_ORIGINS: [...new Set(origins)],
     DATABASE_URL: databaseUrl,
     JWT_SECRET: jwtSecret,

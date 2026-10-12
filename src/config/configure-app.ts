@@ -5,6 +5,7 @@ import {
   ValidationPipe,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import type { Express } from 'express';
 import helmet from 'helmet';
 import type { ApiFieldError } from '../libs/dto/common/api-error.response';
 import { HttpExceptionFilter } from '../libs/filters/http-exception.filter';
@@ -23,6 +24,14 @@ function fieldErrors(errors: ValidationError[], parent = ''): ApiFieldError[] {
 
 export function configureApp(app: INestApplication): void {
   const config = app.get(ConfigService<RuntimeEnvironment, true>);
+
+  // Only the private production gateway may supply forwarded client addresses.
+  // It preserves CloudFront's X-Forwarded-For; trust only its rightmost address.
+  const server = app.getHttpAdapter().getInstance() as Express;
+  server.set(
+    'trust proxy',
+    config.get('TRUST_PROXY', { infer: true }) ? 1 : false,
+  );
 
   app.use(helmet());
   app.enableCors({

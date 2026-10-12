@@ -1143,3 +1143,35 @@ migration/build/health failures and interactive admin dispatch. All Git/Docker/s
 calls in the probes were mocked. Independent static review found no blocking
 issues. Actual Git pulls, Docker builds/services, PostgreSQL migrations, admin
 creation and deployment were not run. Frontend and HTTPS remain the next slices.
+
+## Single-origin gateway integration — 2026-10-12
+
+The backend Compose project now owns the internal `retreat-proxy` Docker network.
+Only the API joins it, with the `retreat-api` alias, for the frontend Nginx gateway
+at `retreat-api:3100`. PostgreSQL and the operator remain outside that network;
+API database/egress access and the host-only `127.0.0.1:8081` binding are unchanged.
+Start the backend before the frontend, which references this external network.
+Normal deployments preserve the network; do not remove it with a gateway attached.
+
+Only the Compose API service enables `TRUST_PROXY=true`. Environment validation
+accepts exact `true`/`false` strings, defaults to false and rejects true outside
+production. Shared HTTP setup uses Express numeric trust proxy 1, so existing
+IP throttlers use the rightmost CloudFront-forwarded viewer address. Nginx must
+preserve CloudFront X-Forwarded-For unchanged, set trusted protocol/host values,
+and enforce the configured origin restriction. This setting is valid only with
+the fixed CloudFront -> restricted Nginx -> private API path; a hop count alone
+is not proxy authentication. Deploy commands clear inherited TRUST_PROXY values.
+
+The frontend gateway strips `/api` before forwarding; existing API routes keep
+no prefix. Its single HTTPS CloudFront origin is used for FRONTEND_URL/CORS and
+frontend link generation. See docs/backend-containers.md and the frontend's
+production guide for the topology and origin prerequisites. No routes, DTOs,
+schema, migrations, dependencies, real environment or cloud resources changed.
+
+Verification: isolated TypeScript, changed-source ESLint/Prettier, Nest build,
+and Bash syntax/help passed. Disposable probes passed 28 real Express/config/
+throttler assertions, 19 official Compose configuration assertions with synthetic
+settings, and 36 mocked deployment command-flow checks including inherited proxy
+setting removal and sudo dispatch. No server, database, S3, Docker daemon, image
+build, CloudFront or live request was used. The user owns Git and deployment;
+live origin restriction, HTTPS, client IP and end-to-end acceptance remain pending.

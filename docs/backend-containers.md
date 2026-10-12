@@ -1,15 +1,17 @@
 # Backend containers: first production setup
 
 This step packages the API, a fresh PostgreSQL 16 database, and an optional
-operator container. It does not configure public HTTPS, a frontend deployment,
-or automatic Git pulls. Run the commands below on EC2 only when the server
+operator container, plus the private network used by the frontend gateway. Public
+HTTPS and the frontend are configured separately in the frontend repository. Run
+the commands below on EC2 only when the server
 configuration is ready. The user owns all builds, migrations and live operations.
 
 ## What Compose runs
 
 - `db`: PostgreSQL on the private `database` Docker network, with no host port.
 - `api`: the nonroot production image from `Dockerfile`; waits for database
-  readiness. It is reachable on the EC2 host at `127.0.0.1:8081` only.
+  readiness. Its host port is bound to `127.0.0.1:8081` only; the frontend gateway
+  reaches `retreat-api:3100` over the shared `retreat-proxy` Docker network.
 - `operator`: development tools, application source, scripts and committed
   migrations in a separate image. It runs only when explicitly selected. Its
   default command displays Prisma help; it never migrates or seeds on startup.
@@ -18,6 +20,13 @@ The API and operator also have an outbound network for S3/EC2 role credentials.
 Keep IMDSv2 required and the instance metadata response hop limit at 2.
 Database readiness and `/health` are not proof of applied migrations, S3 access,
 or working application workflows.
+
+The backend Compose project owns the fixed, internal `retreat-proxy` network.
+Only the API joins it here, with the `retreat-api` alias; the frontend gateway
+joins it as an external network. PostgreSQL and the operator do not join this
+network. Start the backend before the frontend. Normal updates use `deploy.sh up`
+and preserve networks; do not tear down the backend network while the frontend
+is attached. The API retains its separate database and outbound networks.
 
 The fixed volume `retreat-postgres-data` survives container recreation and normal
 `docker compose down`. Never use `down -v` or delete this volume to fix a startup
@@ -52,6 +61,11 @@ Compose sets `NODE_ENV=production`, `PORT=3100`, `DATABASE_URL` and `CORS_ORIGIN
 The database host inside Docker is `db`, not `localhost`; its database/user are
 both `retreat`. There is no need to duplicate those four variables in this server
 file. Existing local development settings remain unchanged.
+
+The API service alone also sets `TRUST_PROXY=true`; do not add this to either
+local development or server `.env`. It defaults to false outside this Compose
+deployment. Runtime validation accepts only the exact strings `true` or `false`
+and rejects enabling it outside production. The operator keeps the default false.
 
 Do not add `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` or `AWS_SESSION_TOKEN`.
 The EC2 role supplies credentials, and this Compose file passes only the listed
@@ -157,8 +171,8 @@ container or the database. Inspect the logs before taking the next action.
 
 Expected health response: `{"status":"ok","service":"retreat-api"}`. This is
 application liveness, not full database/S3 acceptance. The host-only address is not
-the future public API address. Do not open EC2 port 5432 or 3100; public HTTPS and
-proxy configuration remain a separate infrastructure step.
+the public API address. Do not open EC2 ports 5432, 3100 or 8081; the frontend
+gateway is the only public route to the API.
 
 Inspect status or bounded logs if a command fails:
 
@@ -174,6 +188,35 @@ when appropriate after backup/review, then `up`. Do not repeat `admin`. On this
 small server, arrange a maintenance window if running the operator alongside the
 API would exceed available memory. HTTPS setup and workload testing still need
 to be completed before serving users.
+
+## Single CloudFront origin and client IPs
+
+The deployment uses one HTTPS CloudFront address. The frontend gateway serves
+the client and forwards `/api/...` to `http://retreat-api:3100/...`; the API still
+has no global `/api` prefix. Use that CloudFront HTTPS origin for `FRONTEND_URL`
+and the frontend origin settings. The frontend repository documents the gateway,
+CloudFront behaviors, origin restriction and deployment commands.
+
+`TRUST_PROXY=true` configures Express with numeric `trust proxy = 1`, never an
+unrestricted boolean trust setting. CloudFront appends the viewer address to
+`X-Forwarded-For`. Nginx must forward that header unchanged, not append its own
+CloudFront peer address. Express then uses the rightmost forwarded address for
+`request.ip`, which the existing in-memory throttlers use. Earlier caller-supplied
+forwarded addresses are ignored. The gateway supplies the forwarded protocol and
+host; it must not forward arbitrary caller values for those settings.
+
+This is valid only for this fixed path: CloudFront -> the restricted Nginx origin
+-> private API. The origin must accept only the intended CloudFront distribution
+using its configured secret origin header and EC2 access restriction, and API
+ports must remain private. The hop count alone does not authenticate proxies.
+Do not expose the API directly, attach unrelated containers to `retreat-proxy`,
+or use this setting behind a different proxy chain. Host loopback health checks
+without forwarded headers continue to use the socket address. Local/test runs
+ignore forwarded headers because proxy trust defaults to false.
+
+Updating the gateway or this topology requires rechecking client IP attribution,
+the origin restriction and route/caching behavior. No live origin or CloudFront
+configuration is created by the backend files or the deployment script.
 
 ## References
 
