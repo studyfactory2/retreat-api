@@ -1096,3 +1096,27 @@ operational counts/exports and original guest-report replay. These use in-memory
 Prisma/auth/signing fixtures; they do not establish live PostgreSQL isolation,
 authenticated HTTP/JWT/S3 or browser/device acceptance. Prisma generation ran only
 in isolated dependencies. No database or running service was accessed.
+
+## Backend container preparation — 2026-10-12
+
+Production container setup is documented in [backend containers](docs/backend-containers.md).
+The Dockerfile builds the Linux Prisma client and native dependencies, keeps a
+nonroot slim API runtime, and offers a separate optional operator target with
+Prisma, ts-node, scripts and committed migrations. Build inputs exclude .env,
+credentials and host dependencies. Existing runtime routes/schema are unchanged.
+
+compose.production.yml runs PostgreSQL 16 with the fixed retreat-postgres-data
+volume on an internal network. The API waits for TCP database readiness and is
+published only at host loopback 127.0.0.1:8081. API/operator outbound access supports
+S3 and the EC2 role; static AWS credentials are not passed through. Production is
+a fresh database using retreat-photos-prod-studyfactorylab; development data stays
+separate. Migrations and initial administrator creation are explicit user commands,
+never API startup actions. Public HTTPS/proxy setup and deploy.sh remain later steps.
+
+Verification: official Compose v5.6.0 configuration checks with fictional values
+passed for profiles, required variables, credential exclusion, database URL,
+networks, volume, health ordering and resource/log settings. Independent review
+found no blocking configuration/command mismatch. Operator help runs without DB
+access. Step 1's isolated Mac build/pruning/native-library checks passed; Linux
+image builds, PostgreSQL initialization/migrations and container/S3 operation have
+not been run. The user owns live acceptance, Git and deployment.

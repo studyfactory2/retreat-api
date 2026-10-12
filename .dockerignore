@@ -1,0 +1,27 @@
+# Send only the inputs used by the API image. In particular, never send the
+# local .env, node_modules, Git history, credentials, backups, or build output.
+**
+!package.json
+!package-lock.json
+!nest-cli.json
+!tsconfig.json
+!tsconfig.build.json
+!prisma/
+!prisma/schema.prisma
+!prisma/migrations/
+!prisma/migrations/**
+!scripts/
+!scripts/**
+!src/
+!src/**
+
+# Keep secrets and test fixtures excluded even if placed under src in future.
+**/.env*
+**/.aws
+**/.ssh
+**/.npmrc
+**/*.pem
+**/*.key
+**/*.spec.ts
+**/__tests__
+**/__fixtures__
