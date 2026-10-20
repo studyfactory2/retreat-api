@@ -5,6 +5,7 @@ export interface JwtPayload {
   userId: string;
   iat: number;
   exp: number;
+  sessionVersion?: number;
 }
 
 export interface AuthenticatedUser {
@@ -15,7 +16,11 @@ export interface AuthenticatedUser {
 }
 
 export interface AuthenticatedRequest extends Request {
-  user?: AuthenticatedUser | null;
+  user?: AuthenticatedSession | null;
+}
+
+export interface AuthenticatedSession extends AuthenticatedUser {
+  sessionVersion: number;
 }
 
 export interface LoginResponse {

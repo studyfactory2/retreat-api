@@ -8,7 +8,10 @@ import { Role } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { isUUID } from 'class-validator';
 import { PrismaService } from '../../database/prisma.service';
-import type { AuthenticatedUser, JwtPayload } from '../../libs/dto/user/user';
+import type {
+  AuthenticatedSession,
+  JwtPayload,
+} from '../../libs/dto/user/user';
 
 @Injectable()
 export class AuthService {
@@ -36,15 +39,18 @@ export class AuthService {
   }
 
   public async createToken(
-    user: Pick<AuthenticatedUser, 'id'>,
+    user: Pick<AuthenticatedSession, 'id' | 'sessionVersion'>,
     expiresIn: number,
   ): Promise<string> {
-    return this.jwtService.signAsync({ userId: user.id }, { expiresIn });
+    return this.jwtService.signAsync(
+      { userId: user.id, sessionVersion: user.sessionVersion },
+      { expiresIn },
+    );
   }
 
   public async authenticateHeader(
     header: string | undefined,
-  ): Promise<AuthenticatedUser> {
+  ): Promise<AuthenticatedSession> {
     const match =
       typeof header === 'string' && header.length <= 8192
         ? /^Bearer +([^\s]+)$/i.exec(header)
@@ -53,7 +59,7 @@ export class AuthService {
     return this.verifyToken(match[1]);
   }
 
-  public async verifyToken(token: string): Promise<AuthenticatedUser> {
+  public async verifyToken(token: string): Promise<AuthenticatedSession> {
     let payload: JwtPayload;
     try {
       payload = await this.jwtService.verifyAsync<JwtPayload>(token);
@@ -68,7 +74,10 @@ export class AuthService {
       typeof payload.exp !== 'number' ||
       !Number.isFinite(payload.exp) ||
       typeof payload.iat !== 'number' ||
-      !Number.isFinite(payload.iat)
+      !Number.isFinite(payload.iat) ||
+      (payload.sessionVersion !== undefined &&
+        (!Number.isSafeInteger(payload.sessionVersion) ||
+          payload.sessionVersion < 0))
     ) {
       throw this.unauthorized();
     }
@@ -81,6 +90,7 @@ export class AuthService {
         role: true,
         loginId: true,
         passwordHash: true,
+        sessionVersion: true,
         isActive: true,
       },
     });
@@ -88,7 +98,8 @@ export class AuthService {
       !user?.isActive ||
       user.role !== Role.ADMIN ||
       !user.loginId ||
-      !user.passwordHash
+      !user.passwordHash ||
+      user.sessionVersion !== (payload.sessionVersion ?? 0)
     ) {
       throw this.unauthorized();
     }
@@ -97,6 +108,7 @@ export class AuthService {
       name: user.name,
       role: user.role,
       loginId: user.loginId,
+      sessionVersion: user.sessionVersion,
     };
   }
 

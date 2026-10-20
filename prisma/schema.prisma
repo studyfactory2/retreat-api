@@ -118,6 +118,7 @@ model User {
   role         Role     @default(GUEST)
   loginId      String?  @unique
   passwordHash String?
+  sessionVersion Int    @default(0)
   phone        String?
   company      String?
   department   String?

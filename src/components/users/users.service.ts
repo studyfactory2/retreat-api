@@ -27,6 +27,7 @@ export class UsersService {
         role: true,
         loginId: true,
         passwordHash: true,
+        sessionVersion: true,
         isActive: true,
       },
     });
@@ -54,7 +55,10 @@ export class UsersService {
       loginId: user.loginId,
     };
     const expiresIn = (input.autoLogin ? 30 : 7) * 24 * 60 * 60;
-    const token = await this.authService.createToken(profile, expiresIn);
+    const token = await this.authService.createToken(
+      { id: user.id, sessionVersion: user.sessionVersion },
+      expiresIn,
+    );
     return { user: profile, token, tokenType: 'Bearer', expiresIn };
   }
 }

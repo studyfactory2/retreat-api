@@ -37,6 +37,11 @@ export class UsersController {
   @Roles(Role.ADMIN)
   @UseGuards(RolesGuard)
   public me(@AuthUser() user: AuthenticatedUser): AuthenticatedUser {
-    return user;
+    return {
+      id: user.id,
+      name: user.name,
+      role: user.role,
+      loginId: user.loginId,
+    };
   }
 }

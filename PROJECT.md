@@ -1192,3 +1192,26 @@ example sheets, preserved phone zeros, minute/second timestamps, date-only rows,
 invalid inputs and exact/overlapping stay boundaries. No database or production
 request was used. No schema, migrations, dependencies or permanent tests changed;
 the user retains staging, commit, push and deployment ownership.
+
+### Slice 4 — administrator profile and password — 2026-10-20
+
+`admin-account/` exposes GET `/admin/account`, POST `/admin/account/profile` and
+POST `/admin/account/password`. Administrators edit only their own name, contact,
+company and department. Profile saves compare `expectedUpdatedAt`; login ID and
+role remain immutable. Password changes verify the current password, confirmation
+and existing bcrypt limits, then atomically update the hash and increment the
+new `User.sessionVersion`. Authentication rejects older versions, while legacy
+unversioned tokens remain valid only at version zero. Other admins are unaffected.
+Safe `/users/me` and login responses retain their existing public shape.
+
+Schema prerequisite: the user must generate/apply the
+`add_admin_session_version` migration and regenerate Prisma before running the
+updated API. See `docs/admin-account.md` for commands and deployment order.
+The assistant generated Prisma only in an isolated dependency copy for checking;
+no migration or live database command was run.
+
+Verification: isolated Prisma validation/generation, TypeScript/Nest build and
+changed-source ESLint/Prettier; 38 disposable HTTP/service/auth checks with an
+in-memory Prisma adapter, including stale edits, session revocation, other-admin
+isolation, concurrent password changes and throttling. No real database, server
+deployment, dependencies, permanent tests, staging or commits were changed.
