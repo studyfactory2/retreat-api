@@ -131,7 +131,7 @@ function readDate(
   } else {
     const value = text(cell);
     const match = value?.match(
-      /^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2}):(\d{2})(?:\.(\d{1,3}))?)?$/,
+      /^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2})(?::(\d{2})(?:\.(\d{1,3}))?)?)?$/,
     );
     if (!match) return none;
     missingTime = match[4] === undefined;
@@ -358,7 +358,7 @@ export function parseRoster(grid: WorkbookGrid): PreviewRow[] {
         flag(
           row,
           'MISSING_TIME',
-          '날짜만 있고 시간이 없습니다. 입퇴실 시간을 확인해 주세요.',
+          '입·퇴실 시간을 입력해 주세요. 예: 2026-11-02 15:00 (한국 시간)',
         );
       if (arrival.at && departure.at && arrival.at >= departure.at)
         flag(row, 'INVALID_DATE_RANGE', '퇴실은 입실보다 늦어야 합니다.', true);

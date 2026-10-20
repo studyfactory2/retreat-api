@@ -79,6 +79,15 @@ explicit midnight is preserved. Date-only values keep their local date with a
 null timestamp and MISSING_TIME. Standard 15:00/11:00 times are never invented.
 The parser does not enforce a check-in hour that the client has not specified.
 
+Text date-times accept `YYYY-MM-DD HH:mm` or `YYYY-MM-DDTHH:mm`, as well as
+the existing seconds and fractional-seconds forms. Omitting seconds means zero
+seconds; omitting the whole time still requires review. Numeric Excel dates use
+their actual values and cell formats. In the frontend's downloadable `.xls`
+template, I/J use `yyyy-mm-dd hh:mm` and D uses text format to preserve phone
+leading zeros. The blank template must be filled before upload; the separate
+fictional example contains two stays per supported sheet and is not production
+data. The Korean column guide preserves the fixed A:L layout and blank headers.
+
 Overlapping source stays are flagged on both rows. Date-only boundaries use
 conservative whole-day intervals for possible conflicts. Exact checkout/arrival
 boundaries do not overlap. Active database stays are checked for mapped properties;

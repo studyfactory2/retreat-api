@@ -1175,3 +1175,20 @@ settings, and 36 mocked deployment command-flow checks including inherited proxy
 setting removal and sudo dispatch. No server, database, S3, Docker daemon, image
 build, CloudFront or live request was used. The user owns Git and deployment;
 live origin restriction, HTTPS, client IP and end-to-end acceptance remain pending.
+
+### Excel roster minute-precision timestamps — 2026-10-20
+
+Roster text dates now accept `YYYY-MM-DD HH:mm` as well as the existing seconds
+and fractional-seconds forms, including the `T` separator. Supplied times are
+still interpreted in Asia/Seoul. Omitting seconds uses zero seconds; omitting the
+whole time remains `MISSING_TIME` and requires review. Invalid dates/times, stay
+ordering and overlap checks are unchanged. The Korean missing-time message gives
+an explicit date/time example. See `docs/admin-stay-imports.md` for the matching
+frontend blank template, fictional example and writing-guide contract.
+
+Verification: isolated TypeScript compilation and changed-source ESLint/Prettier;
+21 disposable probes using the actual workbook reader/parser covered all six
+example sheets, preserved phone zeros, minute/second timestamps, date-only rows,
+invalid inputs and exact/overlapping stay boundaries. No database or production
+request was used. No schema, migrations, dependencies or permanent tests changed;
+the user retains staging, commit, push and deployment ownership.
