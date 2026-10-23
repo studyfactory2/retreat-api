@@ -9,6 +9,10 @@ import { AdminReportReaderService } from './admin-report-reader.service';
 import { AdminReportWorkbookService } from './admin-report-workbook.service';
 import { REPORT_CONTENT_TYPE } from './admin-report-policy';
 import { PreservationReportReaderService } from './preservation-report-reader.service';
+import {
+  PreservationZipService,
+  type PreservationZipDownload,
+} from './preservation-zip.service';
 import { PreservationReportWorkbookService } from './preservation-report-workbook.service';
 
 @Injectable()
@@ -20,6 +24,7 @@ export class AdminReportsService {
     private readonly workbook: AdminReportWorkbookService,
     private readonly preservationReader: PreservationReportReaderService,
     private readonly preservationWorkbook: PreservationReportWorkbookService,
+    private readonly preservationZip: PreservationZipService,
   ) {}
 
   public async getExcel(input: GetAdminReportInput): Promise<StreamableFile> {
@@ -32,10 +37,22 @@ export class AdminReportsService {
     return this.generate(input, true);
   }
 
-  private async generate(
+  public async getPreservationZip(
     input: GetAdminReportInput,
-    preservation: boolean,
-  ): Promise<StreamableFile> {
+    signal: AbortSignal,
+  ): Promise<PreservationZipDownload> {
+    this.acquire();
+    try {
+      return await this.preservationZip.create(input, signal, () => {
+        this.generating = false;
+      });
+    } catch (error) {
+      this.generating = false;
+      throw error;
+    }
+  }
+
+  private acquire(): void {
     if (this.generating)
       throw new HttpException(
         {
@@ -44,8 +61,14 @@ export class AdminReportsService {
         },
         HttpStatus.TOO_MANY_REQUESTS,
       );
-
     this.generating = true;
+  }
+
+  private async generate(
+    input: GetAdminReportInput,
+    preservation: boolean,
+  ): Promise<StreamableFile> {
+    this.acquire();
     try {
       const buffer = preservation
         ? this.preservationWorkbook.create(

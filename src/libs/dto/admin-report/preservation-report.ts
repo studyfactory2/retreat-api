@@ -20,4 +20,5 @@ export interface PreservationReport {
   generatedAt: Date;
   propertyLabel: string;
   tables: ArchiveTable[];
+  photoPackage?: { total: number; included: number; skipped: number };
 }

@@ -11,6 +11,7 @@ import {
   S3Client,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { Readable } from 'node:stream';
 import type { RuntimeEnvironment } from '../config/environment';
 
 @Injectable()
@@ -61,6 +62,29 @@ export class S3Service implements OnModuleDestroy {
         { abortSignal: AbortSignal.timeout(60_000) },
       );
     } catch {
+      throw this.unavailable();
+    }
+  }
+
+  public async getPhoto(
+    bucket: string,
+    key: string,
+    signal: AbortSignal,
+  ): Promise<{ body: Readable; contentLength?: number } | null> {
+    this.assertLocation(bucket, key);
+    signal.throwIfAborted();
+    try {
+      const object = await this.getClient().send(
+        new GetObjectCommand({ Bucket: bucket, Key: key }),
+        { abortSignal: signal },
+      );
+      if (!(object.Body instanceof Readable)) throw this.unavailable();
+      return { body: object.Body, contentLength: object.ContentLength };
+    } catch (error) {
+      signal.throwIfAborted();
+      // A generic 403/404 can be a permission, bucket or proxy failure.
+      // Only the storage service's missing-object response permits a partial archive.
+      if (isMissingPhoto(error)) return null;
       throw this.unavailable();
     }
   }
@@ -143,4 +167,16 @@ export class S3Service implements OnModuleDestroy {
       message: '사진 저장소에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요.',
     });
   }
+}
+
+function isMissingPhoto(error: unknown): boolean {
+  if (!error || typeof error !== 'object') return false;
+  const candidate = error as {
+    name?: unknown;
+    $metadata?: { httpStatusCode?: unknown };
+  };
+  return (
+    candidate.name === 'NoSuchKey' &&
+    candidate.$metadata?.httpStatusCode === 404
+  );
 }

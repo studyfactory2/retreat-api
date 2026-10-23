@@ -1249,3 +1249,19 @@ parsers and RepeatableRead protect evidence consistency. No schema/dependency
 change; user owns commits and deployment. Temporary fixtures verify workbook,
 service and authenticated HTTP behavior; live PostgreSQL/S3/Excel acceptance is
 not claimed.
+
+## Slice 6C — combined Excel and photo preservation ZIP
+
+ADMIN-only GET /admin/reports/preservation-zip packages the seven-sheet Slice 6B
+workbook and retained historical processed JPEGs together, using one metadata
+snapshot and deduplicating files by attachment ID. ZIP-specific photo columns
+and a text guide state exact paths and any deleted/unavailable/missing omissions.
+Storage access/network/integrity failures reject the whole package. The existing
+summary and standalone preservation Excel contracts are unchanged.
+
+The package uses bounded private temporary disk files and the yazl streaming ZIP
+library, with 100 referenced photos, 100 MiB photo bytes, 128 MiB ZIP and 80-second
+preparation bounds. HTTP completion, disconnect and transfer expiry clean up
+temporary files and release the shared report guard. See docs/admin-reports.md
+for lifecycle, errors, crash residue and browser/download semantics. No schema,
+migration, environment, permanent tests, commits or deployment operations change.

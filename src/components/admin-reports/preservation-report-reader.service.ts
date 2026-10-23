@@ -38,6 +38,12 @@ import {
   MAX_ARCHIVE_VERSIONS,
 } from './preservation-report-model';
 
+import {
+  MAX_ARCHIVE_PHOTOS,
+  archivePhotosTooLarge,
+  type PreservationArchivePhoto,
+} from './preservation-zip-policy';
+
 const attachmentSelect = {
   id: true,
   kind: true,
@@ -50,6 +56,9 @@ const attachmentSelect = {
   createdAt: true,
   deletedAt: true,
   storageDeletedAt: true,
+  storageBucket: true,
+  storageKey: true,
+  checksumSha256: true,
 } satisfies Prisma.AttachmentSelect;
 type ArchiveAttachment = Prisma.AttachmentGetPayload<{
   select: typeof attachmentSelect;
@@ -70,7 +79,10 @@ export class PreservationReportReaderService {
     private readonly issues: AdminIssueReader,
   ) {}
 
-  async read(input: GetAdminReportInput): Promise<PreservationReport> {
+  async read(
+    input: GetAdminReportInput,
+    photoPlan?: Map<string, PreservationArchivePhoto>,
+  ): Promise<PreservationReport> {
     const { start, end } = seoulDateRange(
       input.from,
       input.to,
@@ -292,6 +304,7 @@ export class PreservationReportReaderService {
                     current: row.currentRevision,
                     eventId: revision.id,
                     propertyId: row.propertyId,
+                    propertyName: record.property.name,
                   },
                   link.attachment,
                   link.purpose,
@@ -299,6 +312,7 @@ export class PreservationReportReaderService {
                   link.itemId,
                   link.areaLabel,
                   link.sortOrder,
+                  photoPlan,
                 );
               });
               const fields = submissionFields(
@@ -457,6 +471,7 @@ export class PreservationReportReaderService {
                     current: row.currentVersion,
                     eventId: event.id,
                     propertyId: row.propertyId,
+                    propertyName: record.property.name,
                   },
                   link.attachment,
                   purpose ?? '이벤트 첨부',
@@ -464,6 +479,7 @@ export class PreservationReportReaderService {
                   record.sourceItemId,
                   record.areaLabel,
                   link.sortOrder,
+                  photoPlan,
                 );
               }
               const fields = issueFields(record);
@@ -546,6 +562,7 @@ export class PreservationReportReaderService {
       kind: string;
       id: string;
       propertyId: string;
+      propertyName: string;
       version: number;
       current: number;
       eventId: string;
@@ -556,9 +573,26 @@ export class PreservationReportReaderService {
     itemId: string | null,
     area: string | null,
     order: number,
+    photoPlan?: Map<string, PreservationArchivePhoto>,
   ): void {
     if (photo.kind !== 'PHOTO' || photo.propertyId !== meta.propertyId)
       archiveNeedsReview();
+    if (photoPlan && !photoPlan.has(photo.id)) {
+      if (photoPlan.size >= MAX_ARCHIVE_PHOTOS) archivePhotosTooLarge();
+      photoPlan.set(photo.id, {
+        id: photo.id,
+        propertyId: meta.propertyId,
+        propertyName: meta.propertyName,
+        originalFilename: photo.originalFilename,
+        status: photo.status,
+        deleted: Boolean(photo.deletedAt || photo.storageDeletedAt),
+        contentType: photo.contentType,
+        sizeBytes: photo.sizeBytes,
+        checksumSha256: photo.checksumSha256,
+        storageBucket: photo.storageBucket,
+        storageKey: photo.storageKey,
+      });
+    }
     // This describes database availability only; no S3 request or signed URL is created.
     const availability =
       photo.status === 'DELETED' || photo.deletedAt || photo.storageDeletedAt

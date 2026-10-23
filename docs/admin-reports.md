@@ -208,3 +208,68 @@ Verification uses temporary in-memory Prisma/JWT HTTP fixtures, XLSX round-trip
 and ZIP/XML checks, plus frontend browser fixtures. Actual PostgreSQL isolation,
 S3 files, physical phones and Microsoft Excel rendering need operational acceptance.
 No schema change or migration is needed. No deployment was performed.
+
+## Combined preservation ZIP — Slice 6C
+
+`GET /admin/reports/preservation-zip` accepts the same date/property query and
+ADMIN guards, throttling and no-store policy. It returns
+`retreat-archive-FROM-TO.zip` containing `기록.xlsx`, `다운로드안내.txt`, and
+`사진/{sanitized historical property name}_{property ID}/{attachment ID}.jpg`.
+The seven-sheet Excel and its private photo plan come from the same existing
+RepeatableRead read. Record selection, cancellations, archived properties and
+all retained historical revisions/events follow Slice 6B exactly; photo upload
+dates do not filter the selected records' photos.
+
+Binary files are deduplicated by attachment ID, while every version/event
+reference remains in the photo sheet. The ZIP workbook adds `ZIP 파일 경로`
+and `다운로드 결과` and updates its guide to describe the actual package.
+The ordinary preservation XLSX retains its database-only photo-availability
+wording. Download counts mean distinct attachment IDs, not photo-reference rows.
+Three exposed headers report the completed package:
+`X-Archive-Photos-Total`, `X-Archive-Photos-Included` and
+`X-Archive-Photos-Skipped` (`total = included + skipped`).
+
+Files are the exact processed JPEG bytes retained by the app, including its
+existing resize/re-encode/EXIF removal. The source label can still end in PNG or
+WebP; it remains in Excel and the text guide, but extracted files end in JPG.
+These are not untouched camera originals. Private storage locations and signed
+URLs are never written to the workbook, text guide, or response.
+
+Database-deleted and non-READY attachments are explicitly skipped. A storage
+`NoSuchKey` response with HTTP 404 is the only missing-file response that is
+skipped. Generic 403/404, bucket/access errors, network failures, truncated or
+oversized bodies, and SHA-256 mismatches fail the whole export. Each included
+body must match its database size and optional stored hexadecimal SHA-256.
+The text guide lists every attachment and outcome; the Excel photo sheet repeats
+the outcome on all references. Zero-photo exports still include Excel and the
+guide. A partial archive is downloadable only when all omissions have explicit
+deleted/unavailable/missing-file explanations.
+
+The additional limits are 100 distinct referenced attachment IDs (including
+skipped IDs), 100 MiB expected/actual eligible photo bytes, 128 MiB ZIP and
+80 seconds preparation. Existing workbook/record limits still apply.
+`ARCHIVE_TOO_LARGE` (413) and `ARCHIVE_TIMEOUT` (504) instruct the user to
+narrow the date/property selection; `ARCHIVE_PHOTO_UNAVAILABLE` or existing
+`PHOTO_STORAGE_UNAVAILABLE` (503) fail safely. The 80-second preparation bound
+fits the existing 90-second CloudFront origin response limit. Client/Nginx
+download timeouts are 180 seconds; no infrastructure or environment update is
+required by the API.
+
+Photos stream sequentially from S3 into a private OS temporary directory (0700,
+files 0600). `yazl` streams the finished package to disk; JPEG entries and the
+already-compressed XLSX are stored without recompression. Photo/ZIP byte meters
+enforce actual streamed sizes. All temporary files are removed on preparation
+failure, response completion, aborted requests or the 180-second transfer
+deadline. The shared per-process report guard stays held through ZIP delivery
+and cleanup. Disconnects cancel storage and ZIP input streams.
+
+A process crash or forced kill can leave a private `retreat-photo-archive-*`
+temporary directory. Operations may remove such stale directories from the
+service's OS temp directory after confirming that the owning process is stopped;
+do not delete directories belonging to a live export. This slice adds no
+automatic retention job or cloud backup. The browser receives one bounded Blob
+and reports that download was requested; the app cannot confirm a file was
+saved on the device. The ZIP is for manual preservation, not restore/import.
+
+No schema changes, migrations, permanent tests or service operations are included.
+The user owns staging, commits, pushing and deployment.

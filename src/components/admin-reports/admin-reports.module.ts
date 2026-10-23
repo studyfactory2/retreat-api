@@ -3,6 +3,8 @@ import {
   type MiddlewareConsumer,
   type NestModule,
 } from '@nestjs/common';
+import { StorageModule } from '../../storage/storage.module';
+import { PreservationZipService } from './preservation-zip.service';
 import { AuthModule } from '../auth/auth.module';
 import { AdminIssueReader } from '../admin-issues/admin-issue-reader';
 import { QrNoStoreMiddleware } from '../qr/qr-no-store.middleware';
@@ -14,7 +16,7 @@ import { PreservationReportReaderService } from './preservation-report-reader.se
 import { PreservationReportWorkbookService } from './preservation-report-workbook.service';
 
 @Module({
-  imports: [AuthModule],
+  imports: [AuthModule, StorageModule],
   controllers: [AdminReportsController],
   providers: [
     AdminReportsService,
@@ -22,6 +24,7 @@ import { PreservationReportWorkbookService } from './preservation-report-workboo
     AdminReportWorkbookService,
     PreservationReportReaderService,
     PreservationReportWorkbookService,
+    PreservationZipService,
     AdminIssueReader,
     QrNoStoreMiddleware,
   ],

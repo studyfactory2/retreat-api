@@ -92,6 +92,8 @@ function columnWidth(header: string): number {
     '기록 상태': 12,
     응답: 12,
     '파일 상태': 30,
+    'ZIP 파일 경로': 52,
+    '다운로드 결과': 24,
     파일명: 32,
     '파일 형식': 20,
     '기록 종류': 14,
@@ -141,7 +143,19 @@ export function archiveTableLayout(
   data: PreservationReport,
   table: ArchiveTable,
 ): ArchiveSheetLayout {
-  const leading = leadingColumns[table.name];
+  const leading =
+    table.name === '사진 목록' && data.photoPackage
+      ? [
+          '파일명',
+          '다운로드 결과',
+          'ZIP 파일 경로',
+          '파일 상태',
+          '용도',
+          '기록 종류',
+          '버전',
+          '현재 버전',
+        ]
+      : leadingColumns[table.name];
   if (leading.some((header) => !table.headers.includes(header)))
     throw new Error('Missing preservation presentation column');
   const headers = [
@@ -316,7 +330,9 @@ export function archiveGuideLayout(
   );
   note(
     '사진 보관',
-    '사진 목록만 포함합니다. 사진 원본 파일과 다운로드 링크는 이 엑셀에 포함하지 않습니다.',
+    data.photoPackage
+      ? `ZIP에 앱 저장 사진 ${data.photoPackage.included}장 포함 · ${data.photoPackage.skipped}장 제외 · 전체 ${data.photoPackage.total}장. 사진 목록의 ZIP 파일 경로와 다운로드 결과를 확인하세요. 촬영 원본이 아닌 앱에서 처리된 JPEG입니다.`
+      : '사진 목록만 포함합니다. 사진 원본 파일과 다운로드 링크는 이 엑셀에 포함하지 않습니다.',
     'notice',
   );
   add([], 'spacer', 12);
@@ -347,7 +363,9 @@ export function archiveGuideLayout(
   );
   note(
     '사진 목록',
-    '각 버전 또는 이상사항 이벤트에 연결된 목록으로 같은 사진 ID가 반복될 수 있습니다. 파일 상태는 데이터베이스 기준이며 실제 저장 파일은 확인하지 않았습니다. 목록만으로 원본이 보관되지는 않습니다.',
+    data.photoPackage
+      ? '각 버전과 이상사항 이벤트의 사진 연결을 모두 보존합니다. 같은 사진 ID가 반복되어도 ZIP에는 한 파일만 담깁니다. 파일 상태는 조회 시점의 데이터베이스 정보이며, 다운로드 결과는 이번 파일 확인 결과입니다. 제외 사유는 다운로드안내.txt에도 기록됩니다.'
+      : '각 버전 또는 이상사항 이벤트에 연결된 목록으로 같은 사진 ID가 반복될 수 있습니다. 파일 상태는 데이터베이스 기준이며 실제 저장 파일은 확인하지 않았습니다. 목록만으로 원본이 보관되지는 않습니다.',
   );
   note(
     '연결 ID',
@@ -355,11 +373,15 @@ export function archiveGuideLayout(
   );
   note(
     '제외 항목',
-    '로그인 정보·QR/개인 링크·차량번호·사진 파일·작성 중 기록은 제외합니다. 앱에 다시 업로드하여 복구하는 파일은 아닙니다.',
+    data.photoPackage
+      ? '로그인 정보·QR/개인 링크·차량번호·작성 중 기록은 제외합니다. 삭제되었거나 사용할 수 없거나 저장소에 없는 사진은 제외 사유를 남깁니다. 앱에 다시 업로드하여 복구하는 파일은 아닙니다.'
+      : '로그인 정보·QR/개인 링크·차량번호·사진 파일·작성 중 기록은 제외합니다. 앱에 다시 업로드하여 복구하는 파일은 아닙니다.',
   );
   note(
     '다운로드 제한',
-    '최대 62일, 대상 기록 5,000건, 버전/이벤트 10,000건, 상세 행 합계 50,000행, 텍스트 32 MiB, 파일 16 MiB입니다. 초과하면 일부만 저장하지 않고 범위를 줄이도록 안내합니다.',
+    data.photoPackage
+      ? '기존 엑셀 제한에 더해 사진 ID 100개, 사진 합계 100 MiB, ZIP 128 MiB, 준비 시간 80초 이내입니다. 제한을 초과하면 전체 다운로드가 실패하며 범위를 줄여 다시 시도할 수 있습니다.'
+      : '최대 62일, 대상 기록 5,000건, 버전/이벤트 10,000건, 상세 행 합계 50,000행, 텍스트 32 MiB, 파일 16 MiB입니다. 초과하면 일부만 저장하지 않고 범위를 줄이도록 안내합니다.',
   );
   return {
     name: '안내',

@@ -91,6 +91,13 @@ function appearance(
   if (header === '이상 응답 수' && typeof value === 'number' && value > 0)
     return { ...result, tone: 'red', fill: 'red' };
   // Colors supplement the saved label; never infer state from a note or ID.
+  if (header === '다운로드 결과') {
+    const label = String(value ?? '');
+    if (label === '포함')
+      return { ...result, tone: 'green', fill: 'green', align: 'center' };
+    if (label.startsWith('제외 · '))
+      return { ...result, tone: 'amber', fill: 'amber' };
+  }
   if (
     ['상태', '응답', '처리 상태', '기록 상태', '긴급', '파일 상태'].includes(
       header,
