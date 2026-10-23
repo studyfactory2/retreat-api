@@ -10,6 +10,8 @@ import { AdminReportReaderService } from './admin-report-reader.service';
 import { AdminReportWorkbookService } from './admin-report-workbook.service';
 import { AdminReportsController } from './admin-reports.controller';
 import { AdminReportsService } from './admin-reports.service';
+import { PreservationReportReaderService } from './preservation-report-reader.service';
+import { PreservationReportWorkbookService } from './preservation-report-workbook.service';
 
 @Module({
   imports: [AuthModule],
@@ -18,6 +20,8 @@ import { AdminReportsService } from './admin-reports.service';
     AdminReportsService,
     AdminReportReaderService,
     AdminReportWorkbookService,
+    PreservationReportReaderService,
+    PreservationReportWorkbookService,
     AdminIssueReader,
     QrNoStoreMiddleware,
   ],

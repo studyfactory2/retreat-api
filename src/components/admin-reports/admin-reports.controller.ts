@@ -19,6 +19,19 @@ export class AdminReportsController {
 
   @Roles(Role.ADMIN)
   @UseGuards(RolesGuard, ThrottlerGuard)
+  @Get('preservation-excel')
+  @Header('Cache-Control', 'no-store')
+  @Header('Access-Control-Expose-Headers', 'Content-Disposition')
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  public async getPreservationExcel(
+    @Query() input: GetAdminReportInput,
+  ): Promise<StreamableFile> {
+    console.log('GET: getPreservationExcel');
+    return await this.adminReportsService.getPreservationExcel(input);
+  }
+
+  @Roles(Role.ADMIN)
+  @UseGuards(RolesGuard, ThrottlerGuard)
   @Get('excel')
   @Header('Cache-Control', 'no-store')
   @Header('Access-Control-Expose-Headers', 'Content-Disposition')

@@ -136,3 +136,75 @@ counts and retains only summary rows between batches.
 No schema changes or migration are required. No new tests/spec files, packages,
 frontend, scheduled reports, PDF export or deployment changes are included.
 The user controls staging, commits, migrations and deployment.
+
+
+## Preservation workbook — Slice 6B
+
+`GET /admin/reports/preservation-excel` accepts the same `from`, `to` and optional
+`propertyId` DTO as the summary endpoint. ADMIN authentication, no-store headers,
+10 requests/minute throttling and the shared per-process export lock apply.
+The response is an XLSX attachment named `retreat-archive-FROM-TO.xlsx`.
+`GET /admin/reports/excel` retains its existing three-sheet summary and exclusions.
+
+The preservation workbook has seven Korean sheets: 안내, 이용 일정, 점검 기록,
+점검 답변, 이상사항, 변경 이력 and 사진 목록. Main sheets show the latest saved
+version, including cancellations clearly marked 취소됨. Historical property,
+author, category and checklist text comes from stored snapshots. Question rows
+include unanswered optional items. Original submission times remain unchanged. Stored guest/author phone, company and
+department are included for preservation; the ordinary summary still omits them.
+
+All dates use Asia/Seoul. Inclusive date selection is represented by a half-open
+UTC range. Stays qualify when their current scheduled interval overlaps it
+(checkInAt < end, checkOutAt > start); submissions qualify by original submittedAt;
+issues qualify by reportedAt. Draft submissions are excluded. Inactive properties
+are eligible. Linked entities outside the selected scope are referenced by ID but
+not silently added. Scheduled times do not establish actual occupancy.
+
+For every selected entity, all saved revisions/events are included, even changes
+after the selected period. Reads use one RepeatableRead transaction, loading entity headers in batches of 25
+and version snapshots in batches of 10. The result is
+a snapshot at export, not a reconstruction of the selected period's closing state.
+History uses one row per changed field, with before/after values, version, actor,
+time, reason/note and immutable history ID. First versions establish initial
+values; events with no field changes still receive an event row. Historical answers
+and staff action notes remain readable after correction. Missing versions,
+malformed snapshots and inconsistent photo associations reject the entire export.
+
+Photos are a version/event manifest, not image files. A photo can appear more than
+once; attachment IDs identify the same file across records and versions. Status
+is database-derived: registered/unverified, deleted or unavailable. No storage
+object is read, no signed URL is generated, and no credentials, object keys,
+login/QR/private-link data or vehicle plate is exported. Bulk image download is
+Slice 6C. The workbook is a human-readable archive, not a database restore/import
+format. The 안내 sheet explains filters, joins, counts and these limitations.
+
+Limits apply before worksheet construction: 62 days, 5,000 entities, 10,000
+revisions/events, 50,000 expanded detail/history/photo rows, and 32 MiB of cell
+text. A cell may not exceed Excel's 32,767-character limit. The final file is
+limited to 16 MiB. Exceeding a limit returns REPORT_TOO_LARGE with no partial
+workbook. Narrow the date range or property selection; a single extremely large
+history may require a future dedicated export workflow.
+
+All user values use explicit string cells; phone numbers and IDs retain leading
+zeroes and formula-like text is literal. Timestamps use numeric Excel dates in
+Seoul time. Columns are filterable with frozen headers, wrapped text and readable
+widths. The existing SheetJS ZIP codec applies a small, generated-output-only
+OOXML formatting pass; no new dependency or uploaded-XLSX parsing is introduced.
+Long notes remain complete; users can expand row height to read them.
+
+The seven preservation sheets share navy headers, alternating rows, text-labelled
+status colors and compact 28–54 pt data rows. 안내 opens with the export scope,
+six sheet counts and short reading instructions before the detailed preservation
+rules. It has no frozen pane. The six data sheets keep filters on row 5 and freeze
+the first five rows plus the first identifying column (two columns for history).
+Only the presentation layer reorders columns: important dates, statuses and
+counts come first; complete notes, contact details and immutable IDs remain
+available to the right. Table headers and data cells are never merged. All
+strings have explicit text formatting, including phone numbers and ID values.
+No logo or photo images are embedded. The ordinary three-sheet summary layout
+is unchanged.
+
+Verification uses temporary in-memory Prisma/JWT HTTP fixtures, XLSX round-trip
+and ZIP/XML checks, plus frontend browser fixtures. Actual PostgreSQL isolation,
+S3 files, physical phones and Microsoft Excel rendering need operational acceptance.
+No schema change or migration is needed. No deployment was performed.

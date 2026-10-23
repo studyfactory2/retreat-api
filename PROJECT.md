@@ -1235,3 +1235,17 @@ used an in-memory Prisma adapter for authorization, DTOs, eligibility boundaries
 version conflicts, preview bounds, preservation and injected P2034 retry behavior.
 This does not establish real PostgreSQL concurrency or production behavior. No
 real database, deployment, staging, commits or pushes were performed.
+
+
+## Slice 6B — preservation Excel
+
+Added ADMIN-only GET /admin/reports/preservation-excel alongside the unchanged
+summary endpoint. Seven sheets preserve selected stays, latest checklist records
+and answers, issues, all historical versions and a photo manifest. Cancelled
+records and inactive properties are included; drafts, credentials, vehicle plates
+and photo binaries are excluded. Date selection, snapshot rules and bounded
+all-or-nothing limits are documented in docs/admin-reports.md. Existing snapshot
+parsers and RepeatableRead protect evidence consistency. No schema/dependency
+change; user owns commits and deployment. Temporary fixtures verify workbook,
+service and authenticated HTTP behavior; live PostgreSQL/S3/Excel acceptance is
+not claimed.

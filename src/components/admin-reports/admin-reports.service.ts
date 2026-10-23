@@ -8,6 +8,8 @@ import type { GetAdminReportInput } from '../../libs/dto/admin-report/admin-repo
 import { AdminReportReaderService } from './admin-report-reader.service';
 import { AdminReportWorkbookService } from './admin-report-workbook.service';
 import { REPORT_CONTENT_TYPE } from './admin-report-policy';
+import { PreservationReportReaderService } from './preservation-report-reader.service';
+import { PreservationReportWorkbookService } from './preservation-report-workbook.service';
 
 @Injectable()
 export class AdminReportsService {
@@ -16,9 +18,24 @@ export class AdminReportsService {
   constructor(
     private readonly reader: AdminReportReaderService,
     private readonly workbook: AdminReportWorkbookService,
+    private readonly preservationReader: PreservationReportReaderService,
+    private readonly preservationWorkbook: PreservationReportWorkbookService,
   ) {}
 
   public async getExcel(input: GetAdminReportInput): Promise<StreamableFile> {
+    return this.generate(input, false);
+  }
+
+  public async getPreservationExcel(
+    input: GetAdminReportInput,
+  ): Promise<StreamableFile> {
+    return this.generate(input, true);
+  }
+
+  private async generate(
+    input: GetAdminReportInput,
+    preservation: boolean,
+  ): Promise<StreamableFile> {
     if (this.generating)
       throw new HttpException(
         {
@@ -30,9 +47,12 @@ export class AdminReportsService {
 
     this.generating = true;
     try {
-      const data = await this.reader.read(input);
-      const buffer = this.workbook.create(data);
-      const filename = `retreat-report-${data.from}-${data.to}.xlsx`;
+      const buffer = preservation
+        ? this.preservationWorkbook.create(
+            await this.preservationReader.read(input),
+          )
+        : this.workbook.create(await this.reader.read(input));
+      const filename = `retreat-${preservation ? 'archive' : 'report'}-${input.from}-${input.to}.xlsx`;
       return new StreamableFile(buffer, {
         type: REPORT_CONTENT_TYPE,
         disposition: `attachment; filename="${filename}"`,
