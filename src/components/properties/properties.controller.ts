@@ -15,6 +15,7 @@ import {
 import { Role } from '@prisma/client';
 import {
   AssignStaffInput,
+  ChangePropertyOperationInput,
   CreatePropertyInput,
   GetPropertiesInput,
   UpdatePropertyInput,
@@ -22,6 +23,7 @@ import {
 import type {
   PropertyDto,
   PropertyListDto,
+  PropertyOperationPreviewDto,
 } from '../../libs/dto/property/property';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -84,6 +86,30 @@ export class PropertiesController {
   ): Promise<PropertyDto> {
     console.log('POST: updateProperty');
     return await this.propertiesService.updateProperty(id, input);
+  }
+
+  @Roles(Role.ADMIN)
+  @UseGuards(RolesGuard)
+  @Get(':id/operation')
+  @Header('Cache-Control', 'no-store')
+  public async getOperationPreview(
+    @Param('id', propertyIdPipe) id: string,
+  ): Promise<PropertyOperationPreviewDto> {
+    console.log('GET: getOperationPreview');
+    return await this.propertiesService.getOperationPreview(id);
+  }
+
+  @Roles(Role.ADMIN)
+  @UseGuards(RolesGuard)
+  @Post(':id/operation')
+  @HttpCode(HttpStatus.OK)
+  @Header('Cache-Control', 'no-store')
+  public async changeOperation(
+    @Param('id', propertyIdPipe) id: string,
+    @Body() input: ChangePropertyOperationInput,
+  ): Promise<PropertyDto> {
+    console.log('POST: changeOperation');
+    return await this.propertiesService.changeOperation(id, input);
   }
 
   @Roles(Role.ADMIN)

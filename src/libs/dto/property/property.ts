@@ -21,3 +21,15 @@ export interface PropertyDto {
 }
 
 export type PropertyListDto = ListDto<PropertyDto>;
+
+export interface PropertyOperationPreviewDto {
+  property: PropertyDto;
+  checkedAt: Date;
+  blockingStayCount: number;
+  stays: {
+    id: string;
+    guestName: string;
+    checkInAt: Date;
+    checkOutAt: Date;
+  }[];
+}

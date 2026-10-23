@@ -22,6 +22,8 @@ PropertiesModule retains property management and staff assignment.
 | GET | /admin/properties | Paginated property list | 200 |
 | GET | /admin/properties/:id | Property details with assigned staff | 200 |
 | POST | /admin/properties/:id/update | Edit or activate/deactivate a property | 200 |
+| GET | /admin/properties/:id/operation | Preview archive eligibility and blocking stays | 200 |
+| POST | /admin/properties/:id/operation | Archive or resume with a version check | 200 |
 | POST | /admin/properties/:id/staff | Assign or unassign staff | 200 |
 
 All path IDs must be UUIDs. Unsupported methods do not mutate records.
@@ -94,7 +96,7 @@ visibility explicit. There is no automatic calling or messaging.
 Update with `POST /admin/properties/:id/update`:
 
 ```json
-{ "name": "제주 애월 1호점", "region": "제주", "isActive": true }
+{ "name": "제주 애월 1호점", "region": "제주" }
 ```
 
 At least one field is required. Null/blank clears region; name and isActive cannot
@@ -169,9 +171,55 @@ conflicts retry up to three attempts, then return 409 `CONCURRENT_UPDATE`.
 
 Property updates retain the existing partial-update convention: omitted fields
 are preserved, while competing updates to the same provided field are last-write
-wins after transaction serialization. There is no expected-version input on this
-route; public contact uses the same rule.
+wins after transaction serialization. Public contact uses the same rule. Status
+changes additionally require expectedUpdatedAt as described in Slice 6A below.
 
 The public-contact extension adds nullable `Property.publicContactPhone` and the
 `20261007020000_add_property_public_contact` migration file. The user applies the
 migration; no data backfill or automatic profile-phone exposure is performed.
+
+
+## Slice 6A: remove from operations and resume
+
+`Property.isActive` remains the storage flag. No record deletion or migration is
+introduced. The property directory defaults to operating properties; archived
+properties remain explicitly accessible, and historical API selectors still
+include both statuses.
+
+`GET /admin/properties/:id/operation` returns `property` (the normal safe DTO),
+`checkedAt`, `blockingStayCount`, and up to five `stays` with `id`, `guestName`,
+`checkInAt`, `checkOutAt`, ordered by arrival then ID. The count and rows share a
+repeatable-read snapshot. A blocking stay is ACTIVE (not cancelled), belongs to
+this property, and has `checkOutAt > checkedAt`. Equal checkout times do not block;
+this is the planned schedule, not a physical occupancy assertion. Display in Seoul.
+
+`POST /admin/properties/:id/operation` accepts only:
+
+```json
+{ "isActive": false, "expectedUpdatedAt": "2026-10-23T06:00:00.000Z" }
+```
+
+Use the timestamp from the freshly loaded preview, not this example. `false`
+archives; `true` resumes. The returned payload is the updated PropertyDto.
+Any status write through the existing `/:id/update` route now also requires
+`expectedUpdatedAt` and uses the same safeguard. This is a deliberate contract
+change; deploy the API before using the new client. Ordinary metadata updates
+retain their existing partial-update contract.
+
+Missing/invalid version fields return 400. Stale versions return 409
+`PROPERTY_CHANGED`. Archiving an operating property with blocking stays returns
+409 `PROPERTY_HAS_PENDING_STAYS`; no part of a mixed metadata/status update saves.
+Eligibility is rechecked in the serializable write, never trusted from the preview.
+Manual creation, date edits, cancelled-stay restoration, and Excel confirmation
+already read property activity within serializable transactions. The archive stay
+predicate plus property write participates in those same conflicts; P2034 retries
+recheck both version and schedule. Exhausted retries use existing CONCURRENT_UPDATE.
+Status writes advance updatedAt monotonically to invalidate older confirmations.
+
+Archive preserves identity, staff assignment, guide, templates, stays, submissions,
+photos, issues, and settings. It neither cancels stays nor resolves issues. New
+schedule writes and guest/staff QR or private-stay access are suspended by existing
+active-property checks. Admin history/photo access remains available. Resuming
+keeps the same identity/settings and does not restore cancelled stays. Unrotated
+property QR codes resume; expired/replaced/cancelled stay credentials remain invalid.
+No automatic archive scheduling, export expansion, bulk ZIP or cloud backup is added.

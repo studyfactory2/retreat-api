@@ -10,13 +10,21 @@ import { runSerializableTransaction } from '../../database/serializable-transact
 import type {
   PropertyDto,
   PropertyListDto,
+  PropertyOperationPreviewDto,
 } from '../../libs/dto/property/property';
 import type {
   AssignStaffInput,
+  ChangePropertyOperationInput,
   CreatePropertyInput,
   GetPropertiesInput,
   UpdatePropertyInput,
 } from '../../libs/dto/property/property.input';
+
+import {
+  blockingPropertyStays,
+  OPERATION_STAY_PREVIEW_LIMIT,
+  requirePropertyOperationChange,
+} from './property-operations';
 
 const propertySelect = {
   id: true,
@@ -136,7 +144,7 @@ export class PropertiesService {
       return await runSerializableTransaction(this.prisma, async (tx) => {
         const property = await tx.property.findUnique({
           where: { id },
-          select: { id: true },
+          select: { id: true, isActive: true, updatedAt: true },
         });
         if (!property) {
           throw new NotFoundException({
@@ -145,9 +153,20 @@ export class PropertiesService {
           });
         }
 
+        if (input.isActive !== undefined) {
+          await requirePropertyOperationChange(
+            tx,
+            property,
+            input.isActive,
+            input.expectedUpdatedAt,
+          );
+        }
         return tx.property.update({
           where: { id },
           data: {
+            updatedAt: new Date(
+              Math.max(Date.now(), property.updatedAt.getTime() + 1),
+            ),
             name: input.name,
             region: input.region,
             publicContactPhone: input.publicContactPhone,
@@ -160,6 +179,48 @@ export class PropertiesService {
     } catch (error) {
       this.handleWriteError(error);
     }
+  }
+
+  public async getOperationPreview(
+    id: string,
+  ): Promise<PropertyOperationPreviewDto> {
+    return this.prisma.$transaction(
+      async (tx) => {
+        const property = await tx.property.findUnique({
+          where: { id },
+          select: propertySelect,
+        });
+        if (!property) {
+          throw new NotFoundException({
+            code: 'PROPERTY_NOT_FOUND',
+            message: '휴양소를 찾을 수 없습니다.',
+          });
+        }
+        const checkedAt = new Date();
+        const where = blockingPropertyStays(id, checkedAt);
+        const blockingStayCount = await tx.stay.count({ where });
+        const stays = await tx.stay.findMany({
+          where,
+          orderBy: [{ checkInAt: 'asc' }, { id: 'asc' }],
+          take: OPERATION_STAY_PREVIEW_LIMIT,
+          select: {
+            id: true,
+            guestName: true,
+            checkInAt: true,
+            checkOutAt: true,
+          },
+        });
+        return { property, checkedAt, blockingStayCount, stays };
+      },
+      { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead },
+    );
+  }
+
+  public async changeOperation(
+    id: string,
+    input: ChangePropertyOperationInput,
+  ): Promise<PropertyDto> {
+    return this.updateProperty(id, input);
   }
 
   public async assignStaff(

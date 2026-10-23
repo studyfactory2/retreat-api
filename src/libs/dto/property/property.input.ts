@@ -1,6 +1,8 @@
 import { Transform } from 'class-transformer';
 import {
   IsBoolean,
+  IsISO8601,
+  Matches,
   IsNotEmpty,
   IsString,
   IsUUID,
@@ -53,6 +55,19 @@ export class CreatePropertyInput extends PropertyPublicContactInput {
 }
 
 export class UpdatePropertyInput extends PropertyPublicContactInput {
+  @ValidateIf(
+    (input: UpdatePropertyInput) =>
+      input.isActive !== undefined || input.expectedUpdatedAt !== undefined,
+  )
+  @IsISO8601(
+    { strict: true },
+    { message: '최신 휴양소 정보를 다시 불러와 주세요.' },
+  )
+  @Matches(/T.*(?:Z|[+-]\d{2}:\d{2})$/, {
+    message: '시간대가 포함된 저장 시각이 필요합니다.',
+  })
+  expectedUpdatedAt?: string;
+
   @Transform(trimText)
   @ValidateIf((_object, value: unknown) => value !== undefined)
   @IsString({ message: '휴양소 이름은 문자열이어야 합니다.' })
@@ -93,4 +108,18 @@ export class GetPropertiesInput extends ListInput {
   @ValidateIf((_object, value: unknown) => value !== undefined)
   @IsUUID('4', { message: '직원 ID를 확인해 주세요.' })
   staffUserId?: string;
+}
+
+export class ChangePropertyOperationInput {
+  @IsBoolean({ message: '운영 여부를 확인해 주세요.' })
+  isActive: boolean;
+
+  @IsISO8601(
+    { strict: true },
+    { message: '최신 휴양소 정보를 다시 불러와 주세요.' },
+  )
+  @Matches(/T.*(?:Z|[+-]\d{2}:\d{2})$/, {
+    message: '시간대가 포함된 저장 시각이 필요합니다.',
+  })
+  expectedUpdatedAt: string;
 }

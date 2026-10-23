@@ -1215,3 +1215,23 @@ changed-source ESLint/Prettier; 38 disposable HTTP/service/auth checks with an
 in-memory Prisma adapter, including stale edits, session revocation, other-admin
 isolation, concurrent password changes and throttling. No real database, server
 deployment, dependencies, permanent tests, staging or commits were changed.
+
+
+### Slice 6A — reversible property operations — 2026-10-23
+
+Property operation preview and status endpoints are ADMIN-only and no-store.
+Archiving blocks on non-cancelled stays with planned checkout after the current
+instant. Repeatable-read previews show a bounded five-stay sample plus total;
+serializable status writes repeat the check and require expectedUpdatedAt.
+Legacy property updates containing isActive use this same guard and now require
+the timestamp too. Metadata-only updates retain their partial-write behavior.
+Restore keeps the same property, settings, assignments and QR hashes; no stays,
+issues, submissions or photos are cancelled/deleted/restored automatically.
+See docs/admin-management.md for contract and concurrency details. No schema,
+migration, dependency or permanent test files were added.
+
+Verification: Nest build and non-fixing lint passed. Temporary HTTP/service probes
+used an in-memory Prisma adapter for authorization, DTOs, eligibility boundaries,
+version conflicts, preview bounds, preservation and injected P2034 retry behavior.
+This does not establish real PostgreSQL concurrency or production behavior. No
+real database, deployment, staging, commits or pushes were performed.
