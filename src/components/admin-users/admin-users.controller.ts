@@ -19,9 +19,17 @@ import {
   UpdateStaffInput,
 } from '../../libs/dto/user/staff.input';
 import type { StaffDto, StaffListDto } from '../../libs/dto/user/staff';
+import { DeactivateStaffInput } from '../../libs/dto/user/staff-deactivation.input';
+import type {
+  StaffDeactivationPreviewDto,
+  StaffDeactivationResultDto,
+} from '../../libs/dto/user/staff-deactivation';
+import type { AuthenticatedUser } from '../../libs/dto/user/user';
+import { AuthUser } from '../auth/decorators/auth.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { AdminUsersService } from './admin-users.service';
+import { StaffDeactivationService } from './staff-deactivation.service';
 
 const staffIdPipe = new ParseUUIDPipe({
   version: '4',
@@ -34,7 +42,10 @@ const staffIdPipe = new ParseUUIDPipe({
 
 @Controller('admin')
 export class AdminUsersController {
-  constructor(private readonly adminUsersService: AdminUsersService) {}
+  constructor(
+    private readonly adminUsersService: AdminUsersService,
+    private readonly staffDeactivation: StaffDeactivationService,
+  ) {}
 
   @Roles(Role.ADMIN)
   @UseGuards(RolesGuard)
@@ -78,5 +89,28 @@ export class AdminUsersController {
   ): Promise<StaffDto> {
     console.log('POST: updateStaff');
     return await this.adminUsersService.updateStaff(id, input);
+  }
+
+  @Roles(Role.ADMIN)
+  @UseGuards(RolesGuard)
+  @Get('staff/:id/deactivation-preview')
+  @Header('Cache-Control', 'no-store')
+  public async previewDeactivation(
+    @Param('id', staffIdPipe) id: string,
+  ): Promise<StaffDeactivationPreviewDto> {
+    return this.staffDeactivation.preview(id);
+  }
+
+  @Roles(Role.ADMIN)
+  @UseGuards(RolesGuard)
+  @Post('staff/:id/deactivate')
+  @HttpCode(HttpStatus.OK)
+  @Header('Cache-Control', 'no-store')
+  public async deactivateStaff(
+    @Param('id', staffIdPipe) id: string,
+    @Body() input: DeactivateStaffInput,
+    @AuthUser() actor: AuthenticatedUser,
+  ): Promise<StaffDeactivationResultDto> {
+    return this.staffDeactivation.deactivate(id, input, actor);
   }
 }

@@ -14,7 +14,7 @@ import type {
 } from '../../libs/dto/user/staff.input';
 import type { StaffDto, StaffListDto } from '../../libs/dto/user/staff';
 
-const staffSelect = {
+export const staffSelect = {
   id: true,
   name: true,
   role: true,
@@ -112,21 +112,16 @@ export class AdminUsersService {
       async (transaction) => {
         const user = await transaction.user.findFirst({
           where: { id, role: Role.STAFF },
-          select: { id: true },
+          select: { id: true, isActive: true },
         });
         if (!user) throw this.staffNotFound();
 
-        if (input.isActive === false) {
-          const assignment = await transaction.property.findFirst({
-            where: { staffUserId: id },
-            select: { id: true },
+        if (input.isActive === false && user.isActive) {
+          throw new ConflictException({
+            code: 'STAFF_DEACTIVATION_REQUIRED',
+            message:
+              '직원 인계 화면에서 담당 휴양소와 접근 권한을 확인해 주세요.',
           });
-          if (assignment) {
-            throw new ConflictException({
-              code: 'STAFF_HAS_ASSIGNMENTS',
-              message: '담당 휴양소를 해제하거나 다른 직원으로 변경해 주세요.',
-            });
-          }
         }
 
         const updated = await transaction.user.update({

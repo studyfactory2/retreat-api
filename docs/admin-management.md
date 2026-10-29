@@ -17,7 +17,9 @@ PropertiesModule retains property management and staff assignment.
 | POST | /admin/staff | Create an active STAFF profile | 201 |
 | GET | /admin/staff | Paginated staff list | 200 |
 | GET | /admin/staff/:id | Staff details with assigned properties | 200 |
-| POST | /admin/staff/:id/update | Edit or activate/deactivate a staff profile | 200 |
+| POST | /admin/staff/:id/update | Edit or explicitly reactivate a staff profile | 200 |
+| GET | /admin/staff/:id/deactivation-preview | Preview assignments, unfinished access, and latest handover | 200 |
+| POST | /admin/staff/:id/deactivate | Reassign retreats, revoke staff access, and deactivate atomically | 200 |
 | POST | /admin/properties | Create an active, unassigned property | 201 |
 | GET | /admin/properties | Paginated property list | 200 |
 | GET | /admin/properties/:id | Property details with assigned staff | 200 |
@@ -60,10 +62,13 @@ The same profile fields and a JSON boolean `isActive` are accepted. Omitted fiel
 remain unchanged; null/blank clears optional text. Name cannot be null or blank.
 An empty update and `isActive: null` or `"false"` are invalid.
 
-To deactivate, send `{ "isActive": false }`. This returns 409
-`STAFF_HAS_ASSIGNMENTS` while any property still references the worker, including
-inactive properties. Unassign or reassign those properties first. Reactivate with
-`{ "isActive": true }`. Administrator/guest IDs are not valid staff targets.
+Active-to-inactive updates return 409 `STAFF_DEACTIVATION_REQUIRED`, even when the
+worker has no current assignments. Use the preview and handover route described
+in [Slice 7](staff-deactivation.md) so old access is revoked and the change is
+audited. Inactive profiles can still be edited with `isActive: false`.
+Reactivate explicitly with `{ "isActive": true }`; no old assignment, staff QR,
+draft link or receipt link is restored. Administrator/guest IDs are not valid
+staff targets.
 
 ## Property inputs
 
@@ -112,6 +117,10 @@ Assign with `POST /admin/properties/:id/staff`:
 The property and worker must be active, and the worker must have role STAFF.
 One worker may cover several properties; each property has one current assignee.
 The response returns the updated property and a safe staff summary.
+An actual assignment change revokes the property's previous staff QR in the same
+transaction. Issue and distribute a new staff QR through the QR management page
+after changing the worker. Re-saving the same assignment preserves its staff QR;
+guest QR credentials are never changed by this route.
 
 Unassign using the same route:
 

@@ -138,8 +138,27 @@ model User {
   resolvedIssues      Issue[]               @relation("IssueResolver")
   issueEvents         IssueEvent[]
   updatedPropertyGuides PropertyGuide[] @relation("PropertyGuideEditor")
+  staffDeactivations StaffDeactivation[] @relation("DeactivatedStaff")
+  performedStaffDeactivations StaffDeactivation[] @relation("StaffDeactivationActor")
 
   @@index([role, isActive])
+}
+
+model StaffDeactivation {
+  id                String   @id @default(uuid())
+  staffUserId       String
+  actorUserId       String
+  actorSnapshot     Json
+  staffSnapshot     Json
+  assignments       Json
+  revokedDraftCount Int
+  createdAt         DateTime @default(now()) @db.Timestamptz(3)
+
+  staff User @relation("DeactivatedStaff", fields: [staffUserId], references: [id], onDelete: Restrict)
+  actor User @relation("StaffDeactivationActor", fields: [actorUserId], references: [id], onDelete: Restrict)
+
+  @@index([staffUserId, createdAt, id])
+  @@index([actorUserId])
 }
 
 model Property {

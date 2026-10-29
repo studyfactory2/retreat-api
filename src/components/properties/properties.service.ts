@@ -230,7 +230,12 @@ export class PropertiesService {
     return runSerializableTransaction(this.prisma, async (tx) => {
       const property = await tx.property.findUnique({
         where: { id },
-        select: { id: true, isActive: true },
+        select: {
+          id: true,
+          isActive: true,
+          staffUserId: true,
+          staffQrRotatedAt: true,
+        },
       });
       if (!property) {
         throw new NotFoundException({
@@ -266,7 +271,22 @@ export class PropertiesService {
 
       return tx.property.update({
         where: { id },
-        data: { staffUserId: input.staffUserId },
+        data: {
+          staffUserId: input.staffUserId,
+          // The QR resolves the current assignee; old copies cannot follow a
+          // change of worker. Saving the same assignment keeps existing access.
+          ...(property.staffUserId !== input.staffUserId
+            ? {
+                staffQrTokenHash: null,
+                staffQrRotatedAt: new Date(
+                  Math.max(
+                    Date.now(),
+                    (property.staffQrRotatedAt?.getTime() ?? 0) + 1,
+                  ),
+                ),
+              }
+            : {}),
+        },
         select: propertySelect,
       });
     });
