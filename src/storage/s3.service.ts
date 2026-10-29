@@ -82,8 +82,6 @@ export class S3Service implements OnModuleDestroy {
       return { body: object.Body, contentLength: object.ContentLength };
     } catch (error) {
       signal.throwIfAborted();
-      // A generic 403/404 can be a permission, bucket or proxy failure.
-      // Only the storage service's missing-object response permits a partial archive.
       if (isMissingPhoto(error)) return null;
       throw this.unavailable();
     }
