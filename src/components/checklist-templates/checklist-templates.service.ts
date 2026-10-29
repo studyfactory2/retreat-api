@@ -2,20 +2,32 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
+  InternalServerErrorException,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
-import { ChecklistType, Prisma } from '@prisma/client';
+import {
+  ChecklistTemplateVersionSource,
+  Prisma,
+  Role,
+  type ChecklistTemplateVersion,
+} from '@prisma/client';
 import { PrismaService } from '../../database/prisma.service';
 import { runSerializableTransaction } from '../../database/serializable-transaction';
 import type {
   CreateChecklistTemplateInput,
   GetChecklistTemplatesInput,
+  GetChecklistTemplateVersionsInput,
   UpdateChecklistTemplateInput,
 } from '../../libs/dto/checklist-template/checklist-template.input';
 import type {
   ChecklistTemplateDto,
   ChecklistTemplateListDto,
+  ChecklistTemplateVersionDto,
+  ChecklistTemplateVersionListDto,
+  ChecklistTemplateVersionSummaryDto,
 } from '../../libs/dto/checklist-template/checklist-template';
+import type { AuthenticatedUser } from '../../libs/dto/user/user';
 import {
   buildChecklistDefinition,
   parseChecklistDefinition,
@@ -44,11 +56,13 @@ export class ChecklistTemplatesService {
 
   public async createChecklistTemplate(
     input: CreateChecklistTemplateInput,
+    actor: AuthenticatedUser,
   ): Promise<ChecklistTemplateDto> {
     const definition = buildChecklistDefinition(input.sections);
 
     try {
       return await runSerializableTransaction(this.prisma, async (tx) => {
+        const publisher = await this.requirePublisher(tx, actor);
         await this.requireActiveProperty(tx, input.propertyId);
         const existing = await tx.checklistTemplate.findUnique({
           where: {
@@ -69,7 +83,9 @@ export class ChecklistTemplatesService {
           },
           select: templateSelect,
         });
-        return this.toDto(created);
+        const saved = this.toDto(created);
+        await this.archivePublished(tx, saved, publisher);
+        return saved;
       });
     } catch (error) {
       if (
@@ -131,6 +147,7 @@ export class ChecklistTemplatesService {
   public async updateChecklistTemplate(
     id: string,
     input: UpdateChecklistTemplateInput,
+    actor: AuthenticatedUser,
   ): Promise<ChecklistTemplateDto> {
     if (
       input.title === undefined &&
@@ -144,15 +161,10 @@ export class ChecklistTemplatesService {
     }
 
     return await runSerializableTransaction(this.prisma, async (tx) => {
+      const publisher = await this.requirePublisher(tx, actor);
       const current = await this.findTemplate(tx, id);
       if (input.expectedVersion !== current.version) {
         throw this.versionConflict();
-      }
-      if (current.type !== ChecklistType.MAINTENANCE) {
-        throw new ConflictException({
-          code: 'GUEST_TEMPLATE_FIXED',
-          message: '입실·퇴실 체크리스트는 초기 설정 후 수정할 수 없습니다.',
-        });
       }
       await this.requireActiveProperty(tx, current.propertyId);
 
@@ -170,13 +182,159 @@ export class ChecklistTemplatesService {
         return current;
       }
 
+      // A pre-upgrade API must not publish between the baseline migration and
+      // this release. Do not extend an archive whose current version is missing.
+      const archivedCurrent = await tx.checklistTemplateVersion.findUnique({
+        where: {
+          templateId_version: { templateId: id, version: current.version },
+        },
+        select: { version: true },
+      });
+      if (!archivedCurrent) {
+        throw new ConflictException({
+          code: 'CHECKLIST_HISTORY_UNAVAILABLE',
+          message:
+            '현재 버전의 보관 이력을 확인할 수 없습니다. 관리자에게 문의해 주세요.',
+        });
+      }
+
       const result = await tx.checklistTemplate.updateMany({
         where: { id, version: input.expectedVersion },
-        data: { title, definition, isActive, version: { increment: 1 } },
+        data: {
+          title,
+          definition,
+          isActive,
+          version: { increment: 1 },
+          updatedAt: new Date(
+            Math.max(Date.now(), current.updatedAt.getTime() + 1),
+          ),
+        },
       });
       if (result.count !== 1) throw this.versionConflict();
-      return await this.findTemplate(tx, id);
+      const saved = await this.findTemplate(tx, id);
+      await this.archivePublished(tx, saved, publisher);
+      return saved;
     });
+  }
+
+  public async getVersions(
+    id: string,
+    input: GetChecklistTemplateVersionsInput,
+  ): Promise<ChecklistTemplateVersionListDto> {
+    return this.prisma.$transaction(
+      async (tx) => {
+        const template = await this.findTemplate(tx, id);
+        const where = { templateId: template.id };
+        const [rows, total] = await Promise.all([
+          tx.checklistTemplateVersion.findMany({
+            where,
+            orderBy: { version: 'desc' },
+            skip: (input.page - 1) * input.limit,
+            take: input.limit,
+          }),
+          tx.checklistTemplateVersion.count({ where }),
+        ]);
+        return {
+          templateId: template.id,
+          currentVersion: template.version,
+          items: rows.map((row) => this.versionSummary(row)),
+          total,
+          page: input.page,
+          limit: input.limit,
+          totalPages: Math.ceil(total / input.limit),
+        };
+      },
+      { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead },
+    );
+  }
+
+  public async getVersion(
+    id: string,
+    version: number,
+  ): Promise<ChecklistTemplateVersionDto> {
+    return this.prisma.$transaction(
+      async (tx) => {
+        const template = await this.findTemplate(tx, id);
+        const row = await tx.checklistTemplateVersion.findUnique({
+          where: { templateId_version: { templateId: template.id, version } },
+        });
+        if (!row)
+          throw new NotFoundException({
+            code: 'CHECKLIST_VERSION_NOT_FOUND',
+            message: '보관된 체크리스트 버전을 찾을 수 없습니다.',
+          });
+        return {
+          ...this.versionSummary(row),
+          templateId: template.id,
+          propertyId: template.propertyId,
+          type: template.type,
+          definition: parseChecklistDefinition(row.definition),
+        };
+      },
+      { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead },
+    );
+  }
+
+  private async requirePublisher(
+    tx: Prisma.TransactionClient,
+    actor: AuthenticatedUser,
+  ) {
+    if (!actor?.id) throw new UnauthorizedException();
+    const publisher = await tx.user.findFirst({
+      where: { id: actor.id, role: Role.ADMIN, isActive: true },
+      select: { id: true, name: true },
+    });
+    if (!publisher) throw new UnauthorizedException();
+    return publisher;
+  }
+
+  private async archivePublished(
+    tx: Prisma.TransactionClient,
+    template: ChecklistTemplateDto,
+    publisher: { id: string; name: string },
+  ): Promise<void> {
+    await tx.checklistTemplateVersion.create({
+      data: {
+        templateId: template.id,
+        version: template.version,
+        title: template.title,
+        definition: template.definition,
+        isActive: template.isActive,
+        publishedAt: template.updatedAt,
+        source: ChecklistTemplateVersionSource.PUBLISHED,
+        actorUserId: publisher.id,
+        actorName: publisher.name,
+      },
+    });
+  }
+
+  private versionSummary(
+    row: ChecklistTemplateVersion,
+  ): ChecklistTemplateVersionSummaryDto {
+    const definition = parseChecklistDefinition(row.definition);
+    const baseline = row.source === ChecklistTemplateVersionSource.BASELINE;
+    if (
+      (baseline && (row.actorUserId !== null || row.actorName !== null)) ||
+      (!baseline && (!row.actorUserId || !row.actorName))
+    ) {
+      throw new InternalServerErrorException({
+        code: 'INVALID_CHECKLIST_HISTORY',
+        message: '체크리스트 이력을 확인할 수 없습니다.',
+      });
+    }
+    return {
+      version: row.version,
+      title: row.title,
+      isActive: row.isActive,
+      publishedAt: row.publishedAt,
+      actor: baseline ? null : { id: row.actorUserId, name: row.actorName },
+      source: row.source,
+      sectionCount: definition.sections.length,
+      itemCount: definition.sections.reduce(
+        (total, section) => total + section.items.length,
+        0,
+      ),
+    };
   }
 
   private async findTemplate(

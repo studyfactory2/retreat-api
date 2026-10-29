@@ -100,8 +100,11 @@ issuance status, and resolves scoped property/checklist context. The frontend wi
 render the returned links as QR images. See [the QR access guide](docs/qr-access.md).
 
 Administrator checklist-template management now supports initial property-specific
-guest/maintenance configuration and version-checked maintenance edits through
-GET/POST /admin/checklist-templates routes. See [the template API guide](docs/admin-checklist-templates.md).
+guest/maintenance configuration, version-checked edits for all three types, and
+published version history through GET/POST /admin/checklist-templates routes.
+Ongoing checks retain their captured questions. See [the template API guide](docs/admin-checklist-templates.md)
+for the Slice 8 schema migration, Prisma Client baseline backfill and deployment
+cutover prerequisite.
 
 Administrator stay management now supports creating, listing, correcting,
 cancelling, restoring, and reviewing the history of planned visits through

@@ -18,7 +18,7 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { ChecklistType } from '@prisma/client';
-import { ListInput, trimText } from '../common/list.input';
+import { ListInput, PaginationInput, trimText } from '../common/list.input';
 
 export class ChecklistItemInput {
   @ValidateIf((_object, value: unknown) => value !== undefined)
@@ -117,4 +117,8 @@ export class GetChecklistTemplatesInput extends ListInput {
   @ValidateIf((_object, value: unknown) => value !== undefined)
   @IsEnum(ChecklistType, { message: '체크리스트 유형을 확인해 주세요.' })
   type?: ChecklistType;
+}
+
+export class GetChecklistTemplateVersionsInput extends PaginationInput {
+  limit: number = 10;
 }

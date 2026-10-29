@@ -55,6 +55,11 @@ enum ChecklistType {
   MAINTENANCE
 }
 
+enum ChecklistTemplateVersionSource {
+  BASELINE
+  PUBLISHED
+}
+
 enum SubmissionStatus {
   DRAFT
   SUBMITTED
@@ -140,6 +145,7 @@ model User {
   updatedPropertyGuides PropertyGuide[] @relation("PropertyGuideEditor")
   staffDeactivations StaffDeactivation[] @relation("DeactivatedStaff")
   performedStaffDeactivations StaffDeactivation[] @relation("StaffDeactivationActor")
+  publishedChecklistVersions ChecklistTemplateVersion[] @relation("ChecklistPublisher")
 
   @@index([role, isActive])
 }
@@ -352,9 +358,29 @@ model ChecklistTemplate {
 
   property    Property              @relation(fields: [propertyId], references: [id], onDelete: Restrict)
   submissions ChecklistSubmission[]
+  versions    ChecklistTemplateVersion[]
 
   @@unique([propertyId, type])
   @@unique([id, propertyId])
+}
+
+
+model ChecklistTemplateVersion {
+  templateId  String
+  version     Int
+  title       String
+  definition  Json
+  isActive    Boolean
+  source      ChecklistTemplateVersionSource
+  actorUserId String?
+  actorName   String?
+  publishedAt DateTime @db.Timestamptz(3)
+
+  template ChecklistTemplate @relation(fields: [templateId], references: [id], onDelete: Restrict)
+  actor    User? @relation("ChecklistPublisher", fields: [actorUserId], references: [id], onDelete: Restrict)
+
+  @@id([templateId, version])
+  @@index([actorUserId])
 }
 
 
