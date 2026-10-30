@@ -278,6 +278,7 @@ export class PropertiesService {
           ...(property.staffUserId !== input.staffUserId
             ? {
                 staffQrTokenHash: null,
+                staffQrTokenCiphertext: null,
                 staffQrRotatedAt: new Date(
                   Math.max(
                     Date.now(),

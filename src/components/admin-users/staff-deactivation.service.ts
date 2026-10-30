@@ -143,6 +143,7 @@ export class StaffDeactivationService {
             // Property QR authenticates whoever is currently assigned. Old
             // copies must stop working before the replacement is exposed.
             staffQrTokenHash: null,
+            staffQrTokenCiphertext: null,
             staffQrRotatedAt: new Date(
               Math.max(
                 now.getTime(),

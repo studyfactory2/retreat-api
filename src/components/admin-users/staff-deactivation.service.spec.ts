@@ -248,6 +248,7 @@ describe('StaffDeactivationService', () => {
           data: {
             staffUserId: replacementStaffId,
             staffQrTokenHash: null,
+            staffQrTokenCiphertext: null,
             staffQrRotatedAt: expect.any(Date) as Date,
           },
         },

@@ -1,3 +1,5 @@
+import { readAccessLinkEncryptionKeys } from './access-link-encryption';
+
 export interface RuntimeEnvironment {
   NODE_ENV: 'development' | 'test' | 'production';
   PORT: number;
@@ -6,6 +8,8 @@ export interface RuntimeEnvironment {
   DATABASE_URL: string;
   JWT_SECRET: string;
   FRONTEND_URL: string;
+  ACCESS_LINK_ENCRYPTION_KEYS?: string;
+  ACCESS_LINK_ACTIVE_KEY_ID?: string;
   AWS_REGION?: string;
   S3_BUCKET_NAME?: string;
   AWS_ACCESS_KEY_ID?: string;
@@ -132,6 +136,11 @@ export function validateEnvironment(
   }
 
   const awsRegion = optionalEnvironmentText(input, 'AWS_REGION');
+  const linkKeys = readAccessLinkEncryptionKeys(
+    input.ACCESS_LINK_ENCRYPTION_KEYS,
+    input.ACCESS_LINK_ACTIVE_KEY_ID,
+    jwtSecret,
+  );
   const s3Bucket = optionalEnvironmentText(input, 'S3_BUCKET_NAME');
   if (Boolean(awsRegion) !== Boolean(s3Bucket)) {
     throw new Error('AWS_REGION and S3_BUCKET_NAME must be provided together.');
@@ -172,6 +181,13 @@ export function validateEnvironment(
     DATABASE_URL: databaseUrl,
     JWT_SECRET: jwtSecret,
     FRONTEND_URL: frontendUrl,
+    ...(linkKeys
+      ? {
+          ACCESS_LINK_ENCRYPTION_KEYS:
+            input.ACCESS_LINK_ENCRYPTION_KEYS as string,
+          ACCESS_LINK_ACTIVE_KEY_ID: linkKeys.activeKeyId,
+        }
+      : {}),
     ...(awsRegion ? { AWS_REGION: awsRegion } : {}),
     ...(s3Bucket ? { S3_BUCKET_NAME: s3Bucket } : {}),
     ...(accessKey ? { AWS_ACCESS_KEY_ID: accessKey } : {}),

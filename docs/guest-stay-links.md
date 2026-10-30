@@ -5,7 +5,11 @@ it to that guest. Possession of this link authorizes that stay; it is not proof
 of the person's identity. No guest login, automatic message delivery or public
 roster lookup is introduced.
 
-## Migration required
+## Original personal-link migration
+
+For the current Slice 11 additive migration and key configuration, use
+[access-link recovery](access-link-recovery.md). The migration below is historical
+setup, not a command to repeat for an existing installation.
 
 The user creates and applies the development migration:
 
@@ -26,6 +30,7 @@ All require the existing ADMIN bearer JWT. Each handler has its own RolesGuard.
 | Method | Route | Purpose |
 | --- | --- | --- |
 | GET | /admin/stays/:id/guest-link | Safe issuance/access status |
+| GET | /admin/stays/:id/guest-link/current | Reopen the valid current invitation |
 | POST | /admin/stays/:id/guest-link/issue | Issue or replace the invitation |
 | POST | /admin/stays/:id/guest-link/revoke | Revoke the invitation and child access |
 
@@ -41,12 +46,12 @@ currentRevision; link operations do not create a business StayRevision.
 The mutating transaction rechecks the active administrator and both versions.
 Revoke is also allowed for cancelled stays and inactive properties.
 
-Status returns stayId, issued, enabled, version, stayRevision, issuedForRevision,
+Status returns stayId, issued, enabled, canReopen, version, stayRevision, issuedForRevision,
 expiresAt and updatedAt. No hash or old token is exposed. Issue additionally
-returns url, using FRONTEND_URL + /guest/stay#token=<opaque-secret>. Only this
-response contains the new raw token. Store/copy the returned link; if it is lost,
-refresh status and issue a replacement. Repeating issuance with stale versions
-cannot recover a previous token.
+returns url, using FRONTEND_URL + /guest/stay#token=<opaque-secret>. New links can
+also be retrieved through GET current without changing version or expiry. Old
+hash-only links keep working but cannot be reconstructed. Replacement remains an
+explicit action; repeating issuance with stale versions cannot recover a token.
 
 ## Expiry and invalidation policy
 
@@ -63,7 +68,8 @@ cannot recover a previous token.
 - Historical submissions and photos remain accessible through administrator APIs.
   Revocation does not delete or alter their saved evidence.
 
-Stay stores only a domain-separated SHA-256 token digest. Tokens are random
+Stay authorization uses a domain-separated SHA-256 token digest. Slice 11 stores
+an encrypted copy for administrator reopening of newly issued links. Tokens are random
 32-byte secrets and must never appear in API query strings, logs or analytics.
 The browser reads the fragment and sends Authorization: Bearer <token>.
 Responses/errors use Cache-Control: no-store and Referrer-Policy: no-referrer.

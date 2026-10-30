@@ -56,6 +56,7 @@ describe('property staff assignment credentials', () => {
           data: {
             staffUserId: next,
             staffQrTokenHash: null,
+            staffQrTokenCiphertext: null,
             staffQrRotatedAt: new Date(fixture.rotatedAt.getTime() + 1),
           },
         }),

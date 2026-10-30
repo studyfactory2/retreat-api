@@ -11,6 +11,11 @@ import type {
   ApiErrorResponse,
   ApiFieldError,
 } from '../dto/common/api-error.response';
+import {
+  AccessLinkIssuanceUnavailableException,
+  ACCESS_LINK_ISSUANCE_UNAVAILABLE_CODE,
+  ACCESS_LINK_ISSUANCE_UNAVAILABLE_MESSAGE,
+} from '../exceptions/access-link-issuance-unavailable.exception';
 
 const DEFAULT_MESSAGES: Partial<Record<number, string>> = {
   400: '잘못된 요청입니다.',
@@ -57,6 +62,12 @@ export class HttpExceptionFilter implements ExceptionFilter {
     };
 
     if (statusCode >= 500) {
+      // A single, typed pre-write failure has a fixed safe public contract.
+      // Never forward arbitrary 5xx payloads, even with the same claimed code.
+      if (exception instanceof AccessLinkIssuanceUnavailableException) {
+        body.code = ACCESS_LINK_ISSUANCE_UNAVAILABLE_CODE;
+        body.message = ACCESS_LINK_ISSUANCE_UNAVAILABLE_MESSAGE;
+      }
       this.logger.error(
         request.method + ' ' + path,
         exception instanceof Error ? exception.stack : undefined,

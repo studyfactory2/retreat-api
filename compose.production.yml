@@ -62,6 +62,9 @@ services:
     restart: unless-stopped
     environment:
       <<: *api-environment
+      # Server-only keys for reopening current QR/personal links. Never VITE_ values.
+      ACCESS_LINK_ENCRYPTION_KEYS: ${ACCESS_LINK_ENCRYPTION_KEYS:?Set the access-link encryption keyring in the server .env}
+      ACCESS_LINK_ACTIVE_KEY_ID: ${ACCESS_LINK_ACTIVE_KEY_ID:?Set the active access-link encryption key ID}
       # Only this private API sits behind the single CloudFront/Nginx gateway.
       TRUST_PROXY: 'true'
     depends_on:

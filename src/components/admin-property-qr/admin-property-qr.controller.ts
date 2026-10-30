@@ -45,6 +45,28 @@ export class AdminPropertyQrController {
 
   @Roles(Role.ADMIN)
   @UseGuards(RolesGuard)
+  @Get(':id/qr/guest/link')
+  @Header('Cache-Control', 'no-store')
+  public async getCurrentGuestQrLink(
+    @Param('id', propertyIdPipe) id: string,
+  ): Promise<QrIssueDto> {
+    console.log('GET: getCurrentGuestQrLink');
+    return await this.qrService.getCurrentPropertyQrLink(id, QrFlow.GUEST);
+  }
+
+  @Roles(Role.ADMIN)
+  @UseGuards(RolesGuard)
+  @Get(':id/qr/staff/link')
+  @Header('Cache-Control', 'no-store')
+  public async getCurrentStaffQrLink(
+    @Param('id', propertyIdPipe) id: string,
+  ): Promise<QrIssueDto> {
+    console.log('GET: getCurrentStaffQrLink');
+    return await this.qrService.getCurrentPropertyQrLink(id, QrFlow.STAFF);
+  }
+
+  @Roles(Role.ADMIN)
+  @UseGuards(RolesGuard)
   @Post(':id/qr/guest/rotate')
   @HttpCode(HttpStatus.OK)
   @Header('Cache-Control', 'no-store')

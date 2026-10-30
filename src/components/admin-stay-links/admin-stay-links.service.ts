@@ -2,6 +2,7 @@ import {
   ConflictException,
   Injectable,
   NotFoundException,
+  ServiceUnavailableException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -22,6 +23,7 @@ import {
   hashGuestStayToken,
   STAY_LINK_GRACE_MS,
 } from '../stay-access/stay-link-policy';
+import { AccessLinkVault } from '../access-link-vault/access-link-vault.service';
 
 const stayLinkSelect = {
   id: true,
@@ -29,6 +31,7 @@ const stayLinkSelect = {
   checkOutAt: true,
   currentRevision: true,
   guestLinkTokenHash: true,
+  guestLinkTokenCiphertext: true,
   guestLinkExpiresAt: true,
   guestLinkVersion: true,
   guestLinkStayRevision: true,
@@ -43,6 +46,7 @@ export class AdminStayLinksService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly config: ConfigService<RuntimeEnvironment, true>,
+    private readonly vault: AccessLinkVault,
   ) {}
 
   public async getStayGuestLinkStatus(
@@ -56,6 +60,47 @@ export class AdminStayLinksService {
     return this.toDto(stay);
   }
 
+  public async getCurrentStayGuestLink(
+    id: string,
+    adminId: string,
+  ): Promise<IssueStayGuestLinkDto> {
+    return await runSerializableTransaction(this.prisma, async (tx) => {
+      await this.requireAdministrator(tx, adminId);
+      const stay = await this.findStay(tx, id);
+      const status = this.toDto(stay);
+      if (!status.enabled || !stay.guestLinkTokenHash) {
+        throw new ConflictException({
+          code: 'STAY_LINK_DISABLED',
+          message:
+            '현재 사용할 수 없는 이용 링크입니다. 최신 상태를 확인해 주세요.',
+        });
+      }
+      if (!stay.guestLinkTokenCiphertext) {
+        throw new ConflictException({
+          code: 'STAY_LINK_NOT_RECOVERABLE',
+          message:
+            '이전에 발급한 링크는 다시 볼 수 없습니다. 보관 중인 링크는 계속 사용할 수 있습니다.',
+        });
+      }
+      const token = this.vault.open(
+        stay.guestLinkTokenCiphertext,
+        this.vaultContext(id, stay.guestLinkTokenHash),
+      );
+      if (
+        !/^[A-Za-z0-9_-]{43}$/.test(token) ||
+        Buffer.from(token, 'base64url').toString('base64url') !== token ||
+        hashGuestStayToken(token) !== stay.guestLinkTokenHash
+      ) {
+        throw new ServiceUnavailableException({
+          code: 'ACCESS_LINK_UNAVAILABLE',
+          message:
+            '이용 링크를 불러올 수 없습니다. 잠시 후 다시 시도해 주세요.',
+        });
+      }
+      return { ...status, url: this.linkUrl(token) };
+    });
+  }
+
   public async issueStayGuestLink(
     id: string,
     input: IssueStayGuestLinkInput,
@@ -63,11 +108,7 @@ export class AdminStayLinksService {
   ): Promise<IssueStayGuestLinkDto> {
     const token = randomBytes(32).toString('base64url');
     const hash = hashGuestStayToken(token);
-    const url = new URL(
-      '/guest/stay',
-      this.config.get('FRONTEND_URL', { infer: true }),
-    );
-    url.hash = new URLSearchParams({ token }).toString();
+    const ciphertext = this.vault.seal(token, this.vaultContext(id, hash));
 
     return await runSerializableTransaction(this.prisma, async (tx) => {
       await this.requireAdministrator(tx, adminId);
@@ -97,6 +138,7 @@ export class AdminStayLinksService {
       const updatedAt = this.nextUpdatedAt(stay);
       const data = {
         guestLinkTokenHash: hash,
+        guestLinkTokenCiphertext: ciphertext,
         guestLinkExpiresAt: expiresAt,
         guestLinkVersion: stay.guestLinkVersion + 1,
         guestLinkStayRevision: stay.currentRevision,
@@ -113,7 +155,7 @@ export class AdminStayLinksService {
         data,
       });
       if (result.count !== 1) throw this.changed();
-      return { ...this.toDto({ ...stay, ...data }), url: url.toString() };
+      return { ...this.toDto({ ...stay, ...data }), url: this.linkUrl(token) };
     });
   }
 
@@ -128,6 +170,7 @@ export class AdminStayLinksService {
       this.requireVersions(stay, input);
       const data = {
         guestLinkTokenHash: null,
+        guestLinkTokenCiphertext: null,
         guestLinkExpiresAt: null,
         guestLinkVersion: stay.guestLinkVersion + 1,
         guestLinkStayRevision: null,
@@ -146,6 +189,19 @@ export class AdminStayLinksService {
       if (result.count !== 1) throw this.changed();
       return this.toDto({ ...stay, ...data });
     });
+  }
+
+  private vaultContext(id: string, hash: string): string {
+    return `stay:${id.toLowerCase()}:${hash}`;
+  }
+
+  private linkUrl(token: string): string {
+    const url = new URL(
+      '/guest/stay',
+      this.config.get('FRONTEND_URL', { infer: true }),
+    );
+    url.hash = new URLSearchParams({ token }).toString();
+    return url.toString();
   }
 
   private async findStay(
@@ -204,6 +260,9 @@ export class AdminStayLinksService {
     return {
       stayId: stay.id,
       issued: stay.guestLinkTokenHash !== null,
+      canReopen: Boolean(
+        stay.guestLinkTokenHash && stay.guestLinkTokenCiphertext,
+      ),
       enabled:
         stay.guestLinkTokenHash !== null &&
         stay.guestLinkExpiresAt !== null &&

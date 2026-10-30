@@ -52,6 +52,21 @@ export class AdminStayLinksController {
 
   @Roles(Role.ADMIN)
   @UseGuards(RolesGuard)
+  @Get(':id/guest-link/current')
+  @Header('Cache-Control', 'no-store')
+  public async getCurrentStayGuestLink(
+    @Param('id', stayIdPipe) id: string,
+    @AuthUser() actor: AuthenticatedUser,
+  ): Promise<IssueStayGuestLinkDto> {
+    console.log('GET: getCurrentStayGuestLink');
+    return await this.adminStayLinksService.getCurrentStayGuestLink(
+      id,
+      actor.id,
+    );
+  }
+
+  @Roles(Role.ADMIN)
+  @UseGuards(RolesGuard)
   @Post(':id/guest-link/issue')
   @HttpCode(HttpStatus.OK)
   @Header('Cache-Control', 'no-store')

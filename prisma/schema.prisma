@@ -178,6 +178,8 @@ model Property {
 
   guestQrTokenHash String?   @unique
   staffQrTokenHash String?   @unique
+  guestQrTokenCiphertext String?
+  staffQrTokenCiphertext String?
   guestQrRotatedAt DateTime? @db.Timestamptz(3)
   staffQrRotatedAt DateTime? @db.Timestamptz(3)
   createdAt        DateTime  @default(now())
@@ -228,6 +230,7 @@ model Stay {
   createdByUserId    String
 
   guestLinkTokenHash    String?   @unique
+  guestLinkTokenCiphertext String?
   guestLinkExpiresAt    DateTime? @db.Timestamptz(3)
   guestLinkVersion      Int       @default(0)
   guestLinkStayRevision Int?

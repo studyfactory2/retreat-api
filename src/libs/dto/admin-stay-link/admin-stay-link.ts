@@ -2,6 +2,7 @@ export interface AdminStayLinkStatusDto {
   stayId: string;
   issued: boolean;
   enabled: boolean;
+  canReopen: boolean;
   version: number;
   stayRevision: number;
   issuedForRevision: number | null;

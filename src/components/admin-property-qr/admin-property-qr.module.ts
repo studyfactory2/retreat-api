@@ -4,12 +4,13 @@ import {
   type NestModule,
 } from '@nestjs/common';
 import { AuthModule } from '../auth/auth.module';
+import { AccessLinkVaultModule } from '../access-link-vault/access-link-vault.module';
 import { QrNoStoreMiddleware } from '../qr/qr-no-store.middleware';
 import { AdminPropertyQrController } from './admin-property-qr.controller';
 import { AdminPropertyQrService } from './admin-property-qr.service';
 
 @Module({
-  imports: [AuthModule],
+  imports: [AuthModule, AccessLinkVaultModule],
   controllers: [AdminPropertyQrController],
   providers: [AdminPropertyQrService, QrNoStoreMiddleware],
 })

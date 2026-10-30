@@ -46,6 +46,7 @@ compose() {
   # Compose parses .env as data. Never source it as shell code. Clear inherited
   # application variables so the server file wins; set the tag AFTER sudo.
   docker_access env -u POSTGRES_PASSWORD -u JWT_SECRET -u FRONTEND_URL \
+    -u ACCESS_LINK_ENCRYPTION_KEYS -u ACCESS_LINK_ACTIVE_KEY_ID \
     -u AWS_REGION -u S3_BUCKET_NAME -u TRUST_PROXY -u COMPOSE_PROFILES \
     RELEASE_TAG="$release_tag" docker compose \
     --project-name retreat-api --env-file "$repo_dir/.env" \

@@ -43,6 +43,8 @@ Required settings (replace the placeholder values before running anything):
 ```dotenv
 POSTGRES_PASSWORD=REPLACE_WITH_A_RANDOM_64_CHARACTER_HEX_VALUE
 JWT_SECRET=REPLACE_WITH_A_DIFFERENT_RANDOM_64_CHARACTER_HEX_VALUE
+ACCESS_LINK_ACTIVE_KEY_ID=primary
+ACCESS_LINK_ENCRYPTION_KEYS='{"primary":"REPLACE_WITH_BASE64_32_BYTE_KEY"}'
 FRONTEND_URL=https://REPLACE_WITH_THE_ACTUAL_FRONTEND_HOST
 AWS_REGION=ap-northeast-2
 S3_BUCKET_NAME=retreat-photos-prod-studyfactorylab
@@ -52,6 +54,11 @@ Run `openssl rand -hex 32` twice on your own terminal to generate the two distin
 secrets; enter them into the server file. The database password must use only
 hexadecimal characters in this setup because Compose inserts it into a PostgreSQL
 URL without URL-encoding it. Do not use the placeholder text as a password.
+
+Slice 11 also requires the server-only access-link keyring. Generate an independent
+32-byte key, retain it across deployments, and keep a secure backup. Follow
+[access-link recovery](access-link-recovery.md) for key setup, migration and rollout.
+Do not put these keys in the frontend environment or print resolved Compose config.
 
 `FRONTEND_URL` must be the actual HTTPS frontend origin, without a path. The same
 origin must later be used for the frontend's `VITE_FRONTEND_URL`. Do not invent a

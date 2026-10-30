@@ -9,6 +9,7 @@ export enum QrFlow {
 export interface QrStateDto {
   issued: boolean;
   enabled: boolean;
+  canReopen: boolean;
   rotatedAt: Date | null;
 }
 
@@ -23,6 +24,7 @@ export interface QrIssueDto {
   propertyId: string;
   flow: QrFlow;
   url: string;
+  canReopen: true;
   rotatedAt: Date;
 }
 

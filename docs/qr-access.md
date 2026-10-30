@@ -1,8 +1,8 @@
 # Property QR access
 
-The backend issues secure links and resolves their property/flow. The future React
-frontend renders each link as a printable QR image. This slice does not render QR
-images or implement guest/staff forms, uploads, personal stay links, or submissions.
+The backend issues scoped links and resolves their property/flow. The React
+frontend renders each link as a downloadable QR image. For current reopening,
+encryption configuration and rollout, see [access-link recovery](access-link-recovery.md).
 
 AdminPropertyQrModule owns issuance/status routes and their service in
 src/components/admin-property-qr. QrModule owns public context and property
@@ -17,11 +17,13 @@ Each controller handler explicitly requires ADMIN and RolesGuard.
 | Method | Route | Purpose |
 |---|---|---|
 | GET | /admin/properties/:id/qr | Current guest/staff issuance status |
+| GET | /admin/properties/:id/qr/guest/link | Reopen the current guest link |
+| GET | /admin/properties/:id/qr/staff/link | Reopen the current staff link |
 | POST | /admin/properties/:id/qr/guest/rotate | Issue or replace guest link |
 | POST | /admin/properties/:id/qr/staff/rotate | Issue or replace staff link |
 
 All successful responses are 200. IDs are UUID v4. GET returns propertyId,
-propertyIsActive, and guest/staff { issued, enabled, rotatedAt }. It never returns
+propertyIsActive, and guest/staff { issued, enabled, canReopen, rotatedAt }. Status never returns
 a raw token, digest, or previous URL. enabled means the property is active and that
 QR has been issued; it does not imply staff/checklist configuration is complete.
 
@@ -44,10 +46,11 @@ decide whether replacement is still intended; do not blindly retry credential
 rotation. Timestamps advance monotonically, including replacements in one
 millisecond. The check and write run in one serializable transaction.
 
-The POST response is { propertyId, flow: GUEST|STAFF, url, rotatedAt }. Only this
-response exposes the usable link. Save/download/print it at this point. Only a
-SHA-256 digest is stored, so the server cannot redisplay an existing link later.
-If the saved QR is lost, replacement invalidates the previous printed copies.
+The POST response is { propertyId, flow: GUEST|STAFF, url, rotatedAt, canReopen }.
+New issuance stores an encrypted recoverable token alongside the SHA-256 digest.
+The matching GET link route returns the same credential without rotating it.
+Legacy hash-only codes remain valid but cannot be reopened; explicit replacement
+invalidates previous printed copies. Merely viewing/copying/downloading never replaces them.
 Replacing guest QR leaves staff QR unchanged, and vice versa.
 
 Issuance requires an active property. Deactivation suspends both QR links without
@@ -134,7 +137,7 @@ guards and handlers, covering authentication and business failures as well as
 success. Controller logs contain static action names only. Never log Authorization
 headers or issuance response bodies/URLs in frontend, server, or proxy tooling.
 
-No new table, migration, dependency, QR image file, automatic message delivery,
-guest private link, guide, vehicle registration, upload, or submission is added.
-Existing per-submission privateTokenHash fields are separate from property QR.
-Guest stay invitations still require their own design and implementation.
+The original QR slice added no table or dependency. Slice 11 adds nullable encrypted
+copies via Prisma migration; images are still generated locally, not stored.
+Existing per-submission privateTokenHash fields remain separate from property QR.
+Personal stay invitations use their [own scoped contract](guest-stay-links.md).

@@ -66,8 +66,10 @@ logic in its own service when needed. Avoid creating empty feature modules.
   and message. Example: BadRequestException({ code: 'INVALID_STAY',
   message: '이용 일정을 확인해 주세요.' }).
 - Unmarked HTTP error messages fall back to safe Korean status messages.
-- All 5xx messages are generic in responses; diagnostic stacks stay in server
-  logs. Error paths omit query strings.
+- All 5xx messages are generic in responses except the fixed, typed
+  `AccessLinkIssuanceUnavailableException` described below. It is only thrown
+  for missing sealing configuration before issuance starts a transaction.
+  Diagnostic stacks stay in server logs. Error paths omit query strings.
 - Validation errors add an errors array of field names and messages. Never
   include input values or sensitive data in validation message templates.
 - CORS is an origin allowlist, with credentials disabled. It is not authorization.
@@ -1265,3 +1267,62 @@ preparation bounds. HTTP completion, disconnect and transfer expiry clean up
 temporary files and release the shared report guard. See docs/admin-reports.md
 for lifecycle, errors, crash residue and browser/download semantics. No schema,
 migration, environment, permanent tests, commits or deployment operations change.
+
+## Slice 11 — recoverable current QR and personal links — 2026-10-30
+
+The existing hashed-credential authorization is unchanged. New issuance stores
+an AES-256-GCM encrypted token alongside its hash. Three nullable fields allow
+legacy rows to remain valid without attempting impossible hash recovery or
+automatic rotation. New ADMIN-only no-store GET routes return the valid current
+property guest/staff QR or personal stay link without mutations. Status includes
+`canReopen`; current validity is separately enforced. Staff reassignment and
+explicit revocation clear ciphertext with the hash. Historical records remain intact.
+
+`ACCESS_LINK_ENCRYPTION_KEYS` and `ACCESS_LINK_ACTIVE_KEY_ID` configure a separate
+server-only keyring. Retain keys across restarts/deployments and back them up.
+Production Compose passes them only to the API. Missing local configuration keeps
+old access/status available but fails new issuance/retrieval; malformed configured
+keys fail startup. Read [access-link recovery](docs/access-link-recovery.md) before
+rollout, including legacy behavior, key lifecycle and the domain-change boundary.
+
+Migration `20261030050000_add_recoverable_access_links` was generated with installed
+Prisma 5.22.0 schema-to-schema `migrate diff --script`, not manually authored SQL.
+Prisma Client generation/validation passed. No migration, backfill or real database
+operation was performed. Apply the existing migration, configure keys and deploy
+the API before the client. No backfill is needed and no existing QR is auto-replaced.
+
+Validation: build, scoped ESLint, 48 existing unit checks and 14 existing mocked
+HTTP checks passed. Temporary probes passed 35 encryption/configuration checks,
+18 service scenarios and 36 actual Nest HTTP cases with mocked Prisma. The latter
+verify role checks, all response/error no-store headers and zero writes on reads.
+Tampering, missing keys, legacy, expiry/revision, replacement/revoke and staff
+handover are covered. Real PostgreSQL migration/concurrency, deployment and physical
+device acceptance remain user-run. No Git mutations or infrastructure changes.
+
+### QR issuance setup errors — 2026-10-30
+
+Missing access-link sealing configuration now throws the dedicated
+`AccessLinkIssuanceUnavailableException` before property QR or personal-link
+issuance starts its transaction. The HTTP filter recognizes that exception class
+only and emits the fixed 503 code `ACCESS_LINK_ISSUANCE_UNAVAILABLE` with safe
+setup guidance. The failed request has not changed the existing credential.
+The client can preserve its current receipt and show the setup message without
+claiming the issuance result is unknown. It does not automatically retry.
+
+Arbitrary 5xx payloads, including a regular `ServiceUnavailableException`
+claiming that code, remain generic. Invalid token/context, decryption failures,
+missing old decryption keys and other server errors do not receive the pre-write
+guarantee. The client retains its uncertainty handling for other server/network
+write failures and for revocation. No settings, schema or migrations change.
+
+Verification includes 60 temporary actual-Nest/mock-Prisma HTTP, exception and
+client classification checks: missing configuration reaches no transaction and
+performs no writes; authentication and no-store/no-referrer headers are preserved;
+spoofed codes and internal details are not exposed. Temporary client hook checks
+also cover receipt preservation and no automatic retry. Database and production
+verification remain outside these checks.
+
+API build (including Prisma Client generation only), scoped ESLint/Prettier and
+`git diff --check` pass. Existing unit tests pass (3 suites, 48 tests), as do the
+existing HTTP tests using mocked Prisma (1 suite, 14 tests). No database,
+migration, configuration, deployment or Git mutation was performed.
