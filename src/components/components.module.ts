@@ -1,3 +1,4 @@
+import { AdminStayAccessModule } from './admin-stay-access/admin-stay-access.module';
 import { Module } from '@nestjs/common';
 import { HealthModule } from './health/health.module';
 import { AuthModule } from './auth/auth.module';
@@ -64,6 +65,7 @@ import { AdminPropertyAccessModule } from './admin-property-access/admin-propert
     AdminStayVehiclesModule,
     GuestStayVehiclesModule,
     AdminPropertyAccessModule,
+    AdminStayAccessModule,
   ],
 })
 export class ComponentsModule {}

@@ -1340,3 +1340,16 @@ key ring is reused with a different AAD domain; all responses use no-store and
 only explicit admin reveal responses contain plaintext. Saving here never
 means a physical lock changed. Reservation generation, staff/guest access and
 notification delivery remain later slices.
+
+## Slice 13 — administrator reservation access codes
+
+`admin-stay-access` adds admin-only metadata, confirmed save and explicit reveal
+under `/admin/stays/:id/access-code`. `StayAccessCode` holds the current encrypted
+number; `StayAccessCodeEvent` retains actor/action/method metadata without digits.
+Preparation is explicit, uses automatic/phone/fixed methods, checks adjacent
+reservation codes and preserves numbers across ordinary edits. Contact/name
+changes, restoration and policy conflicts require review. See
+`docs/stay-access-codes.md` for the full contract and verification limits.
+
+The migration is generated offline with Prisma and remains user-applied. No
+backfill, real account, public disclosure or messaging is part of this slice.

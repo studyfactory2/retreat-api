@@ -303,3 +303,14 @@ staff disclosure, reservation codes, messages or lock changes are included.
 Apply the pending Prisma migration before using the new routes; no backfill is
 required. See [property access settings](docs/property-access-settings.md) for
 the HTTP contract, existing encryption configuration and user-run commands.
+
+## Reservation access codes (Slice 13)
+
+Administrators can explicitly prepare a stable six-digit reservation code using
+automatic generation or the saved phone's last six digits. Fixed-code properties
+use their configured room code. Changes and restored reservations have a review
+flow; preparing a code does not change the lock or send it to guests/staff.
+Apply the already generated pending migration with `npx prisma migrate dev`
+locally, then `npx prisma generate`. No backfill is needed. See
+[reservation access codes](docs/stay-access-codes.md) for behavior, encryption,
+the API contract and production migration instructions.

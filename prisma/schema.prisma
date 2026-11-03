@@ -18,6 +18,18 @@ enum PropertyRoomCodeMode {
   ROTATING
 }
 
+enum StayAccessCodeMethod {
+  AUTO
+  PHONE_LAST6
+  FIXED
+}
+
+enum StayAccessCodeAction {
+  PREPARED
+  REPLACED
+  CONFIRMED
+}
+
 enum StayStatus {
   ACTIVE
   CANCELLED
@@ -139,6 +151,7 @@ model User {
   assignedProperties  Property[]            @relation("PropertyStaff")
   guestStays          Stay[]                @relation("StayGuest")
   createdStays        Stay[]                @relation("StayCreator")
+  stayAccessCodeEvents StayAccessCodeEvent[]
   stayRevisions       StayRevision[]
   uploadedImports     ImportBatch[]         @relation("ImportUploader")
   confirmedImports    ImportBatch[]         @relation("ImportConfirmer")
@@ -273,12 +286,44 @@ model Stay {
   importRows  ImportRow[]
   submissions ChecklistSubmission[]
   vehicle     StayVehicle?
+  accessCode  StayAccessCode?
+  accessCodeEvents StayAccessCodeEvent[]
 
   @@unique([id, propertyId])
   @@index([propertyId, status, checkInAt])
   @@index([propertyId, status, checkOutAt])
   @@index([guestUserId])
   @@index([createdByUserId])
+}
+
+model StayAccessCode {
+  stayId                String @id
+  version               Int @default(1)
+  method                StayAccessCodeMethod
+  ciphertext            String
+  sourceStayRevision    Int
+  sourceSettingsVersion Int
+  preparedAt            DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt             DateTime @updatedAt @db.Timestamptz(3)
+
+  stay Stay @relation(fields: [stayId], references: [id], onDelete: Restrict)
+}
+
+model StayAccessCodeEvent {
+  id          String @id @default(uuid())
+  stayId      String
+  codeVersion Int
+  action      StayAccessCodeAction
+  method      StayAccessCodeMethod
+  actorUserId String
+  actorName   String
+  createdAt   DateTime @default(now()) @db.Timestamptz(3)
+
+  stay Stay @relation(fields: [stayId], references: [id], onDelete: Restrict)
+  actor User @relation(fields: [actorUserId], references: [id], onDelete: Restrict)
+
+  @@unique([stayId, codeVersion])
+  @@index([actorUserId])
 }
 
 model StayVehicle {

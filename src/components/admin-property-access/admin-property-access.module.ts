@@ -11,6 +11,7 @@ import { PropertyAccessCodeVault } from './property-access-code-vault';
 
 @Module({
   imports: [AuthModule],
+  exports: [PropertyAccessCodeVault],
   controllers: [AdminPropertyAccessController],
   providers: [
     AdminPropertyAccessService,
