@@ -1,3 +1,5 @@
+import { CleaningTasksModule } from './cleaning-tasks/cleaning-tasks.module';
+import { StaffCleaningTasksModule } from './staff-cleaning-tasks/staff-cleaning-tasks.module';
 import { AdminStayAccessModule } from './admin-stay-access/admin-stay-access.module';
 import { Module } from '@nestjs/common';
 import { HealthModule } from './health/health.module';
@@ -66,6 +68,8 @@ import { AdminPropertyAccessModule } from './admin-property-access/admin-propert
     GuestStayVehiclesModule,
     AdminPropertyAccessModule,
     AdminStayAccessModule,
+    CleaningTasksModule,
+    StaffCleaningTasksModule,
   ],
 })
 export class ComponentsModule {}

@@ -1353,3 +1353,24 @@ changes, restoration and policy conflicts require review. See
 
 The migration is generated offline with Prisma and remains user-applied. No
 backfill, real account, public disclosure or messaging is part of this slice.
+
+## Slice 14 — staff QR cleaning tasks
+
+`CleaningTask` adds one automatic departure task per reservation plus manual admin
+work, scoped staff QR start/resume, and an immutable completion record. Automatic
+creation/edit/cancellation runs inside existing reservation/import transactions;
+explicit POST sync initializes today's and future existing bookings. Assigned staff
+use the existing pinned checklist/photos/private draft flow. Task completion requires
+READY after-cleaning evidence and a fresh version-bound physical code-change
+attestation; fixed-code properties skip the change checkbox. Next-reservation,
+vacancy and blocked-code states reuse Slices 12/13. Completed evidence is never
+rewritten, and changed source records surface a follow-up review indicator.
+
+Task working credentials additionally bind current assignee and QR generation.
+READY task photos are retained across link expiry for safe resume. Generic legacy
+records remain compatible but cannot read task passwords or complete scheduled
+work. See `docs/cleaning-tasks.md` for behavior, HTTP contracts in DTOs, evidence,
+retention and user-run rollout. Migration `20261103060000_add_cleaning_tasks` was
+Prisma-generated offline, not applied. No database, account, environment, deployment
+or Git mutation was performed by the assistant. Verification uses local fixtures;
+real PostgreSQL/S3/physical-device and deployed acceptance remain user-run.

@@ -57,7 +57,14 @@ export function cleanupCandidateWhere(
           {
             status: AttachmentStatus.READY,
             deletedAt: null,
-            submission: { is: { privateTokenExpiresAt: { lte: cutoff } } },
+            // Task work can be resumed with a fresh credential after expiry.
+            // Keep its READY evidence, including schedule cancellation/handover.
+            submission: {
+              is: {
+                cleaningTaskId: null,
+                privateTokenExpiresAt: { lte: cutoff },
+              },
+            },
           },
           {
             status: AttachmentStatus.DELETED,

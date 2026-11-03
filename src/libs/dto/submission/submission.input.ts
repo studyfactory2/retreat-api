@@ -13,6 +13,7 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { PhotoPurpose } from '@prisma/client';
+import { TaskConfirmationInput } from '../staff-cleaning-task/staff-cleaning-task.input';
 import { trimNullableText } from '../common/list.input';
 
 const utcTimestampPattern =
@@ -47,6 +48,12 @@ export class SubmissionPhotoInput {
 }
 
 export class SubmitChecklistInput {
+  @ValidateIf((_object, value: unknown) => value !== undefined)
+  @IsObject()
+  @ValidateNested()
+  @Type(() => TaskConfirmationInput)
+  taskConfirmation?: TaskConfirmationInput;
+
   @IsISO8601(
     { strict: true, strictSeparator: true },
     { message: '임시 저장 일시를 확인해 주세요.' },

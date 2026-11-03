@@ -14,6 +14,7 @@ import { StayAccessCodeVault } from './stay-access-code-vault';
   imports: [AuthModule, AdminPropertyAccessModule],
   controllers: [AdminStayAccessController],
   providers: [AdminStayAccessService, StayAccessCodeVault, QrNoStoreMiddleware],
+  exports: [AdminStayAccessService],
 })
 export class AdminStayAccessModule implements NestModule {
   public configure(consumer: MiddlewareConsumer): void {

@@ -27,6 +27,7 @@ import type {
   StayRevisionListDto,
 } from '../../libs/dto/stay/stay';
 import { buildStayActorSnapshot, buildStaySnapshot } from './stay-snapshot';
+import { syncCleaningTaskForStay } from '../cleaning-tasks/cleaning-task-sync';
 
 const staySelect = {
   id: true,
@@ -425,6 +426,7 @@ export class StaysService {
         reason,
       },
     });
+    await syncCleaningTaskForStay(tx, stay);
   }
 
   private parseTimestamp(value: string): Date {

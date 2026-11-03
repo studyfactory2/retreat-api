@@ -28,6 +28,7 @@ import {
   SubmissionDraftsService,
   type DraftRecord,
 } from '../submission-drafts/submission-drafts.service';
+import { CleaningTaskAccessService } from '../cleaning-task-access/cleaning-task-access.service';
 import { createSubmissionIssues } from './submission-issues';
 import {
   readSubmissionReceipt,
@@ -52,6 +53,7 @@ export class SubmissionsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly drafts: SubmissionDraftsService,
+    private readonly taskAccess: CleaningTaskAccessService,
   ) {}
 
   public async submitChecklist(
@@ -103,6 +105,9 @@ export class SubmissionsService {
               JSON.stringify({
                 expectedUpdatedAt: input.expectedUpdatedAt,
                 photos,
+                ...(input.taskConfirmation
+                  ? { taskConfirmation: input.taskConfirmation }
+                  : {}),
               }),
             )
             .digest('hex');
@@ -130,6 +135,13 @@ export class SubmissionsService {
           await this.checkPhotos(tx, draft, photos);
           const stayMatch = await this.readPrivateStayMatch(tx, draft);
           const submittedAt = new Date();
+          await this.taskAccess.complete(
+            tx,
+            draft,
+            input.taskConfirmation,
+            photos,
+            submittedAt,
+          );
           const updatedAt = new Date(
             Math.max(submittedAt.getTime(), draft.updatedAt.getTime() + 1),
           );

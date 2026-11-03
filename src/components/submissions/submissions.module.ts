@@ -5,11 +5,12 @@ import {
 } from '@nestjs/common';
 import { QrNoStoreMiddleware } from '../qr/qr-no-store.middleware';
 import { SubmissionDraftsModule } from '../submission-drafts/submission-drafts.module';
+import { CleaningTaskAccessModule } from '../cleaning-task-access/cleaning-task-access.module';
 import { SubmissionsController } from './submissions.controller';
 import { SubmissionsService } from './submissions.service';
 
 @Module({
-  imports: [SubmissionDraftsModule],
+  imports: [SubmissionDraftsModule, CleaningTaskAccessModule],
   controllers: [SubmissionsController],
   providers: [SubmissionsService, QrNoStoreMiddleware],
 })

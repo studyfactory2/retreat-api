@@ -36,6 +36,12 @@ export type DraftAuthorSnapshot = {
 
 export interface SubmissionDraftDto {
   id: string;
+  cleaningTask?: {
+    id: string;
+    title: string;
+    dueAt: Date;
+    version: number;
+  } | null;
   property: { id: string; name: string; region: string | null };
   type: ChecklistType;
   status: 'DRAFT';

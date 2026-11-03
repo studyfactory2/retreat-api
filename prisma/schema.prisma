@@ -30,6 +30,18 @@ enum StayAccessCodeAction {
   CONFIRMED
 }
 
+enum CleaningTaskSource {
+  AUTO
+  MANUAL
+}
+
+enum CleaningTaskStatus {
+  PLANNED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
 enum StayStatus {
   ACTIVE
   CANCELLED
@@ -213,6 +225,7 @@ model Property {
   attachments        Attachment[]
   issues             Issue[]
   guide              PropertyGuide?
+  cleaningTasks      CleaningTask[]
 
   @@index([staffUserId])
 }
@@ -288,6 +301,7 @@ model Stay {
   vehicle     StayVehicle?
   accessCode  StayAccessCode?
   accessCodeEvents StayAccessCodeEvent[]
+  departureCleaningTask CleaningTask?
 
   @@unique([id, propertyId])
   @@index([propertyId, status, checkInAt])
@@ -456,6 +470,39 @@ model ChecklistTemplateVersion {
 }
 
 
+model CleaningTask {
+  id                  String             @id @default(uuid())
+  requestKey          String?            @unique
+  requestHash         String?
+  propertyId          String
+  departingStayId     String?            @unique
+  source              CleaningTaskSource
+  status              CleaningTaskStatus @default(PLANNED)
+  dueAt               DateTime           @db.Timestamptz(3)
+  manualDueAt         Boolean            @default(false)
+  sourceStayRevision  Int?
+  version             Int                @default(1)
+  note                String?
+  cancelledBySchedule Boolean            @default(false)
+  cancellationReason  String?
+  currentSubmissionId String?            @unique
+  completion          Json?
+  completedAt         DateTime?          @db.Timestamptz(3)
+  createdAt           DateTime           @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime           @updatedAt @db.Timestamptz(3)
+
+  property          Property              @relation(fields: [propertyId], references: [id], onDelete: Restrict)
+  departingStay     Stay?                 @relation(fields: [departingStayId, propertyId], references: [id, propertyId], onDelete: Restrict, onUpdate: Restrict)
+  currentSubmission ChecklistSubmission?  @relation("CurrentCleaningSubmission", fields: [currentSubmissionId, propertyId], references: [id, propertyId], onDelete: Restrict, onUpdate: Restrict)
+  submissions       ChecklistSubmission[] @relation("CleaningSubmissions")
+
+  @@unique([id, propertyId])
+  @@unique([currentSubmissionId, propertyId])
+  @@unique([departingStayId, propertyId])
+  @@index([propertyId, status, dueAt, id])
+  @@index([status, dueAt, id])
+}
+
 model ChecklistSubmission {
   id                    String           @id @default(uuid())
   requestKey            String           @unique
@@ -476,6 +523,8 @@ model ChecklistSubmission {
   startedAt             DateTime?        @db.Timestamptz(3)
   submittedAt           DateTime?        @db.Timestamptz(3)
   cancelledAt           DateTime?        @db.Timestamptz(3)
+  cleaningTaskId        String?
+  taskQrTokenHash       String?
   privateTokenHash      String?          @unique
   privateTokenExpiresAt DateTime?        @db.Timestamptz(3)
   createdAt             DateTime         @default(now()) @db.Timestamptz(3)
@@ -485,6 +534,8 @@ model ChecklistSubmission {
   template    ChecklistTemplate    @relation(fields: [templateId, propertyId], references: [id, propertyId], onDelete: Restrict, onUpdate: Restrict)
   stay        Stay?                @relation(fields: [stayId, propertyId], references: [id, propertyId], onDelete: Restrict, onUpdate: Restrict)
   author      User?                @relation(fields: [authorUserId], references: [id], onDelete: Restrict)
+  cleaningTask CleaningTask? @relation("CleaningSubmissions", fields: [cleaningTaskId, propertyId], references: [id, propertyId], onDelete: Restrict, onUpdate: Restrict)
+  currentForCleaningTask CleaningTask? @relation("CurrentCleaningSubmission")
   revisions   SubmissionRevision[]
   attachments Attachment[]
   issues      Issue[]
@@ -493,6 +544,7 @@ model ChecklistSubmission {
   @@index([propertyId, type, status, visitDate])
   @@index([propertyId, type, startedAt])
   @@index([stayId, type, status])
+  @@index([cleaningTaskId, propertyId])
   @@index([templateId, propertyId])
   @@index([authorUserId])
 }

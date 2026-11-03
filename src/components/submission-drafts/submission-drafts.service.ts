@@ -13,7 +13,7 @@ import {
   Role,
   SubmissionStatus,
 } from '@prisma/client';
-import { createHash, randomBytes } from 'node:crypto';
+import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import type { RuntimeEnvironment } from '../../config/environment';
 import { PrismaService } from '../../database/prisma.service';
 import { runSerializableTransaction } from '../../database/serializable-transaction';
@@ -34,6 +34,22 @@ import { parseChecklistDefinition } from '../checklist-templates/checklist-defin
 import { QrService } from '../qr/qr.service';
 import { StayAccessService } from '../stay-access/stay-access.service';
 import { buildDraftAnswers, parseDraftAnswers } from './draft-answers';
+
+type NewDraftContext = {
+  propertyId: string;
+  stayId?: string;
+  stayLinkVersion?: number;
+  accessExpiresAt?: Date;
+  requestKey: string;
+  type: ChecklistType;
+  visitDate: Date;
+  authorUserId: string | null;
+  authorSource: ActorSource;
+  authorSnapshot: DraftAuthorSnapshot;
+  startedAt: Date | null;
+  cleaningTaskId?: string;
+  taskQrTokenHash?: string;
+};
 
 // Initial draft policy; this does not define the future submitted-link lifetime.
 const DRAFT_LIFETIME_MS = 7 * 24 * 60 * 60 * 1000;
@@ -60,6 +76,19 @@ const draftSelect = {
   privateTokenExpiresAt: true,
   createdAt: true,
   updatedAt: true,
+  cleaningTaskId: true,
+  taskQrTokenHash: true,
+  cleaningTask: {
+    select: {
+      id: true,
+      propertyId: true,
+      source: true,
+      dueAt: true,
+      version: true,
+      status: true,
+      currentSubmissionId: true,
+    },
+  },
   property: {
     select: {
       id: true,
@@ -67,6 +96,7 @@ const draftSelect = {
       region: true,
       isActive: true,
       staffUserId: true,
+      staffQrTokenHash: true,
     },
   },
   author: { select: { id: true, role: true, isActive: true } },
@@ -278,69 +308,7 @@ export class SubmissionDraftsService {
     const token = randomBytes(32).toString('base64url');
     try {
       return await runSerializableTransaction(this.prisma, async (tx) => {
-        const { accessExpiresAt, ...context } = await resolve(tx);
-        // A request key deduplicates creation; it never authorizes token recovery.
-        const existing = await tx.checklistSubmission.findUnique({
-          where: { requestKey: context.requestKey },
-          select: { id: true },
-        });
-        if (existing) throw this.duplicateRequest();
-        const template = await tx.checklistTemplate.findFirst({
-          where: {
-            propertyId: context.propertyId,
-            type: context.type,
-            isActive: true,
-          },
-          select: {
-            id: true,
-            title: true,
-            type: true,
-            version: true,
-            definition: true,
-          },
-        });
-        if (!template)
-          throw new ConflictException({
-            code: 'CHECKLIST_UNAVAILABLE',
-            message:
-              '사용 가능한 체크리스트가 없습니다. 관리자에게 문의해 주세요.',
-          });
-        const snapshot: DraftTemplateSnapshot = {
-          schemaVersion: 1,
-          ...template,
-          definition: parseChecklistDefinition(template.definition),
-        };
-        const expiresAt = new Date(
-          Math.min(
-            Date.now() + DRAFT_LIFETIME_MS,
-            accessExpiresAt?.getTime() ?? Number.POSITIVE_INFINITY,
-          ),
-        );
-        if (expiresAt.getTime() <= Date.now()) throw this.invalidAccess();
-        const draft = await tx.checklistSubmission.create({
-          data: {
-            ...context,
-            templateId: template.id,
-            templateVersion: template.version,
-            templateSnapshot: snapshot,
-            status: SubmissionStatus.DRAFT,
-            draftAnswers: { schemaVersion: 1, items: [], generalNote: null },
-            privateTokenHash: this.hashToken(token),
-            privateTokenExpiresAt: expiresAt,
-          },
-          select: draftSelect,
-        });
-        const url = new URL(
-          '/draft',
-          this.config.get('FRONTEND_URL', { infer: true }),
-        );
-        url.hash = new URLSearchParams({ token }).toString();
-        return {
-          draft: this.toDto(draft),
-          accessToken: token,
-          url: url.toString(),
-          expiresAt,
-        };
+        return await this.createDraft(tx, await resolve(tx), token);
       });
     } catch (error) {
       if (
@@ -353,6 +321,168 @@ export class SubmissionDraftsService {
       }
       throw error;
     }
+  }
+
+  private async createDraft(
+    tx: Prisma.TransactionClient,
+    resolved: NewDraftContext,
+    token: string,
+  ): Promise<StartDraftDto> {
+    const { accessExpiresAt, ...context } = resolved;
+    // A request key deduplicates creation; it never authorizes token recovery.
+    const existing = await tx.checklistSubmission.findUnique({
+      where: { requestKey: context.requestKey },
+      select: { id: true },
+    });
+    if (existing) throw this.duplicateRequest();
+    const template = await tx.checklistTemplate.findFirst({
+      where: {
+        propertyId: context.propertyId,
+        type: context.type,
+        isActive: true,
+      },
+      select: {
+        id: true,
+        title: true,
+        type: true,
+        version: true,
+        definition: true,
+      },
+    });
+    if (!template)
+      throw new ConflictException({
+        code: 'CHECKLIST_UNAVAILABLE',
+        message: '사용 가능한 체크리스트가 없습니다. 관리자에게 문의해 주세요.',
+      });
+    const snapshot: DraftTemplateSnapshot = {
+      schemaVersion: 1,
+      ...template,
+      definition: parseChecklistDefinition(template.definition),
+    };
+    const expiresAt = new Date(
+      Math.min(
+        Date.now() + DRAFT_LIFETIME_MS,
+        accessExpiresAt?.getTime() ?? Number.POSITIVE_INFINITY,
+      ),
+    );
+    if (expiresAt.getTime() <= Date.now()) throw this.invalidAccess();
+    const draft = await tx.checklistSubmission.create({
+      data: {
+        ...context,
+        templateId: template.id,
+        templateVersion: template.version,
+        templateSnapshot: snapshot,
+        status: SubmissionStatus.DRAFT,
+        draftAnswers: { schemaVersion: 1, items: [], generalNote: null },
+        privateTokenHash: this.hashToken(token),
+        privateTokenExpiresAt: expiresAt,
+      },
+      select: draftSelect,
+    });
+    const url = new URL(
+      '/draft',
+      this.config.get('FRONTEND_URL', { infer: true }),
+    );
+    url.hash = new URLSearchParams({ token }).toString();
+    return {
+      draft: this.toDto(draft),
+      accessToken: token,
+      url: url.toString(),
+      expiresAt,
+    };
+  }
+
+  // The caller resolves the current QR, assignee and task inside this transaction.
+  public async startCleaningTaskDraft(
+    tx: Prisma.TransactionClient,
+    context: {
+      taskId: string;
+      propertyId: string;
+      currentSubmissionId: string | null;
+      qrTokenHash: string;
+      staff: { id: string; name: string };
+    },
+  ): Promise<StartDraftDto> {
+    const token = randomBytes(32).toString('base64url');
+    const now = new Date();
+    if (context.currentSubmissionId) {
+      const draft = await tx.checklistSubmission.findUnique({
+        where: { id: context.currentSubmissionId },
+        select: draftSelect,
+      });
+      if (
+        !draft ||
+        draft.cleaningTaskId !== context.taskId ||
+        draft.propertyId !== context.propertyId ||
+        draft.status !== SubmissionStatus.DRAFT
+      )
+        throw this.staleDraft();
+      if (draft.authorUserId === context.staff.id) {
+        const expiresAt = new Date(now.getTime() + DRAFT_LIFETIME_MS);
+        const resumed = await tx.checklistSubmission.update({
+          where: { id: draft.id },
+          data: {
+            privateTokenHash: this.hashToken(token),
+            privateTokenExpiresAt: expiresAt,
+            taskQrTokenHash: context.qrTokenHash,
+            updatedAt: new Date(
+              Math.max(now.getTime(), draft.updatedAt.getTime() + 1),
+            ),
+          },
+          select: draftSelect,
+        });
+        const url = new URL(
+          '/draft',
+          this.config.get('FRONTEND_URL', { infer: true }),
+        );
+        url.hash = new URLSearchParams({ token }).toString();
+        return {
+          draft: this.toDto(resumed),
+          accessToken: token,
+          url: url.toString(),
+          expiresAt,
+        };
+      }
+      // A new assignee starts a new attempt. Original work and photos keep their author.
+      await tx.checklistSubmission.update({
+        where: { id: draft.id },
+        data: {
+          status: SubmissionStatus.CANCELLED,
+          cancelledAt: now,
+          privateTokenHash: null,
+          privateTokenExpiresAt: null,
+        },
+      });
+    }
+    const day = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Asia/Seoul',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).format(now);
+    return await this.createDraft(
+      tx,
+      {
+        propertyId: context.propertyId,
+        requestKey: randomUUID(),
+        cleaningTaskId: context.taskId,
+        taskQrTokenHash: context.qrTokenHash,
+        type: ChecklistType.MAINTENANCE,
+        visitDate: this.parseVisitDate(day),
+        authorUserId: context.staff.id,
+        authorSource: ActorSource.STAFF_QR,
+        authorSnapshot: {
+          schemaVersion: 1,
+          role: 'STAFF',
+          name: context.staff.name,
+          company: null,
+          department: null,
+          phone: null,
+        },
+        startedAt: now,
+      },
+      token,
+    );
   }
 
   public async resolveDraft(
@@ -400,6 +530,21 @@ export class SubmissionDraftsService {
         !draft.author.isActive)
     )
       throw this.invalidAccess();
+    if (draft.cleaningTaskId) {
+      const task = draft.cleaningTask;
+      if (
+        draft.type !== ChecklistType.MAINTENANCE ||
+        !task ||
+        task.propertyId !== draft.propertyId ||
+        task.currentSubmissionId !== draft.id ||
+        !draft.taskQrTokenHash ||
+        draft.taskQrTokenHash !== draft.property.staffQrTokenHash ||
+        (draft.status === SubmissionStatus.DRAFT
+          ? task.status !== 'IN_PROGRESS'
+          : task.status !== 'COMPLETED')
+      )
+        throw this.invalidAccess();
+    }
     if (draft.stayLinkVersion !== null) {
       if (
         !draft.stayId ||
@@ -424,6 +569,15 @@ export class SubmissionDraftsService {
     if (!draft.privateTokenExpiresAt) throw new InternalServerErrorException();
     return {
       id: draft.id,
+      cleaningTask: draft.cleaningTask
+        ? {
+            id: draft.cleaningTask.id,
+            title:
+              draft.cleaningTask.source === 'AUTO' ? '퇴실 정비' : '추가 정비',
+            dueAt: draft.cleaningTask.dueAt,
+            version: draft.cleaningTask.version,
+          }
+        : null,
       property: {
         id: draft.property.id,
         name: draft.property.name,

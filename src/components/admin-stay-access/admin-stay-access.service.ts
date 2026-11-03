@@ -41,7 +41,7 @@ import {
   type StayWithAccess,
 } from './stay-access-data';
 
-interface AccessContext {
+export interface AccessContext {
   stay: StayWithAccess;
   code: string | null;
   fixedCode: string | null;
@@ -61,7 +61,7 @@ export class AdminStayAccessService {
     try {
       return await runSerializableTransaction(
         this.prisma,
-        async (tx) => (await this.context(tx, stayId.toLowerCase())).dto,
+        async (tx) => (await this.readContext(tx, stayId.toLowerCase())).dto,
       );
     } catch (error) {
       throw this.safeError(error);
@@ -120,7 +120,7 @@ export class AdminStayAccessService {
             code: 'UNAUTHENTICATED',
             message: '다시 로그인해 주세요.',
           });
-        const context = await this.context(tx, stayId.toLowerCase());
+        const context = await this.readContext(tx, stayId.toLowerCase());
         const { stay, dto } = context;
         this.checkVersions(stay, input);
         if (dto.blockedReason)
@@ -212,7 +212,7 @@ export class AdminStayAccessService {
           },
           select: { id: true },
         });
-        return (await this.context(tx, stay.id)).dto;
+        return (await this.readContext(tx, stay.id)).dto;
       });
     } catch (error) {
       if (
@@ -287,7 +287,7 @@ export class AdminStayAccessService {
     );
   }
 
-  private async context(
+  public async readContext(
     tx: Prisma.TransactionClient,
     stayId: string,
   ): Promise<AccessContext> {

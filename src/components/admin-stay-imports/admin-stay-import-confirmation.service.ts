@@ -6,6 +6,7 @@ import {
 import {
   AttachmentKind,
   AttachmentStatus,
+  CleaningTaskSource,
   ImportRowAction,
   ImportRowStatus,
   ImportStatus,
@@ -15,6 +16,7 @@ import {
   StayStatus,
 } from '@prisma/client';
 import { randomUUID } from 'node:crypto';
+import { cleaningTaskCutoff } from '../cleaning-tasks/cleaning-task-sync';
 import { PrismaService } from '../../database/prisma.service';
 import { runSerializableTransaction } from '../../database/serializable-transaction';
 import type { StayImportConfirmationDto } from '../../libs/dto/stay-import/stay-import';
@@ -189,6 +191,21 @@ export class AdminStayImportConfirmationService {
             })),
           });
           if (revisions.count !== chunk.length) throw this.changed();
+          const upcoming = chunk.filter(
+            ({ stay }) => stay.checkOutAt >= cleaningTaskCutoff(confirmedAt),
+          );
+          if (upcoming.length) {
+            const tasks = await tx.cleaningTask.createMany({
+              data: upcoming.map(({ stay }) => ({
+                propertyId: stay.propertyId,
+                departingStayId: stay.id,
+                source: CleaningTaskSource.AUTO,
+                dueAt: stay.checkOutAt,
+                sourceStayRevision: stay.currentRevision,
+              })),
+            });
+            if (tasks.count !== upcoming.length) throw this.changed();
+          }
           const values = chunk.map(
             ({ rowId, stay, snapshot }) => Prisma.sql`
             (${rowId}::text, ${stay.propertyId}::text, ${stay.id}::text,
