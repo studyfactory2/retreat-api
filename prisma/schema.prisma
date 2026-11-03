@@ -13,6 +13,11 @@ enum Role {
   GUEST
 }
 
+enum PropertyRoomCodeMode {
+  FIXED
+  ROTATING
+}
+
 enum StayStatus {
   ACTIVE
   CANCELLED
@@ -143,6 +148,7 @@ model User {
   resolvedIssues      Issue[]               @relation("IssueResolver")
   issueEvents         IssueEvent[]
   updatedPropertyGuides PropertyGuide[] @relation("PropertyGuideEditor")
+  updatedPropertyAccessSettings PropertyAccessSettings[] @relation("PropertyAccessEditor")
   staffDeactivations StaffDeactivation[] @relation("DeactivatedStaff")
   performedStaffDeactivations StaffDeactivation[] @relation("StaffDeactivationActor")
   publishedChecklistVersions ChecklistTemplateVersion[] @relation("ChecklistPublisher")
@@ -187,6 +193,7 @@ model Property {
 
   staff              User?                 @relation("PropertyStaff", fields: [staffUserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   stays              Stay[]
+  accessSettings     PropertyAccessSettings?
   importRows         ImportRow[]
   checklistTemplates ChecklistTemplate[]
   submissions        ChecklistSubmission[]
@@ -195,6 +202,23 @@ model Property {
   guide              PropertyGuide?
 
   @@index([staffUserId])
+}
+
+model PropertyAccessSettings {
+  propertyId              String               @id
+  roomMode                PropertyRoomCodeMode
+  entranceCodeCiphertext  String?
+  fixedRoomCodeCiphertext String?
+  vacancyCodeCiphertext   String?
+  version                 Int                  @default(1)
+  updatedByUserId         String
+  createdAt               DateTime             @default(now()) @db.Timestamptz(3)
+  updatedAt               DateTime             @updatedAt @db.Timestamptz(3)
+
+  property  Property @relation(fields: [propertyId], references: [id], onDelete: Restrict)
+  updatedBy User     @relation("PropertyAccessEditor", fields: [updatedByUserId], references: [id], onDelete: Restrict)
+
+  @@index([updatedByUserId])
 }
 
 model PropertyGuide {

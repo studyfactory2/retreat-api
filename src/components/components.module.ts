@@ -29,6 +29,7 @@ import { AdminPropertyGuidesModule } from './admin-property-guides/admin-propert
 import { GuestPropertyGuidesModule } from './guest-property-guides/guest-property-guides.module';
 import { AdminStayVehiclesModule } from './admin-stay-vehicles/admin-stay-vehicles.module';
 import { GuestStayVehiclesModule } from './guest-stay-vehicles/guest-stay-vehicles.module';
+import { AdminPropertyAccessModule } from './admin-property-access/admin-property-access.module';
 
 @Module({
   imports: [
@@ -62,6 +63,7 @@ import { GuestStayVehiclesModule } from './guest-stay-vehicles/guest-stay-vehicl
     GuestPropertyGuidesModule,
     AdminStayVehiclesModule,
     GuestStayVehiclesModule,
+    AdminPropertyAccessModule,
   ],
 })
 export class ComponentsModule {}

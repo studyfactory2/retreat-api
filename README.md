@@ -295,3 +295,11 @@ Scheduling and live S3 verification remain deployment work.
 Work one approved slice at a time. Report verification results and provide a
 commit message at the handoff. The user handles staging, commits, pushes,
 migrations, and deployment. See PROJECT.md for code conventions.
+## Property access settings (Slice 12)
+
+Administrators can save masked shared-entrance, fixed-room and vacancy codes in
+separate encrypted property settings. Explicit reveal is admin-only; no guest or
+staff disclosure, reservation codes, messages or lock changes are included.
+Apply the pending Prisma migration before using the new routes; no backfill is
+required. See [property access settings](docs/property-access-settings.md) for
+the HTTP contract, existing encryption configuration and user-run commands.

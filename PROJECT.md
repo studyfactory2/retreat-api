@@ -1326,3 +1326,17 @@ API build (including Prisma Client generation only), scoped ESLint/Prettier and
 `git diff --check` pass. Existing unit tests pass (3 suites, 48 tests), as do the
 existing HTTP tests using mocked Prisma (1 suite, 14 tests). No database,
 migration, configuration, deployment or Git mutation was performed.
+## Slice 12 — administrator property access settings
+
+`admin-property-access` adds admin-only metadata, save and explicit code-reveal
+routes under `/admin/properties/:id/access-settings`. `PropertyAccessSettings`
+separately stores encrypted codes, fixed/rotating mode, optimistic version and
+last editor metadata. Existing property DTOs, QR flows and public routes do not
+expose these settings. See `docs/property-access-settings.md` for the contract.
+
+The additive migration is generated offline by Prisma from schemas and is not
+applied by the assistant. No backfill or real-data fixture is needed. The shared
+key ring is reused with a different AAD domain; all responses use no-store and
+only explicit admin reveal responses contain plaintext. Saving here never
+means a physical lock changed. Reservation generation, staff/guest access and
+notification delivery remain later slices.
