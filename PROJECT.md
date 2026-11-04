@@ -1,5 +1,17 @@
 # retreat-api project reference
 
+## Slice 15 guest reservation passwords — 2026-11-04
+
+Personal reservation links now read masked password metadata and explicitly
+reveal their own room or shared-entrance code through
+`/guest/stays/current/access-codes`. Access opens exactly seven days before
+check-in and closes at checkout, independently of the invitation's later expiry.
+Existing reservation/source/policy review and private-link authorization are
+rechecked; shared QR and other credentials do not grant access. Prepared codes
+do not imply a physical lock change. See `docs/guest-access-codes.md` for contracts,
+expiry/error rules and verification limits. No schema, migration, backfill,
+account creation, messaging or infrastructure change is part of this slice.
+
 ## Product and working agreement
 
 QR-based retreat operations for guests, cleaning staff, and one administrator.
