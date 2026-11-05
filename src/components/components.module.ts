@@ -1,4 +1,6 @@
 import { CleaningTasksModule } from './cleaning-tasks/cleaning-tasks.module';
+import { MessagingModule } from './messaging/messaging.module';
+import { MessageAutomationModule } from './message-automation/message-automation.module';
 import { StaffCleaningTasksModule } from './staff-cleaning-tasks/staff-cleaning-tasks.module';
 import { AdminStayAccessModule } from './admin-stay-access/admin-stay-access.module';
 import { Module } from '@nestjs/common';
@@ -70,6 +72,8 @@ import { AdminPropertyAccessModule } from './admin-property-access/admin-propert
     AdminStayAccessModule,
     CleaningTasksModule,
     StaffCleaningTasksModule,
+    MessagingModule,
+    MessageAutomationModule,
   ],
 })
 export class ComponentsModule {}

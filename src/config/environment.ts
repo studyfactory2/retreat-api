@@ -1,6 +1,10 @@
+import {
+  readMessagingEnvironment,
+  type MessagingEnvironment,
+} from './messaging-environment';
 import { readAccessLinkEncryptionKeys } from './access-link-encryption';
 
-export interface RuntimeEnvironment {
+export interface RuntimeEnvironment extends MessagingEnvironment {
   NODE_ENV: 'development' | 'test' | 'production';
   PORT: number;
   TRUST_PROXY: boolean;
@@ -174,6 +178,7 @@ export function validateEnvironment(
   }
 
   return {
+    ...readMessagingEnvironment(input),
     NODE_ENV: nodeEnv,
     PORT: port,
     TRUST_PROXY: trustProxy,

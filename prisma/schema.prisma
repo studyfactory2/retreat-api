@@ -726,3 +726,96 @@ model IssueEventAttachment {
   @@id([eventId, attachmentId])
   @@index([attachmentId])
 }
+
+
+enum MessageKind {
+  GUEST_CHECKIN
+  GUEST_CHECKOUT
+  GUEST_CHANGE
+  GUEST_CANCEL
+  STAFF_ASSIGNMENT
+  STAFF_CHANGE
+  STAFF_CANCEL
+}
+
+enum MessageSubjectType {
+  STAY
+  TASK
+}
+
+enum MessageDispatchMode {
+  MANUAL
+  AUTOMATIC
+}
+
+enum MessageDispatchStatus {
+  SENDING
+  ACCEPTED
+  DELIVERED
+  FAILED
+  UNKNOWN
+}
+
+model MessageDispatch {
+  id                  String                @id @default(uuid())
+  subjectType         MessageSubjectType
+  subjectId           String
+  kind                MessageKind
+  mode                MessageDispatchMode
+  idempotencyKey      String                @unique
+  deduplicationKey    String?               @unique
+  contextHash         String
+  status              MessageDispatchStatus @default(SENDING)
+  maskedRecipient     String
+  providerMessageId   String?
+  providerGroupId     String?
+  actorUserId         String?
+  errorCode           String?
+  createdAt           DateTime              @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime              @updatedAt @db.Timestamptz(3)
+  lastCheckedAt       DateTime?             @db.Timestamptz(3)
+
+  @@index([subjectType, subjectId, createdAt])
+  @@index([status, createdAt])
+}
+
+model MessageAutomationState {
+  id          String    @id
+  activatedAt DateTime  @db.Timestamptz(3)
+  fingerprintKeyId String?
+  leaseOwner  String?
+  leaseUntil  DateTime? @db.Timestamptz(3)
+  lastScanAt  DateTime? @db.Timestamptz(3)
+}
+
+model MessageAutomationTarget {
+  id             String             @id
+  subjectType    MessageSubjectType
+  subjectId      String
+  sourceVersion  Int
+  fingerprint    String
+  observedStatus String
+  eventSequence Int @default(0)
+  observedAt     DateTime           @db.Timestamptz(3)
+
+  @@index([subjectType, subjectId])
+}
+
+model MessageAutomationJob {
+  id            String             @id @default(uuid())
+  key           String             @unique
+  subjectType   MessageSubjectType
+  subjectId     String
+  kind          MessageKind
+  sourceVersion Int
+  sourceFingerprint String
+  dueAt         DateTime           @db.Timestamptz(3)
+  status        String             @default("PENDING")
+  reasonCode    String?
+  dispatchId    String?
+  createdAt     DateTime           @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime           @updatedAt @db.Timestamptz(3)
+
+  @@index([status, dueAt])
+  @@index([subjectType, subjectId, createdAt])
+}
