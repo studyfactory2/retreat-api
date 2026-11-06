@@ -1,0 +1,2 @@
+-- AlterEnum
+ALTER TYPE "PhotoPurpose" ADD VALUE 'ROOM_CONDITION';

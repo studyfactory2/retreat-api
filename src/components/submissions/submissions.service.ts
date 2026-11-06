@@ -98,7 +98,7 @@ export class SubmissionsService {
             input.photos,
             template.definition,
             answers,
-            draft.type === ChecklistType.MAINTENANCE,
+            draft.type,
           );
           const requestHash = createHash('sha256')
             .update(

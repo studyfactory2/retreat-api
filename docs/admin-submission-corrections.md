@@ -95,6 +95,8 @@ ABNORMAL. NORMAL or omission removes dependent repair information only from the
 new current answer. An answer changed back to ABNORMAL does not resurrect removed
 repair data. Earlier revisions and repair-report events remain available.
 
+- Guest CHECK_IN ROOM_CONDITION photos stay with the submission when an answer
+  changes. They have no checklist item or issue association.
 - DEFECT associations remain only for still-ABNORMAL answers.
 - REPAIR associations remain only for still-ABNORMAL answers whose saved staff
   repairReported is still true.

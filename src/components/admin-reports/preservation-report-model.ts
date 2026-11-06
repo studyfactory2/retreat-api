@@ -157,6 +157,7 @@ export const archiveLabels: Record<string, string> = {
   SYSTEM: '시스템',
   MANUAL: '직접 등록',
   EXCEL: '엑셀',
+  ROOM_CONDITION: '객실 상태 사진',
   DEFECT: '이상 사진',
   REPAIR: '조치 사진',
   MAINTENANCE_BEFORE: '정비 전',

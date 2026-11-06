@@ -127,6 +127,7 @@ enum PhotoPurpose {
   MAINTENANCE_BEFORE
   MAINTENANCE_AFTER
   REPAIR
+  ROOM_CONDITION
 }
 
 enum IssueStatus {

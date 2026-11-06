@@ -91,7 +91,7 @@ export function parseSubmissionSnapshot(
       storedPhotos(root.photos),
       definition,
       answers,
-      isStaff,
+      type,
     );
     const startedAt = nullableTimestamp(submission.startedAt);
     const submittedAt = timestamp(submission.submittedAt);

@@ -1,5 +1,5 @@
 import { BadRequestException } from '@nestjs/common';
-import { PhotoPurpose } from '@prisma/client';
+import { ChecklistType, PhotoPurpose } from '@prisma/client';
 import type { ChecklistDefinition } from '../../libs/dto/checklist-template/checklist-template';
 import type { DraftAnswers } from '../../libs/dto/submission-draft/submission-draft';
 import type { PreparedSubmissionPhoto } from '../../libs/dto/submission/submission';
@@ -38,7 +38,7 @@ export function prepareSubmissionPhotos(
   photos: SubmissionPhotoInput[],
   definition: ChecklistDefinition,
   answers: DraftAnswers,
-  isStaff: boolean,
+  type: ChecklistType,
 ): PreparedSubmissionPhoto[] {
   if (!Array.isArray(photos) || photos.length > MAX_DRAFT_PHOTOS) {
     return invalidPhotos();
@@ -85,15 +85,23 @@ export function prepareSubmissionPhotos(
     }
 
     const answer = itemId === null ? undefined : savedAnswers.get(itemId);
-    if (!isStaff && photo.purpose !== PhotoPurpose.DEFECT)
-      return invalidPhotos();
     switch (photo.purpose) {
+      case PhotoPurpose.ROOM_CONDITION:
+        if (
+          type !== ChecklistType.CHECK_IN ||
+          sectionId !== null ||
+          itemId !== null ||
+          areaLabel !== null
+        ) {
+          return invalidPhotos();
+        }
+        break;
       case PhotoPurpose.DEFECT:
         if (answer?.value !== 'ABNORMAL') return invalidPhotos();
         break;
       case PhotoPurpose.REPAIR:
         if (
-          !isStaff ||
+          type !== ChecklistType.MAINTENANCE ||
           answer?.value !== 'ABNORMAL' ||
           !answer.repairReported
         ) {
@@ -103,7 +111,7 @@ export function prepareSubmissionPhotos(
       case PhotoPurpose.MAINTENANCE_BEFORE:
       case PhotoPurpose.MAINTENANCE_AFTER:
         if (
-          !isStaff ||
+          type !== ChecklistType.MAINTENANCE ||
           (sectionId === null && itemId === null && areaLabel === null)
         ) {
           return invalidPhotos();
@@ -120,6 +128,31 @@ export function prepareSubmissionPhotos(
       sortOrder,
     };
   });
+}
+
+export function retainedCorrectionPhotos(
+  photos: PreparedSubmissionPhoto[],
+  definition: ChecklistDefinition,
+  answers: DraftAnswers,
+  type: ChecklistType,
+): PreparedSubmissionPhoto[] {
+  const byItem = new Map(
+    answers.items.map((answer) => [answer.itemId, answer]),
+  );
+  return prepareSubmissionPhotos(
+    photos.filter((photo) => {
+      const answer =
+        photo.itemId === null ? undefined : byItem.get(photo.itemId);
+      if (photo.purpose === PhotoPurpose.DEFECT)
+        return answer?.value === 'ABNORMAL';
+      if (photo.purpose === PhotoPurpose.REPAIR)
+        return answer?.value === 'ABNORMAL' && answer.repairReported;
+      return true;
+    }),
+    definition,
+    answers,
+    type,
+  );
 }
 
 function normalizedId(value: unknown): string {

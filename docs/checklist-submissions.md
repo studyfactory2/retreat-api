@@ -60,6 +60,7 @@ section is rejected. Array order becomes the stored photo order.
 
 | Purpose | Rule |
 | --- | --- |
+| ROOM_CONDITION | Optional guest check-in room photo, via shared QR or personal link. Omit item, section and area. This photo is independent of checklist issues. |
 | DEFECT | Guest or staff; must reference an answered ABNORMAL item. |
 | MAINTENANCE_AFTER | Staff only; specify section, item or area label. |
 | MAINTENANCE_BEFORE | Optional staff photo; same location rule. |

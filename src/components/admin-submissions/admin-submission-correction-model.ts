@@ -1,15 +1,11 @@
-import { ChecklistType, PhotoPurpose } from '@prisma/client';
+import { ChecklistType } from '@prisma/client';
 import type { CorrectAdminSubmissionInput } from '../../libs/dto/admin-submission/admin-submission-correction.input';
 import type {
   DraftAnswers,
   DraftTemplateSnapshot,
 } from '../../libs/dto/submission-draft/submission-draft';
-import type { PreparedSubmissionPhoto } from '../../libs/dto/submission/submission';
 import { buildDraftAnswers } from '../submission-drafts/draft-answers';
-import {
-  assertCompleteAnswers,
-  prepareSubmissionPhotos,
-} from '../submissions/submission-validation';
+import { assertCompleteAnswers } from '../submissions/submission-validation';
 
 export function canonicalCorrectionAnswers(
   answers: DraftAnswers,
@@ -67,29 +63,4 @@ export function preserveMaintenanceRepairs(
         : answer;
     }),
   };
-}
-
-export function retainedCorrectionPhotos(
-  photos: PreparedSubmissionPhoto[],
-  template: DraftTemplateSnapshot,
-  answers: DraftAnswers,
-  type: ChecklistType,
-): PreparedSubmissionPhoto[] {
-  const byItem = new Map(
-    answers.items.map((answer) => [answer.itemId, answer]),
-  );
-  return prepareSubmissionPhotos(
-    photos.filter((photo) => {
-      const answer =
-        photo.itemId === null ? undefined : byItem.get(photo.itemId);
-      if (photo.purpose === PhotoPurpose.DEFECT)
-        return answer?.value === 'ABNORMAL';
-      if (photo.purpose === PhotoPurpose.REPAIR)
-        return answer?.value === 'ABNORMAL' && answer.repairReported;
-      return true;
-    }),
-    template.definition,
-    answers,
-    type === ChecklistType.MAINTENANCE,
-  );
 }

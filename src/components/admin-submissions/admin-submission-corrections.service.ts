@@ -21,13 +21,13 @@ import {
   parseSubmissionActor,
   parseSubmissionSnapshot,
 } from '../../libs/submissions/submission-snapshot';
+import { retainedCorrectionPhotos } from '../submissions/submission-validation';
 import { AdminIssueReader } from '../admin-issues/admin-issue-reader';
 import { recordAdminCorrectionIssues } from './admin-submission-correction-issues';
 import {
   canonicalCorrectionAnswers,
   preserveMaintenanceRepairs,
   requestedAdminAnswers,
-  retainedCorrectionPhotos,
 } from './admin-submission-correction-model';
 import {
   readAdminSubmissionCorrectionRecord,
@@ -97,7 +97,7 @@ export class AdminSubmissionCorrectionsService {
             };
           const photos = retainedCorrectionPhotos(
             current.photos,
-            record.template,
+            record.template.definition,
             answers,
             submission.type,
           );

@@ -66,7 +66,8 @@ Revoked/expired access cannot replay a successful correction.
 ## Photo behavior in this slice
 
 Guests cannot upload replacements, select arbitrary photo IDs or delete stored
-photos here. Existing defect photos stay in the latest revision while their
+photos here. Check-in room-condition photos are retained across revisions regardless of
+answer changes. Existing defect photos stay in the latest revision while their
 associated answer remains ABNORMAL. Changing that item to NORMAL or clearing an
 optional answer omits those associations from the new revision. Their original
 revision associations, stored images and issue evidence remain intact for the

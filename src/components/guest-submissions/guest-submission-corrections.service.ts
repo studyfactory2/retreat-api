@@ -24,7 +24,7 @@ import { parseSubmissionSnapshot } from '../../libs/submissions/submission-snaps
 import { buildDraftAnswers } from '../submission-drafts/draft-answers';
 import {
   assertCompleteAnswers,
-  prepareSubmissionPhotos,
+  retainedCorrectionPhotos,
 } from '../submissions/submission-validation';
 import { recordGuestCorrectionIssues } from './guest-submission-issues';
 import { GuestSubmissionsService } from './guest-submissions.service';
@@ -101,19 +101,11 @@ export class GuestSubmissionCorrectionsService {
               changed: false,
             };
           }
-          const abnormalIds = new Set(
-            answers.items
-              .filter((answer) => answer.value === 'ABNORMAL')
-              .map((answer) => answer.itemId),
-          );
-          // Removed defect associations stay preserved in previous revisions.
-          const photos = prepareSubmissionPhotos(
-            current.capturedPhotos.filter(
-              (photo) => photo.itemId !== null && abnormalIds.has(photo.itemId),
-            ),
+          const photos = retainedCorrectionPhotos(
+            current.capturedPhotos,
             record.template.definition,
             answers,
-            false,
+            submission.type,
           );
           const now = new Date(
             Math.max(Date.now(), submission.updatedAt.getTime() + 1),
