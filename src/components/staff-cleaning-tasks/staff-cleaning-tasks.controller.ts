@@ -13,6 +13,8 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
+import type { StaffCompletedWorkListDto } from '../../libs/dto/staff-cleaning-task/staff-cleaning-task';
+import { PaginationInput } from '../../libs/dto/common/list.input';
 import type { CleaningTaskListDto } from '../../libs/dto/cleaning-task/cleaning-task';
 import {
   GetStaffCleaningTasksInput,
@@ -35,6 +37,15 @@ export class StaffCleaningTasksController {
   ): Promise<CleaningTaskListDto> {
     console.log('GET: staffCleaningTasks');
     return await this.service.list(authorization, input);
+  }
+
+  @Get('completed')
+  @Header('Cache-Control', 'no-store')
+  public async completed(
+    @Headers('authorization') authorization: string | undefined,
+    @Query() input: PaginationInput,
+  ): Promise<StaffCompletedWorkListDto> {
+    return await this.service.completed(authorization, input);
   }
 
   @Post('sync')

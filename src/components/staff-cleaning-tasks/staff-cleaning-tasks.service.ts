@@ -7,6 +7,7 @@ import {
 import { CleaningTaskStatus, Prisma, Role, StayStatus } from '@prisma/client';
 import { PrismaService } from '../../database/prisma.service';
 import { runSerializableTransaction } from '../../database/serializable-transaction';
+import type { PaginationInput } from '../../libs/dto/common/list.input';
 import type { CleaningTaskListDto } from '../../libs/dto/cleaning-task/cleaning-task';
 import { QrFlow } from '../../libs/dto/qr/qr';
 import type {
@@ -15,6 +16,7 @@ import type {
   StartCleaningTaskInput,
 } from '../../libs/dto/staff-cleaning-task/staff-cleaning-task.input';
 import type {
+  StaffCompletedWorkListDto,
   TaskPasswordDto,
   RevealedTaskPasswordDto,
 } from '../../libs/dto/staff-cleaning-task/staff-cleaning-task';
@@ -28,6 +30,7 @@ import { syncPropertyCleaningTasks } from '../cleaning-tasks/cleaning-task-sync'
 import { CleaningTaskAccessService } from '../cleaning-task-access/cleaning-task-access.service';
 import { QrService } from '../qr/qr.service';
 import { SubmissionDraftsService } from '../submission-drafts/submission-drafts.service';
+import { listCompletedStaffWork } from './staff-completed-work';
 
 @Injectable()
 export class StaffCleaningTasksService {
@@ -46,6 +49,19 @@ export class StaffCleaningTasksService {
       async (tx) => {
         const { property } = await this.resolveStaff(tx, authorization);
         return await listCleaningTasks(tx, input, property.id);
+      },
+      { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead },
+    );
+  }
+
+  public async completed(
+    authorization: string | undefined,
+    input: PaginationInput,
+  ): Promise<StaffCompletedWorkListDto> {
+    return await this.prisma.$transaction(
+      async (tx) => {
+        const { property } = await this.resolveStaff(tx, authorization);
+        return await listCompletedStaffWork(tx, property.id, input);
       },
       { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead },
     );
