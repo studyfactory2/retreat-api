@@ -27,20 +27,30 @@ propertyIsActive, and guest/staff { issued, enabled, canReopen, rotatedAt }. Sta
 a raw token, digest, or previous URL. enabled means the property is active and that
 QR has been issued; it does not imply staff/checklist configuration is complete.
 
-Each POST requires exactly this body for first issuance:
+Each POST requires `expectedRotatedAt` copied exactly from the corresponding
+flow's `rotatedAt` in the latest status, including when `issued` is false. If the
+latest status has `rotatedAt: null`, send:
 
 ```json
 { "expectedRotatedAt": null }
 ```
 
-For replacement, copy the corresponding rotatedAt from the latest status:
+If the latest status has a timestamp, send that timestamp for issuance or replacement:
 
 ```json
 { "expectedRotatedAt": "2026-09-16T01:00:00.123Z" }
 ```
 
 That timestamp is an example, not a real QR revision. The field is required,
-nullable only for never-issued QR, and otherwise exact UTC ISO with milliseconds.
+nullable only when the latest status has no revision, and otherwise exact UTC ISO
+with milliseconds. Changing the staff assignment clears the staff QR hash and
+recoverable token while advancing `staff.rotatedAt`, even if no staff QR had yet
+been issued. Its valid status is therefore `issued: false`, `enabled: false`,
+`canReopen: false`, with a non-null `rotatedAt`. Retain that timestamp when issuing
+the next staff QR; `issued: false` does not imply `expectedRotatedAt: null`.
+Saving the same assignment preserves the current staff QR. Guest QR access is
+unchanged by staff assignment changes.
+
 Stale or competing requests return 409 STALE_QR_CODE. Refetch status and explicitly
 decide whether replacement is still intended; do not blindly retry credential
 rotation. Timestamps advance monotonically, including replacements in one
