@@ -1,3 +1,8 @@
+export interface PropertyGuidePdfMetadata {
+  filename: string;
+  sizeBytes: number;
+}
+
 export interface AdminPropertyGuideDto {
   property: {
     id: string;
@@ -8,6 +13,8 @@ export interface AdminPropertyGuideDto {
   guide: {
     title: string;
     content: string;
+    type: 'TEXT' | 'PDF';
+    pdf: PropertyGuidePdfMetadata | null;
     isPublished: boolean;
     version: number;
     updatedByUserId: string;

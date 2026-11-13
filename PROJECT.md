@@ -773,33 +773,27 @@ No schema, migration, new package, new test file, frontend or deployment changes
 are included. Guides, vehicle registration, final client configuration, upload
 cleanup and release verification remain separate slices.
 
-## Property usage guide slice
+## Property usage guides — text and PDF
 
-AdminPropertyGuidesModule owns GET/POST /admin/properties/:id/guide with explicit
-ADMIN/RolesGuard. POST fully replaces title/content/isPublished and requires
-expectedVersion (0 only on first creation). Serializable saves recheck the active
-administrator, reject stale versions and map concurrent creation conflicts to
-409 PROPERTY_GUIDE_CHANGED. Inactive properties can be configured for later use.
+Each retreat has one guide with TEXT/PDF type, title, publication and optimistic
+version. Existing guides remain TEXT. Admin JSON save is the existing text route;
+POST /admin/properties/:id/guide/pdf accepts a bounded multipart PDF and saves it
+atomically with title/publication/version. No-file PDF saves retain only the
+current PDF; retained text is admin-only while PDF mode is active.
 
-GuestPropertyGuidesModule independently owns GET /guest/property-guides/qr and
-/guest/property-guides/stay. Each accepts only its designated guest Bearer token
-through the existing QR/stay resolver. The resolved property and published guide
-are read in one RepeatableRead transaction; missing/hidden guides return null.
-No property ID selection, private guest details or editor IDs appear in guest
-responses. Existing QR and guest-stay context contracts remain unchanged.
+Guest QR and personal stay links use their designated resolvers for guide JSON
+and authenticated PDF download. Hidden or missing guides reveal no draft content.
+PDFs remain private under guides/* in the existing S3 bucket, with no public URLs;
+production IAM must add PutObject/GetObject/DeleteObject for that prefix. Parsing
+uses pdf-lib in a bounded worker and rejects encrypted/active PDFs. Changes do not
+rewrite the uploaded document or grant shared QR access to reservation passwords.
 
-New PropertyGuide is a one-to-one optional property table with plain-text content,
-publication state, version, last administrator ID and timestamps. There is no
-guide revision archive or separate published/draft copy. General instructions
-are equally available through valid guest QR and private links; restricted entry
-codes/private guest data require a separate access design. Frontend must render
-escaped text, never HTML. See docs/property-guides.md for DTOs and error cases.
-
-All guide routes reject unexpected query parameters and send no-store/no-referrer
-headers. Read limits are 60/min/IP/process; admin save limit is 20/min/IP/process.
-The user runs npx prisma migrate dev --name add_property_guides. No migration,
-business seed, new package or new test file is created by the assistant. Actual
-guide content, frontend, vehicle capture, cleanup and deployment remain separate.
+The Prisma-generated add_property_guide_pdf migration was applied to the local
+development database with user authorization on 2026-11-13, after a readable backup.
+Prisma Client was regenerated and existing guide values were verified unchanged.
+Production remains untouched. No backfill is needed. All routes retain no-store/no-referrer,
+version conflicts and active-admin checks. See docs/property-guides.md for API
+fields, upload limits, preservation, cleanup caveats and deployment prerequisites.
 
 ## Guest stay vehicle slice
 

@@ -3,6 +3,7 @@ import {
   Body,
   Controller,
   Get,
+  Header,
   HttpCode,
   HttpStatus,
   Param,
@@ -10,11 +11,20 @@ import {
   Post,
   Query,
   UseGuards,
+  UploadedFile,
+  UseInterceptors,
+  type StreamableFile,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import type {} from 'multer';
+import { MAX_GUIDE_PDF_BYTES } from '../../storage/guide-pdf-storage.service';
+import { GuidePdfUploadCapacityInterceptor } from './guide-pdf-upload-capacity.interceptor';
 import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import { Role } from '@prisma/client';
 import {
   GetAdminPropertyGuideInput,
+  GetPropertyGuidePdfInput,
+  SaveAdminPropertyGuidePdfInput,
   SaveAdminPropertyGuideInput,
 } from '../../libs/dto/admin-property-guide/admin-property-guide.input';
 import type { AdminPropertyGuideDto } from '../../libs/dto/admin-property-guide/admin-property-guide';
@@ -67,5 +77,54 @@ export class AdminPropertyGuidesController {
     void query;
     console.log('POST: savePropertyGuide');
     return await this.adminPropertyGuidesService.saveGuide(id, input, actor.id);
+  }
+
+  @Roles(Role.ADMIN)
+  @UseGuards(RolesGuard)
+  @Get('pdf')
+  @Header('Cache-Control', 'private, no-store')
+  @Header('X-Content-Type-Options', 'nosniff')
+  @Header('Access-Control-Expose-Headers', 'Content-Disposition')
+  @Throttle({ default: { limit: 20, ttl: 60_000 } })
+  public async getPdf(
+    @Param('id', propertyIdPipe) id: string,
+    @Query() input: GetPropertyGuidePdfInput,
+  ): Promise<StreamableFile> {
+    console.log('GET: getPropertyGuidePdf');
+    return await this.adminPropertyGuidesService.getPdf(id, input.version);
+  }
+
+  @Roles(Role.ADMIN)
+  @UseGuards(RolesGuard)
+  @Post('pdf')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @UseInterceptors(
+    GuidePdfUploadCapacityInterceptor,
+    FileInterceptor('file', {
+      limits: {
+        fileSize: MAX_GUIDE_PDF_BYTES,
+        files: 1,
+        fields: 4,
+        fieldSize: 100_000,
+        parts: 6,
+      },
+    }),
+  )
+  public async savePdf(
+    @Param('id', propertyIdPipe) id: string,
+    @Query() query: GetAdminPropertyGuideInput,
+    @Body() input: SaveAdminPropertyGuidePdfInput,
+    @UploadedFile() file: Express.Multer.File | undefined,
+    @AuthUser() actor: AuthenticatedUser,
+  ): Promise<AdminPropertyGuideDto> {
+    void query;
+    console.log('POST: savePropertyGuidePdf');
+    return await this.adminPropertyGuidesService.savePdf(
+      id,
+      input,
+      actor.id,
+      file,
+    );
   }
 }

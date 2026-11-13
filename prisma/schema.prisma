@@ -248,10 +248,20 @@ model PropertyAccessSettings {
   @@index([updatedByUserId])
 }
 
+enum PropertyGuideType {
+  TEXT
+  PDF
+}
+
 model PropertyGuide {
   propertyId      String   @id
   title           String
   content         String
+  type            PropertyGuideType @default(TEXT)
+  pdfBucket       String?
+  pdfKey          String?
+  pdfFilename     String?
+  pdfSizeBytes    Int?
   isPublished     Boolean  @default(false)
   version         Int      @default(1)
   updatedByUserId  String

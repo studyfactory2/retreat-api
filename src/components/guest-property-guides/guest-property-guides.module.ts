@@ -3,6 +3,7 @@ import {
   type MiddlewareConsumer,
   type NestModule,
 } from '@nestjs/common';
+import { PropertyGuideFilesModule } from '../property-guide-files/property-guide-files.module';
 import { QrModule } from '../qr/qr.module';
 import { QrNoStoreMiddleware } from '../qr/qr-no-store.middleware';
 import { StayAccessModule } from '../stay-access/stay-access.module';
@@ -10,7 +11,7 @@ import { GuestPropertyGuidesController } from './guest-property-guides.controlle
 import { GuestPropertyGuidesService } from './guest-property-guides.service';
 
 @Module({
-  imports: [QrModule, StayAccessModule],
+  imports: [QrModule, StayAccessModule, PropertyGuideFilesModule],
   controllers: [GuestPropertyGuidesController],
   providers: [GuestPropertyGuidesService, QrNoStoreMiddleware],
 })
